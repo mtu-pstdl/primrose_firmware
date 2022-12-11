@@ -1,3 +1,4 @@
+
 #include <Arduino.h>
 #include <FlexCAN_T4.h>
 #include <ros.h>
@@ -5,7 +6,7 @@
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros.h"
 #include "ODrive/ODriveS1.h"
 
-//ros::NodeHandle node_handle;
+ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64> can1;
 
 
@@ -27,18 +28,26 @@ void setup() {
 
 //    node_handle.initNode();
 
-    Serial.begin(115200);
+    Serial.begin(115200); // 115kbps
 
     // Set up the CAN bus
     can1.begin();
     can1.setBaudRate(500000); // 500kbps
 
+
     // Set up the ODrives
-    odrives[0] = new ODriveS1(0, "FLD", &can1);
-    odrives[1] = new ODriveS1(1, "FRD", &can1);
-    odrives[2] = new ODriveS1(2, "BLD", &can1);
-    odrives[3] = new ODriveS1(3, "BRD", &can1);
-    odrives[4] = new ODriveS1(4, "TRENCH", &can1);
+//    odrives[0] = new ODriveS1(0, "FLD", &can1);
+//    odrives[1] = new ODriveS1(1, "FRD", &can1);
+//    odrives[2] = new ODriveS1(2, "BLD", &can1);
+//    odrives[3] = new ODriveS1(3, "BRD", &can1);
+//    odrives[4] = new ODriveS1(4, "TRENCH", &can1);
+
+    odrives[0] = new ODriveS1(0, "FLD", &can1, &node_handle);
+    odrives[1] = new ODriveS1(1, "FRD", &can1, &node_handle);
+    odrives[2] = new ODriveS1(2, "BLD", &can1, &node_handle);
+    odrives[3] = new ODriveS1(3, "BRD", &can1, &node_handle);
+    odrives[4] = new ODriveS1(4, "TRENCH", &can1, &node_handle);
+
 
     // Set MB 0 to receive all messages
     can1.setMBFilter(MB0, 0x000, 0x7FF);
