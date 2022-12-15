@@ -9,7 +9,6 @@
 ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64> can1;
 
-
 ODriveS1* odrives[5];
 
 

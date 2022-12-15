@@ -26,10 +26,11 @@ ODriveS1::ODriveS1(uint8_t can_id, String name, FlexCAN_T4<CAN1, RX_SIZE_256, TX
 }
 
 void ODriveS1::advertise() {
-    node_handle->advertise(condition_pub);
-    node_handle->advertise(encoder_pub);
-    node_handle->advertise(state_pub);
-
+    this->node_handle->advertise(condition_pub);
+    this->node_handle->advertise(encoder_pub);
+    this->node_handle->advertise(state_pub);
+    this->node_handle->subscribe(setpoint_sub);
+    this->node_handle->subscribe(control_mode_sub);
 }
 
 /**
@@ -39,8 +40,11 @@ void ODriveS1::advertise() {
 void ODriveS1::setpoint_callback(const std_msgs::Float32MultiArray &msg) {
     if(msg.data_length == 3){
         this->setpoint = msg.data[0];
-        this->velocity = msg.data[1];
-        this->torque   = msg.data[2];
+        if (this->control_mode == odrive::POSITION_CONTROL){
+            // When in position control mode, the velocity and torque ff values are halfed to 16 bits
+            // So we need to truncate the values of each float to 16 bits with a factor of 0.001
+
+        }
     }
 }
 
@@ -55,6 +59,11 @@ void ODriveS1::control_mode_callback(const std_msgs::Int32MultiArray &msg){
 //    this->name = std::move(name);
 //    this->can_bus = can_bus;
 //}
+
+void ODriveS1::init() {
+    // Tell the ODrive to begin homing the motor
+    this->send_command(ODriveS1::Set_Axis_State, odrive::STARTUP_SEQUENCE);
+}
 
 uint8_t ODriveS1::get_can_id() const {
     return this->can_id;
@@ -136,6 +145,20 @@ uint8_t ODriveS1::send_command(ODriveS1::command_ids command_id) {
     msg.id = this->can_id << 5 | command_id; // 6 bits for the ID and 5 bits for the command
     msg.flags.remote = true; // Set the remote flag to true (remote transmission request)
     msg.len = 0;
+    uint8_t result = this->can_bus->write(msg);
+    return result; // Return the result of the write (1 for success, -1 for failure)
+}
+
+uint8_t ODriveS1::send_command(command_ids command_id, uint32_t value) {
+    CAN_message_t msg;
+    msg.id = this->can_id << 5 | command_id; // 6 bits for the ID and 5 bits for the command
+    msg.flags.extended = false;
+    msg.flags.remote = false;
+    msg.len = 4;
+    msg.buf[0] = (uint8_t) (value & 0xFF);
+    msg.buf[1] = (uint8_t) ((value >> 8) & 0xFF);
+    msg.buf[2] = (uint8_t) ((value >> 16) & 0xFF);
+    msg.buf[3] = (uint8_t) ((value >> 24) & 0xFF);
     uint8_t result = this->can_bus->write(msg);
     return result; // Return the result of the write (1 for success, -1 for failure)
 }

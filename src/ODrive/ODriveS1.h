@@ -9,6 +9,7 @@
 
 
 #include <cstdint>
+#include <cmath>
 #include "odrive_constants.h"
 
 #include <FlexCAN_T4.h>
@@ -78,6 +79,11 @@ class ODriveS1{
     float_t velocity = 0; // The velocity of the ODrive
     float_t torque   = 0; // The torque of the ODrive
 
+    union {
+
+        float_t float32;
+    } velocity_ff; // The velocity feedforward of the ODrive
+
     enum command_ids: uint8_t { // These are can bus command ids
         Heartbeat = 0x001, Estop = 0x002,
         Get_Error = 0x003, Set_Axis_Node_ID = 0x006,
@@ -94,6 +100,8 @@ class ODriveS1{
 
     uint8_t send_command(command_ids command_id);
 
+    uint8_t send_command(command_ids command_id, uint32_t value);
+
     uint8_t send_command(command_ids command_id, uint32_t lower_data, uint32_t upper_data);
 
     void setpoint_callback(const std_msgs::Float32MultiArray &msg);
@@ -102,13 +110,13 @@ class ODriveS1{
 
 public:
 
-    void init(ros::NodeHandle *node_ptr);
-
 //    ODriveS1(uint8_t can_id, String name, FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64>* can_bus);
 
     ODriveS1(uint8_t can_id, String name, FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64>* can_bus, ros::NodeHandle *node_ptr);
 
     void advertise(); // Advertise all the topics and publishers
+
+    void init(); // Initialize the ODrive module
 
     void on_message(const CAN_message_t &msg);
 
