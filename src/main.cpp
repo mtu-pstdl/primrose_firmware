@@ -9,7 +9,7 @@
 ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64> can1;
 
-ODriveS1* odrives[5];
+ODriveS1* odrives[6];
 
 
 void can_event(const CAN_message_t &msg) {
@@ -46,6 +46,7 @@ void setup() {
     odrives[2] = new ODriveS1(2, "BLD", &can1, &node_handle);
     odrives[3] = new ODriveS1(3, "BRD", &can1, &node_handle);
     odrives[4] = new ODriveS1(4, "TRENCH", &can1, &node_handle);
+    odrives[5] = new ODriveS1(5, "CONVEY", &can1, &node_handle);
 
 
     // Set MB 0 to receive all messages

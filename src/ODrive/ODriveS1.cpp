@@ -25,6 +25,9 @@ ODriveS1::ODriveS1(uint8_t can_id, String name, FlexCAN_T4<CAN1, RX_SIZE_256, TX
     this->node_handle = nh;
 }
 
+/**
+ * This method sets up the ROS publishers and subscribers
+ */
 void ODriveS1::advertise() {
     this->node_handle->advertise(condition_pub);
     this->node_handle->advertise(encoder_pub);
@@ -69,11 +72,24 @@ uint8_t ODriveS1::get_can_id() const {
     return this->can_id;
 }
 
+/**
+ * This method is called any time a message is received from the ODrive
+ * @param msg A can message received from the ODrive this object represents
+ */
 void ODriveS1::on_message(const CAN_message_t &msg) {
     uint8_t msg_type = msg.id & 0x1F; // Use bitmask of 0b00000011111 to get the last 5 bits
     // Bytes are sent little endian
-    uint32_t upper_32 = (msg.buf[4] << 24) | (msg.buf[5] << 16) | (msg.buf[6] << 8) | msg.buf[7];
-    uint32_t lower_32 = (msg.buf[0] << 24) | (msg.buf[1] << 16) | (msg.buf[2] << 8) | msg.buf[3];
+
+    if (msg.len == 8) { // 8 bytes
+        uint32_t upper_32 = (msg.buf[4] << 24) | (msg.buf[5] << 16) | (msg.buf[6] << 8) | msg.buf[7];
+        uint32_t lower_32 = (msg.buf[0] << 24) | (msg.buf[1] << 16) | (msg.buf[2] << 8) | msg.buf[3];
+    } else if (msg.len == 4) { // 4 bytes
+        uint32_t upper_32 = 0;  // Set the upper 32 bits to 0 since we only have 4 bytes
+        uint32_t lower_32 = (msg.buf[0] << 24) | (msg.buf[1] << 16) | (msg.buf[2] << 8) | msg.buf[3];
+    } else {
+        uint32_t upper_32 = 0;
+        uint32_t lower_32 = 0;
+    }
     switch (static_cast<ODriveS1::command_ids>(msg_type)){
         case Heartbeat: // Lower 4 bytes are AXIS_ERROR and the upper 4 bytes are AXIS_STATE
             this->AXIS_ERROR = (float) lower_32;
