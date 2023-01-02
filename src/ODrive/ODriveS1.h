@@ -11,14 +11,10 @@
 #include <cstdint>
 #include <cmath>
 #include "odrive_constants.h"
-
-#include <FlexCAN_T4.h>
-#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32MultiArray.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32MultiArray.h"
-#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/publisher.h"
-#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/subscriber.h"
-#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/service_server.h"
+
+#include <FlexCAN_T4.h>
 
 
 class ODriveS1{
@@ -27,24 +23,6 @@ class ODriveS1{
     uint8_t can_id = 0;
 
     FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64>* can_bus = nullptr; // The CAN bus pointer
-
-    ros::NodeHandle* node_handle = nullptr; // The ROS node handle
-
-    // Publishes the values of FET_TEMP, MOTOR_TEMP, VBUS_VOLTAGE, VBUS_CURRENT
-    std_msgs::Float32MultiArray condition_topic;
-    ros::Publisher condition_pub;
-
-    // Publishes the values of POS_ESTIMATE, VEL_ESTIMATE, Iq_Setpoint, Iq_Measured
-    std_msgs::Float32MultiArray encoder_topic;
-    ros::Publisher encoder_pub;
-
-    // Publishes the values of AXIS_STATE, AXIS_ERROR, ACTIVE_ERRORS, DISARM_REASON
-    std_msgs::Int32MultiArray state_topic;
-    ros::Publisher state_pub;
-
-    ros::Subscriber<std_msgs::Float32MultiArray, ODriveS1> setpoint_sub;
-
-    ros::Subscriber<std_msgs::Int32MultiArray, ODriveS1> control_mode_sub;
 
 
 #define AXIS_REFRESH_BIT 0x01
@@ -71,18 +49,14 @@ class ODriveS1{
     uint32_t last_refresh = 0; // The last time the data completely refreshed
     uint32_t last_refresh_attempt = 0; // The last time the data was attempted to be refreshed
 
-
-    odrive::control_modes control_mode = odrive::control_modes::UNKNOWN_CONTROL_MODE; // The control mode of the ODrive
-    odrive::input_modes input_mode = odrive::input_modes::UNKNOWN_INPUT_MODE; // The input mode of the ODrive
-
     float_t setpoint = 0; // The setpoint of the ODrive
     float_t velocity = 0; // The velocity of the ODrive
     float_t torque   = 0; // The torque of the ODrive
 
-    union {
-
-        float_t float32;
-    } velocity_ff; // The velocity feedforward of the ODrive
+//    union {
+//
+//        float_t float32;
+//    } velocity_ff; // The velocity feedforward of the ODrive
 
     enum command_ids: uint8_t { // These are can bus command ids
         Heartbeat = 0x001, Estop = 0x002,
@@ -104,17 +78,9 @@ class ODriveS1{
 
     uint8_t send_command(command_ids command_id, uint32_t lower_data, uint32_t upper_data);
 
-    void setpoint_callback(const std_msgs::Float32MultiArray &msg);
-
-    void control_mode_callback(const std_msgs::Int32MultiArray &msg);
-
 public:
 
-//    ODriveS1(uint8_t can_id, String name, FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64>* can_bus);
-
-    ODriveS1(uint8_t can_id, String name, FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64>* can_bus, ros::NodeHandle *node_ptr);
-
-    void advertise(); // Advertise all the topics and publishers
+    ODriveS1(uint8_t can_id, String name, FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64>* can_bus);
 
     void init(); // Initialize the ODrive module
 
@@ -125,6 +91,7 @@ public:
     String* get_state_string(); // Returns the state as a string
 
     uint8_t get_can_id() const;
+
 };
 
 

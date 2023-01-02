@@ -7,61 +7,11 @@
 //#include <utility>
 //#include "odrive_constants.h"
 
-
-// ******** Begin ROS Section ********
-
-ODriveS1::ODriveS1(uint8_t can_id, String name, FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64> *can_bus,
-                   ros::NodeHandle* nh):
-        condition_pub(String(TOPIC_BASE + name + "/condition").c_str(), &condition_topic),
-        encoder_pub(String(TOPIC_BASE + name + "/encoder").c_str(), &encoder_topic),
-        state_pub(String(TOPIC_BASE + name + "/state").c_str(), &state_topic),
-        setpoint_sub(String(TOPIC_BASE + name + "/setpoint").c_str(),
-                     &ODriveS1::setpoint_callback, this),
-        control_mode_sub(String(TOPIC_BASE + name + "/control_mode").c_str(),
-                         &ODriveS1::control_mode_callback, this){
+ODriveS1::ODriveS1(uint8_t can_id, String name, FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64> *can_bus) {
     this->can_id = can_id;
     this->name = std::move(name);
     this->can_bus = can_bus;
-    this->node_handle = nh;
 }
-
-/**
- * This method sets up the ROS publishers and subscribers
- */
-void ODriveS1::advertise() {
-    this->node_handle->advertise(condition_pub);
-    this->node_handle->advertise(encoder_pub);
-    this->node_handle->advertise(state_pub);
-    this->node_handle->subscribe(setpoint_sub);
-    this->node_handle->subscribe(control_mode_sub);
-}
-
-/**
- * This function is called when a message is received on the setpoint topic
- * @param msg The length of the message is 3 values: [0] = Position, [1] = Velocity, [2] = Torque
- */
-void ODriveS1::setpoint_callback(const std_msgs::Float32MultiArray &msg) {
-    if(msg.data_length == 3){
-        this->setpoint = msg.data[0];
-        if (this->control_mode == odrive::POSITION_CONTROL){
-            // When in position control mode, the velocity and torque ff values are halfed to 16 bits
-            // So we need to truncate the values of each float to 16 bits with a factor of 0.001
-
-        }
-    }
-}
-
-void ODriveS1::control_mode_callback(const std_msgs::Int32MultiArray &msg){
-
-}
-
-// ******** End ROS Section ********
-
-//ODriveS1::ODriveS1(uint8_t can_id, String name, FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64> *can_bus) {
-//    this->can_id = can_id;
-//    this->name = std::move(name);
-//    this->can_bus = can_bus;
-//}
 
 void ODriveS1::init() {
     // Tell the ODrive to begin homing the motor
@@ -79,16 +29,17 @@ uint8_t ODriveS1::get_can_id() const {
 void ODriveS1::on_message(const CAN_message_t &msg) {
     uint8_t msg_type = msg.id & 0x1F; // Use bitmask of 0b00000011111 to get the last 5 bits
     // Bytes are sent little endian
-
+    uint32_t upper_32 = 0;
+    uint32_t lower_32 = 0;
     if (msg.len == 8) { // 8 bytes
-        uint32_t upper_32 = (msg.buf[4] << 24) | (msg.buf[5] << 16) | (msg.buf[6] << 8) | msg.buf[7];
-        uint32_t lower_32 = (msg.buf[0] << 24) | (msg.buf[1] << 16) | (msg.buf[2] << 8) | msg.buf[3];
+        upper_32 = (msg.buf[4] << 24) | (msg.buf[5] << 16) | (msg.buf[6] << 8) | msg.buf[7];
+        lower_32 = (msg.buf[0] << 24) | (msg.buf[1] << 16) | (msg.buf[2] << 8) | msg.buf[3];
     } else if (msg.len == 4) { // 4 bytes
-        uint32_t upper_32 = 0;  // Set the upper 32 bits to 0 since we only have 4 bytes
-        uint32_t lower_32 = (msg.buf[0] << 24) | (msg.buf[1] << 16) | (msg.buf[2] << 8) | msg.buf[3];
+        upper_32 = 0;  // Set the upper 32 bits to 0 since we only have 4 bytes
+        lower_32 = (msg.buf[0] << 24) | (msg.buf[1] << 16) | (msg.buf[2] << 8) | msg.buf[3];
     } else {
-        uint32_t upper_32 = 0;
-        uint32_t lower_32 = 0;
+        upper_32 = 0;
+        lower_32 = 0;
     }
     switch (static_cast<ODriveS1::command_ids>(msg_type)){
         case Heartbeat: // Lower 4 bytes are AXIS_ERROR and the upper 4 bytes are AXIS_STATE
@@ -233,5 +184,6 @@ String* ODriveS1::get_state_string() {
     state_string->concat("LAST UPDATE: " + String(millis() - this->last_refresh) + "ms ago\n");
     return state_string;
 }
+
 
 

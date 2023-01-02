@@ -41,12 +41,12 @@ void setup() {
 //    odrives[3] = new ODriveS1(3, "BRD", &can1);
 //    odrives[4] = new ODriveS1(4, "TRENCH", &can1);
 
-    odrives[0] = new ODriveS1(0, "FLD", &can1, &node_handle);
-    odrives[1] = new ODriveS1(1, "FRD", &can1, &node_handle);
-    odrives[2] = new ODriveS1(2, "BLD", &can1, &node_handle);
-    odrives[3] = new ODriveS1(3, "BRD", &can1, &node_handle);
-    odrives[4] = new ODriveS1(4, "TRENCH", &can1, &node_handle);
-    odrives[5] = new ODriveS1(5, "CONVEY", &can1, &node_handle);
+    odrives[0] = new ODriveS1(0, "FLD", &can1);
+    odrives[1] = new ODriveS1(1, "FRD", &can1);
+    odrives[2] = new ODriveS1(2, "BLD", &can1);
+    odrives[3] = new ODriveS1(3, "BRD", &can1);
+    odrives[4] = new ODriveS1(4, "TRENCH", &can1);
+    odrives[5] = new ODriveS1(5, "CONVEY", &can1);
 
 
     // Set MB 0 to receive all messages
