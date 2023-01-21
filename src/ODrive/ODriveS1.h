@@ -24,7 +24,6 @@ class ODriveS1{
 
     FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64>* can_bus = nullptr; // The CAN bus pointer
 
-
 #define AXIS_REFRESH_BIT 0x01
     float_t    AXIS_ERROR = 0;   // Axis error code
     uint32_t   AXIS_STATE = 0;   // Axis state code
@@ -53,10 +52,7 @@ class ODriveS1{
     float_t velocity = 0; // The velocity of the ODrive
     float_t torque   = 0; // The torque of the ODrive
 
-//    union {
-//
-//        float_t float32;
-//    } velocity_ff; // The velocity feedforward of the ODrive
+    bool conn_established = false; // Flag for if a connection has been established with the ODrive
 
     enum command_ids: uint8_t { // These are can bus command ids
         Heartbeat = 0x001, Estop = 0x002,
