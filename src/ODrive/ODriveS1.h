@@ -92,6 +92,32 @@ public:
 
     uint8_t get_can_id() const;
 
+    float_t get_fet_temp() const;
+
+    float_t get_motor_temp() const;
+
+    float_t get_vbus_voltage() const;
+
+    float_t get_vbus_current() const;
+
+    float_t get_pos_estimate() const;
+
+    float_t get_vel_estimate() const;
+
+    float_t get_Iq_setpoint() const;
+
+    float_t get_Iq_measured() const;
+
+    float_t get_setpoint() const;
+
+    uint32_t get_axis_state() const;
+
+    uint32_t get_axis_error() const;
+
+    uint32_t get_active_errors() const;
+
+    uint32_t get_disarm_reason() const;
+
 };
 
 

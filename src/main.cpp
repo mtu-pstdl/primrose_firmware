@@ -49,7 +49,7 @@ void setup() {
     odrives[5] = new ODriveS1(5, "CONVEY", &can1);
 
 
-    // Set MB 0 to receive all messages
+    // Set MailBox 0 to receive all messages
     can1.setMBFilter(MB0, 0x000, 0x7FF);
     // Setup a callback for MB 0
     can1.onReceive(MB0, can_event);

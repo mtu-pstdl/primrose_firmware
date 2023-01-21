@@ -38,7 +38,27 @@ void ODrive_ROS::control_mode_callback(const std_msgs::Int32MultiArray &msg){
 
 
 void ODrive_ROS::publish_all() {
+    // Publish the condition topic
+    condition_topic.data[0] = this->odrive->get_fet_temp();
+    condition_topic.data[1] = this->odrive->get_motor_temp();
+    condition_topic.data[2] = this->odrive->get_vbus_voltage();
+    condition_topic.data[3] = this->odrive->get_vbus_current();
+    condition_topic.data[4] = this->odrive->get_Iq_measured();
+    condition_pub.publish(&condition_topic);
 
+    // Publish the encoder topic
+    encoder_topic.data[0] = this->odrive->get_pos_estimate();
+    encoder_topic.data[1] = this->odrive->get_vel_estimate();
+    encoder_topic.data[2] = this->odrive->get_Iq_setpoint();
+    encoder_topic.data[4] = this->odrive->get_setpoint();
+    encoder_pub.publish(&encoder_topic);
+
+    // Publish the state topic
+    state_topic.data[0] = this->odrive->get_axis_state();
+    state_topic.data[1] = this->odrive->get_axis_error();
+    state_topic.data[2] = this->odrive->get_active_errors();
+    state_topic.data[3] = this->odrive->get_disarm_reason();
+    state_pub.publish(&state_topic);
 }
 
 

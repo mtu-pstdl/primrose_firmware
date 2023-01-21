@@ -185,5 +185,59 @@ String* ODriveS1::get_state_string() {
     return state_string;
 }
 
+float_t ODriveS1::get_fet_temp() const {
+    return this->FET_TEMP;
+}
+
+float_t ODriveS1::get_motor_temp() const {
+    return this->MOTOR_TEMP;
+}
+
+float_t ODriveS1::get_vbus_voltage() const {
+    return this->VBUS_VOLTAGE;
+}
+
+float_t ODriveS1::get_vbus_current() const {
+    return this->VBUS_CURRENT;
+}
+
+float_t ODriveS1::get_pos_estimate() const {
+    return this->POS_ESTIMATE;
+}
+
+float_t ODriveS1::get_vel_estimate() const {
+    return this->VEL_ESTIMATE;
+}
+
+float_t ODriveS1::get_Iq_setpoint() const {
+    return this->Iq_Setpoint;
+}
+
+float_t ODriveS1::get_Iq_measured() const {
+    return this->Iq_Measured;
+}
+
+float_t ODriveS1::get_setpoint() const {
+    return this->setpoint;
+}
+
+uint32_t ODriveS1::get_axis_state() const {
+    return this->AXIS_STATE;
+}
+
+uint32_t ODriveS1::get_axis_error() const {
+    return this->ACTIVE_ERRORS;
+}
+
+uint32_t ODriveS1::get_active_errors() const {
+    return this->ACTIVE_ERRORS;
+}
+
+uint32_t ODriveS1::get_disarm_reason() const {
+    return this->DISARM_REASON;
+}
+
+
+
 
 

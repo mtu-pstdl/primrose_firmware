@@ -14,6 +14,7 @@
 #include "ODriveS1.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/node_handle.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/UInt32MultiArray.h"
 
 class ODrive_ROS {
 
@@ -36,7 +37,7 @@ class ODrive_ROS {
     ros::Publisher encoder_pub;
 
     // Publishes the values of AXIS_STATE, AXIS_ERROR, ACTIVE_ERRORS, DISARM_REASON
-    std_msgs::Int32MultiArray state_topic;
+    std_msgs::UInt32MultiArray state_topic;
     ros::Publisher state_pub;
 
     float_t setpoint = 0; // The setpoint of the ODrive
