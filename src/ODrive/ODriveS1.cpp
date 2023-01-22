@@ -90,10 +90,11 @@ void ODriveS1::refresh_data() {
     } else {
         // If the last refresh attempt was successful, reset the refresh flags and try again
         this->refresh_flags = 0;
-        this->last_refresh = millis();
+        // Slightly randomize the next refresh attempt to avoid collisions with other ODrives
+        this->next_refresh = millis() + 50;
     }
 
-    if (this->last_refresh + 50 < millis()) {
+    if (this->next_refresh < millis()) {
         this->last_refresh_attempt = millis();
         this->refresh_flags = 0;
 
@@ -111,6 +112,7 @@ uint8_t ODriveS1::send_command(ODriveS1::command_ids command_id) {
     CAN_message_t msg;
     msg.id = this->can_id << 5 | command_id; // 6 bits for the ID and 5 bits for the command
     msg.flags.remote = true; // Set the remote flag to true (remote transmission request)
+    msg.flags.extended = false; // Set the extended flag to false (standard CAN)
     msg.len = 0;
     uint8_t result = this->can_bus->write(msg);
     return result; // Return the result of the write (1 for success, -1 for failure)
@@ -122,10 +124,10 @@ uint8_t ODriveS1::send_command(command_ids command_id, uint32_t value) {
     msg.flags.extended = false;
     msg.flags.remote = false;
     msg.len = 4;
-    msg.buf[0] = (uint8_t) (value & 0xFF);
-    msg.buf[1] = (uint8_t) ((value >> 8) & 0xFF);
-    msg.buf[2] = (uint8_t) ((value >> 16) & 0xFF);
-    msg.buf[3] = (uint8_t) ((value >> 24) & 0xFF);
+    msg.buf[0] = (uint8_t) (value & 0xFF);         // Set the first byte to the lower 8 bits of the value
+    msg.buf[1] = (uint8_t) ((value >> 8) & 0xFF);  // Set the second byte to the next 8 bits of the value
+    msg.buf[2] = (uint8_t) ((value >> 16) & 0xFF); // Set the third byte to the next 8 bits of the value
+    msg.buf[3] = (uint8_t) ((value >> 24) & 0xFF); // Set the fourth byte to the upper 8 bits of the value
     uint8_t result = this->can_bus->write(msg);
     return result; // Return the result of the write (1 for success, -1 for failure)
 }
@@ -134,6 +136,7 @@ uint8_t ODriveS1::send_command(ODriveS1::command_ids command_id, uint32_t lower_
     CAN_message_t msg;
     msg.id = this->can_id << 5 | command_id; // 6 bits for the ID and 5 bits for the command
     msg.flags.remote = false; // Set the remote flag to false (data transmission)
+    msg.flags.extended = false; // Set the extended flag to false (standard CAN)
     msg.len = 8;
     msg.buf[0] = (uint8_t) (lower_data >> 24);
     msg.buf[1] = (uint8_t) (lower_data >> 16);
@@ -181,7 +184,7 @@ String* ODriveS1::get_state_string() {
     state_string->concat("ENCODER ESTIMATES: POS: " + String(this->POS_ESTIMATE) + " | VEL: " +
     String(this->VEL_ESTIMATE));
 
-    state_string->concat("LAST UPDATE: " + String(millis() - this->last_refresh) + "ms ago\n");
+    state_string->concat("LAST UPDATE: " + String(millis() - this->next_refresh) + "ms ago\n");
     return state_string;
 }
 

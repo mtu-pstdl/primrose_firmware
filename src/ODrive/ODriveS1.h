@@ -45,7 +45,7 @@ class ODriveS1{
 
     uint8_t  refresh_flags = 0; // Flags for which data has been refreshed to indicate if the refresh was successful
 #define ODRIVE_REFRESH_FLAG_MASK 0x3F // Mask for the refresh flags
-    uint32_t last_refresh = 0; // The last time the data completely refreshed
+    uint32_t next_refresh = 0; // The last time the data completely refreshed
     uint32_t last_refresh_attempt = 0; // The last time the data was attempted to be refreshed
 
     float_t setpoint = 0; // The setpoint of the ODrive
