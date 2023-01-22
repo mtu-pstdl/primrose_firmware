@@ -5,12 +5,11 @@
 #ifndef TEENSYCANTRANSCEIVER_ODRIVES1_H
 #define TEENSYCANTRANSCEIVER_ODRIVES1_H
 
-#define TOPIC_BASE "MOTORS/ODrives/"
-
 
 #include <cstdint>
 #include <cmath>
 #include "odrive_constants.h"
+#include "motor_configs.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32MultiArray.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32MultiArray.h"
 
@@ -70,9 +69,11 @@ class ODriveS1{
 
     uint8_t send_command(command_ids command_id);
 
-    uint8_t send_command(command_ids command_id, uint32_t value);
+    template <typename T>
+    uint8_t send_command(command_ids command_id, T value);
 
-    uint8_t send_command(command_ids command_id, uint32_t lower_data, uint32_t upper_data);
+    template <typename T>
+    uint8_t send_command(command_ids command_id, T lower_data, T upper_data);
 
 public:
 
@@ -81,6 +82,8 @@ public:
     void init(); // Initialize the ODrive module
 
     void on_message(const CAN_message_t &msg);
+
+    void set_config(ODRIVE_MOTOR_CONFIG* config);
 
     void refresh_data(); // Refreshes data from the ODrive
 

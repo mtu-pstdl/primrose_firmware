@@ -107,7 +107,6 @@ void ODriveS1::refresh_data() {
 }
 
 
-
 uint8_t ODriveS1::send_command(ODriveS1::command_ids command_id) {
     CAN_message_t msg;
     msg.id = this->can_id << 5 | command_id; // 6 bits for the ID and 5 bits for the command
@@ -118,36 +117,52 @@ uint8_t ODriveS1::send_command(ODriveS1::command_ids command_id) {
     return result; // Return the result of the write (1 for success, -1 for failure)
 }
 
-uint8_t ODriveS1::send_command(command_ids command_id, uint32_t value) {
+template <typename T>
+uint8_t ODriveS1::send_command(command_ids command_id, T value) {
     CAN_message_t msg;
     msg.id = this->can_id << 5 | command_id; // 6 bits for the ID and 5 bits for the command
     msg.flags.extended = false;
     msg.flags.remote = false;
     msg.len = 4;
-    msg.buf[0] = (uint8_t) (value & 0xFF);         // Set the first byte to the lower 8 bits of the value
-    msg.buf[1] = (uint8_t) ((value >> 8) & 0xFF);  // Set the second byte to the next 8 bits of the value
-    msg.buf[2] = (uint8_t) ((value >> 16) & 0xFF); // Set the third byte to the next 8 bits of the value
-    msg.buf[3] = (uint8_t) ((value >> 24) & 0xFF); // Set the fourth byte to the upper 8 bits of the value
+    uint32_t lower_32 = *(uint32_t*) &value;
+    msg.buf[0] = (uint8_t) (lower_32 & 0xFF);         // Set the first byte to the lower 8 bits of the value
+    msg.buf[1] = (uint8_t) ((lower_32 >> 8) & 0xFF);  // Set the second byte to the next 8 bits of the value
+    msg.buf[2] = (uint8_t) ((lower_32 >> 16) & 0xFF); // Set the third byte to the next 8 bits of the value
+    msg.buf[3] = (uint8_t) ((lower_32 >> 24) & 0xFF); // Set the fourth byte to the upper 8 bits of the value
     uint8_t result = this->can_bus->write(msg);
     return result; // Return the result of the write (1 for success, -1 for failure)
 }
 
-uint8_t ODriveS1::send_command(ODriveS1::command_ids command_id, uint32_t lower_data, uint32_t upper_data) {
+template <typename T>
+uint8_t ODriveS1::send_command(ODriveS1::command_ids command_id, T lower_data, T upper_data) {
     CAN_message_t msg;
     msg.id = this->can_id << 5 | command_id; // 6 bits for the ID and 5 bits for the command
     msg.flags.remote = false; // Set the remote flag to false (data transmission)
     msg.flags.extended = false; // Set the extended flag to false (standard CAN)
     msg.len = 8;
-    msg.buf[0] = (uint8_t) (lower_data >> 24);
-    msg.buf[1] = (uint8_t) (lower_data >> 16);
-    msg.buf[2] = (uint8_t) (lower_data >> 8);
-    msg.buf[3] = (uint8_t) lower_data;
-    msg.buf[4] = (uint8_t) (upper_data >> 24);
-    msg.buf[5] = (uint8_t) (upper_data >> 16);
-    msg.buf[6] = (uint8_t) (upper_data >> 8);
-    msg.buf[7] = (uint8_t) upper_data;
+    uint32_t lower_32 = *(uint32_t*) &lower_data;  // Cast the data to a uint32_t without modifying the bits
+    uint32_t upper_32 = *(uint32_t*) &upper_data;  // Cast the data to a uint32_t without modifying the bits
+    msg.buf[0] = (uint8_t) (lower_32 & 0xFF);         // Set the first byte to the lower 8 bits of the value
+    msg.buf[1] = (uint8_t) ((lower_32 >> 8) & 0xFF);  // Set the second byte to the next 8 bits of the value
+    msg.buf[2] = (uint8_t) ((lower_32 >> 16) & 0xFF); // Set the third byte to the next 8 bits of the value
+    msg.buf[3] = (uint8_t) ((lower_32 >> 24) & 0xFF); // Set the fourth byte to the upper 8 bits of the value
+    msg.buf[4] = (uint8_t) (upper_32 & 0xFF);         // Set the first byte to the lower 8 bits of the value
+    msg.buf[5] = (uint8_t) ((upper_32 >> 8) & 0xFF);  // Set the second byte to the next 8 bits of the value
+    msg.buf[6] = (uint8_t) ((upper_32 >> 16) & 0xFF); // Set the third byte to the next 8 bits of the value
+    msg.buf[7] = (uint8_t) ((upper_32 >> 24) & 0xFF); // Set the fourth byte to the upper 8 bits of the value
     uint8_t result = this->can_bus->write(msg);
     return result; // Return the result of the write (1 for success, -1 for failure)
+}
+
+void ODriveS1::set_config(ODRIVE_MOTOR_CONFIG* config) {
+    this->send_command(command_ids::Set_Limits,
+                          config->velocity_lim, config->current_lim);
+    this->send_command(command_ids::Set_Vel_Gains,
+                          config->velocity_gain, config->velocity_integrator_gain);
+    this->send_command(command_ids::Set_Pos_Gains, config->position_gain);
+    this->send_command(command_ids::Set_Traj_Acc_Limit,
+                          config->acceleration_lim, config->deceleration_lim);
+
 }
 
 String* ODriveS1::get_state_string() {

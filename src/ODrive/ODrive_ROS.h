@@ -16,6 +16,8 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/UInt32MultiArray.h"
 
+#define TOPIC_BASE "/mciu/ODrives/"
+
 class ODrive_ROS {
 
     ODriveS1 *odrive = nullptr;

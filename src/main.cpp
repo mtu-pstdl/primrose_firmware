@@ -33,6 +33,8 @@ void setup() {
     can1.begin();
     can1.setBaudRate(500000); // 500kbps
 
+    pinMode(LED_BUILTIN, OUTPUT);
+    digitalWrite(LED_BUILTIN, HIGH);
 
     // Set up the ODrives
 //    odrives[0] = new ODriveS1(0, "FLD", &can1);
@@ -59,10 +61,8 @@ void setup() {
 
 void loop() {
 
-    // Refresh the data from the ODrives
-    for (ODriveS1* odrive : odrives) {
-        odrive->refresh_data();
-    }
+    uint32_t loop_start = micros(); // Get the time at the start of the loop
+    digitalWriteFast(LED_BUILTIN, HIGH); // Turn on the LED
 
     Serial.println("Dumping data");
     for (ODriveS1* odrive: odrives){
@@ -76,5 +76,11 @@ void loop() {
 //    if (result != ros::SPIN_OK) {
 //
 //    }
+
+    digitalWriteFast(LED_BUILTIN, LOW); // Turn off the LED
+    // Wait until the loop has been running for 50ms
+    while (micros() - loop_start < 50000) {
+        delayMicroseconds(10);
+    }
 
 }
