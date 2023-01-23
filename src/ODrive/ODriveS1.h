@@ -18,9 +18,11 @@
 
 class ODriveS1{
 
+public:
     String name = "";
     uint8_t can_id = 0;
 
+private:
     FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64>* can_bus = nullptr; // The CAN bus pointer
 
 #define AXIS_REFRESH_BIT 0x01

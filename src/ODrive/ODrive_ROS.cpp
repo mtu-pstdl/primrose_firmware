@@ -62,8 +62,7 @@ void ODrive_ROS::publish_all() {
 }
 
 
-ODrive_ROS::ODrive_ROS(const String& name, ros::NodeHandle* nh, int axis_number,
-                       FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64> *can_bus) :
+ODrive_ROS::ODrive_ROS(const String& name, ros::NodeHandle* nh, ODriveS1* odrive) :
         condition_pub(String(TOPIC_BASE + name + "/condition").c_str(), &condition_topic),
         encoder_pub(String(TOPIC_BASE + name + "/encoder").c_str(), &encoder_topic),
         state_pub(String(TOPIC_BASE + name + "/state").c_str(), &state_topic),
@@ -71,5 +70,6 @@ ODrive_ROS::ODrive_ROS(const String& name, ros::NodeHandle* nh, int axis_number,
                      &ODrive_ROS::setpoint_callback, this),
         control_mode_sub(String(TOPIC_BASE + name + "/control_mode").c_str(),
                          &ODrive_ROS::control_mode_callback, this) {
-        this->odrive = new ODriveS1(axis_number, name, can_bus);
+        this->odrive = odrive;
+        this->node_handle = nh;
     }

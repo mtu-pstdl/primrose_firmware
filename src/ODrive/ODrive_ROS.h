@@ -44,7 +44,9 @@ class ODrive_ROS {
 
     float_t setpoint = 0; // The setpoint of the ODrive
 
-    ODrive_ROS(const String& name, ros::NodeHandle* nh, int axis_number, FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64> *can_bus);
+public:
+
+    ODrive_ROS(const String& name, ros::NodeHandle* nh, ODriveS1* odrive);
 
     void setpoint_callback(const std_msgs::Float32MultiArray &msg);
 

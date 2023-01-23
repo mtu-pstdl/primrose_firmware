@@ -5,11 +5,13 @@
 #include <std_srvs/SetBool.h>
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros.h"
 #include "ODrive/ODriveS1.h"
+#include "ODrive/ODrive_ROS.h"
 
 ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64> can1;
 
 ODriveS1* odrives[6];
+ODrive_ROS* odrive_ros[6];
 
 
 void can_event(const CAN_message_t &msg) {
@@ -25,9 +27,10 @@ void can_event(const CAN_message_t &msg) {
 
 void setup() {
 
-//    node_handle.initNode();
-
     Serial.begin(115200); // 115kbps
+    Serial1.begin(38400); // 38.4kbps
+
+    node_handle.initNode();
 
     // Set up the CAN bus
     can1.begin();
@@ -43,19 +46,22 @@ void setup() {
 //    odrives[3] = new ODriveS1(3, "BRD", &can1);
 //    odrives[4] = new ODriveS1(4, "TRENCH", &can1);
 
-    odrives[0] = new ODriveS1(0, "FLD", &can1);
-    odrives[1] = new ODriveS1(1, "FRD", &can1);
-    odrives[2] = new ODriveS1(2, "BLD", &can1);
-    odrives[3] = new ODriveS1(3, "BRD", &can1);
-    odrives[4] = new ODriveS1(4, "TRENCH", &can1);
-    odrives[5] = new ODriveS1(5, "CONVEY", &can1);
+    odrives[0] = new ODriveS1(0, "00", &can1);
+    odrives[1] = new ODriveS1(1, "01", &can1);
+    odrives[2] = new ODriveS1(2, "02", &can1);
+    odrives[3] = new ODriveS1(3, "03", &can1);
+    odrives[4] = new ODriveS1(4, "04", &can1);
+    odrives[5] = new ODriveS1(5, "05", &can1);
 
+    // Set up the ODrive ROS nodes
+    for (int i = 0; i < 6; i++) {
+        odrive_ros[i] = new ODrive_ROS(odrives[i]->name, &node_handle, odrives[i]);
+    }
 
     // Set MailBox 0 to receive all messages
     can1.setMBFilter(MB0, 0x000, 0x7FF);
     // Setup a callback for MB 0
     can1.onReceive(MB0, can_event);
-
 
 }
 
