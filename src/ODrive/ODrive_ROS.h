@@ -7,19 +7,34 @@
 
 
 #include "odrive_constants.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/node_handle.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/subscriber.h"
-//#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/publisher.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/publisher.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/service_server.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32MultiArray.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32MultiArray.h"
 #include "ODriveS1.h"
-#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/node_handle.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/UInt32MultiArray.h"
-#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/publisher.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Empty.h"
 
-#define TOPIC_BASE "/mciu/ODrives/"
+#define TOPIC_BASE "/mciu/ODrives"
 
 class ODrive_ROS {
+
+    const char* topic_names[6][6] = {
+        {TOPIC_BASE "/00/condition", TOPIC_BASE "/01/condition", TOPIC_BASE "/02/condition",
+                TOPIC_BASE "/03/condition", TOPIC_BASE "/04/condition", TOPIC_BASE "/05/condition"},
+        {TOPIC_BASE "/00/encoder", TOPIC_BASE "/01/encoder", TOPIC_BASE "/02/encoder",
+                TOPIC_BASE "/03/encoder", TOPIC_BASE "/04/encoder", TOPIC_BASE "/05/encoder"},
+        {TOPIC_BASE "/00/state", TOPIC_BASE "/01/state", TOPIC_BASE "/02/state",
+                TOPIC_BASE "/03/state", TOPIC_BASE "/04/state", TOPIC_BASE "/05/state"},
+        {TOPIC_BASE "/00/setpoint", TOPIC_BASE "/01/setpoint", TOPIC_BASE "/02/setpoint",
+                TOPIC_BASE "/03/setpoint", TOPIC_BASE "/04/setpoint", TOPIC_BASE "/05/setpoint"},
+        {TOPIC_BASE "/00/control_mode", TOPIC_BASE "/01/control_mode", TOPIC_BASE "/02/control_mode",
+                TOPIC_BASE "/03/control_mode", TOPIC_BASE "/04/control_mode", TOPIC_BASE "/05/control_mode"},
+    };
+
 
     ODriveS1 *odrive = nullptr;
     String name = ""; // The name of the ODrive
@@ -35,25 +50,28 @@ private:
 
     // Publishes the values of FET_TEMP, MOTOR_TEMP, VBUS_VOLTAGE, VBUS_CURRENT
     std_msgs::Float32MultiArray condition_topic;
-    ros::Publisher condition_pub;
+    ros::Publisher condition_pub_;
 
     // Publishes the values of POS_ESTIMATE, VEL_ESTIMATE, Iq_Setpoint, Iq_Measured
     std_msgs::Float32MultiArray encoder_topic;
-    ros::Publisher encoder_pub;
+    ros::Publisher encoder_pub_;
 
     // Publishes the values of AXIS_STATE, AXIS_ERROR, ACTIVE_ERRORS, DISARM_REASON
     std_msgs::UInt32MultiArray state_topic;
-    ros::Publisher state_pub;
+    ros::Publisher state_pub_;
+
+    // Setup service server
 
     float_t setpoint = 0; // The setpoint of the ODrive
 
 public:
 
-    ODrive_ROS(ODriveS1* odrive, const char* random) :
-            setpoint_sub(random,&ODrive_ROS::setpoint_callback, this),
-            control_mode_sub(random,&ODrive_ROS::control_mode_callback, this),
-            condition_pub(random, &condition_topic), encoder_pub(random, &encoder_topic),
-            state_pub(random, &state_topic){
+    ODrive_ROS(ODriveS1* odrive, uint8_t number) :
+            setpoint_sub(topic_names[4][number], &ODrive_ROS::setpoint_callback, this),
+            control_mode_sub(topic_names[5][number], &ODrive_ROS::control_mode_callback, this),
+            condition_pub_(topic_names[0][number], &condition_topic),
+            encoder_pub_(topic_names[1][number], &encoder_topic),
+            state_pub_(topic_names[2][number], &state_topic) {
         this->odrive = odrive;
     }
 

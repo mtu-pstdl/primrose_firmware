@@ -16,4 +16,6 @@ struct ODRIVE_MOTOR_CONFIG {
     float_t velocity_integrator_gain;
 };
 
+
+
 #endif //TEENSYCANTRANSCEIVER_MOTOR_CONFIGS_H

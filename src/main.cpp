@@ -38,6 +38,7 @@ void setup() {
 //    Serial1.begin(38400); // 38.4kbps
 
     node_handle.getHardware()->setBaud(115200);
+    node_handle.setSpinTimeout(50); // 50ms
     node_handle.initNode();
 //    node_handle.spinOnce();
 
@@ -57,17 +58,17 @@ void setup() {
     digitalWrite(LED_BUILTIN, HIGH);
 
     odrives[0] = new ODriveS1(0, new String("00"), &can1);
-    odrive_ros[0] = new ODrive_ROS(odrives[0], reinterpret_cast<const char *>('A'));
+    odrive_ros[0] = new ODrive_ROS(odrives[0], 0);
     odrives[1] = new ODriveS1(1, new String("01"), &can1);
-    odrive_ros[1] = new ODrive_ROS(odrives[1], reinterpret_cast<const char *>('B'));
+    odrive_ros[1] = new ODrive_ROS(odrives[1], 1);
     odrives[2] = new ODriveS1(2, new String("02"), &can1);
-    odrive_ros[2] = new ODrive_ROS(odrives[2], reinterpret_cast<const char *>('C'));
+    odrive_ros[2] = new ODrive_ROS(odrives[2], 2);
     odrives[3] = new ODriveS1(3, new String("03"), &can1);
-    odrive_ros[3] = new ODrive_ROS(odrives[3], reinterpret_cast<const char *>('D'));
+    odrive_ros[3] = new ODrive_ROS(odrives[3], 3);
     odrives[4] = new ODriveS1(4, new String("04"), &can1);
-    odrive_ros[4] = new ODrive_ROS(odrives[4], reinterpret_cast<const char *>('E'));
+    odrive_ros[4] = new ODrive_ROS(odrives[4], 4);
     odrives[5] = new ODriveS1(5, new String("05"), &can1);
-    odrive_ros[5] = new ODrive_ROS(odrives[5], reinterpret_cast<const char *>('F'));
+    odrive_ros[5] = new ODrive_ROS(odrives[5], 5);
 
 
     // Make sure there are no duplicate ODrive nodes
@@ -76,7 +77,6 @@ void setup() {
         if (odrive == nullptr) {
             continue;
         }
-        odrive->advertise(&node_handle);
         node_handle.spinOnce();
     }
 
@@ -87,6 +87,8 @@ void setup() {
 ////     Setup a callback for MB 0
 //    can1.onReceive(MB0, can_event);
 
+    startup_info_print_once = false;
+
 }
 
 void loop() {
@@ -94,21 +96,42 @@ void loop() {
     uint32_t loop_start = micros(); // Get the time at the start of the loop
     digitalWriteFast(LED_BUILTIN, HIGH); // Turn on the LED
 
+    // Get the teensy temperature
+    system_temperature.data = (float) tempmonGetTemp();
+    system_temperature_pub.publish(&system_temperature);
+
     if (!startup_info_print_once) {
         node_handle.loginfo("Startup complete");
         for (ODrive_ROS* odrive : odrive_ros) {
             if (odrive == nullptr) {
                 continue;
             }
-//            node_handle.loginfo(odrive->get_odrive()->*name.c_str());
+            odrive->advertise(&node_handle);
         }
         startup_info_print_once = true;
     }
 
-    uint8_t result = node_handle.spinOnce();
+    if (!node_handle.connected()){
+        node_handle.logerror("NodeHandle not properly configured");
+    }
 
-    if (result != ros::SPIN_OK) {
+    int8_t spin_result = node_handle.spinOnce(); // 50ms timeout
 
+    switch (spin_result) {
+        case ros::SPIN_OK:
+            break;
+        case ros::SPIN_ERR:
+            node_handle.logerror("Spin error");
+            // Collect info about the error
+
+            break;
+        case ros::SPIN_TIMEOUT:
+            node_handle.logwarn("Spin timeout");
+            break;
+        default:
+            String log_msg = "Unknown spin result: " + String(spin_result);
+            node_handle.logerror(log_msg.c_str());
+            break;
     }
 
     digitalWriteFast(LED_BUILTIN, LOW); // Turn off the LED
