@@ -9,12 +9,27 @@
 /**
  * This method sets up the ROS publishers and subscribers
  */
-void ODrive_ROS::advertise() {
-    this->node_handle->advertise(condition_pub);
-    this->node_handle->advertise(encoder_pub);
-    this->node_handle->advertise(state_pub);
-    this->node_handle->subscribe(setpoint_sub);
-    this->node_handle->subscribe(control_mode_sub);
+void ODrive_ROS::advertise(ros::NodeHandle *nh) {
+    this->node_handle = nh;
+    // Set the name of the topics
+    String condition_topic_name = TOPIC_BASE + *this->odrive->name + "/condition";
+    String encoder_topic_name = TOPIC_BASE + *this->odrive->name + "/encoder";
+    String state_topic_name = TOPIC_BASE + *this->odrive->name + "/state";
+    String setpoint_topic_name = TOPIC_BASE + *this->odrive->name + "/setpoint";
+    String control_mode_topic_name = TOPIC_BASE + *this->odrive->name + "/control_mode";
+
+    // Overwrite the topic names
+    condition_pub.topic_ = condition_topic_name.c_str();
+    encoder_pub.topic_ = encoder_topic_name.c_str();
+    state_pub.topic_ = state_topic_name.c_str();
+    setpoint_sub.topic_ = setpoint_topic_name.c_str();
+    control_mode_sub.topic_ = control_mode_topic_name.c_str();
+
+    nh->advertise(condition_pub);
+    nh->advertise(encoder_pub);
+    nh->advertise(state_pub);
+    nh->subscribe(setpoint_sub);
+    nh->subscribe(control_mode_sub);
 }
 
 /**
@@ -61,15 +76,6 @@ void ODrive_ROS::publish_all() {
     state_pub.publish(&state_topic);
 }
 
-
-ODrive_ROS::ODrive_ROS(const String& name, ros::NodeHandle* nh, ODriveS1* odrive) :
-        condition_pub(String(TOPIC_BASE + name + "/condition").c_str(), &condition_topic),
-        encoder_pub(String(TOPIC_BASE + name + "/encoder").c_str(), &encoder_topic),
-        state_pub(String(TOPIC_BASE + name + "/state").c_str(), &state_topic),
-        setpoint_sub(String(TOPIC_BASE + name + "/setpoint").c_str(),
-                     &ODrive_ROS::setpoint_callback, this),
-        control_mode_sub(String(TOPIC_BASE + name + "/control_mode").c_str(),
-                         &ODrive_ROS::control_mode_callback, this) {
-        this->odrive = odrive;
-        this->node_handle = nh;
-    }
+ODriveS1* ODrive_ROS::get_odrive() {
+    return this->odrive;
+}

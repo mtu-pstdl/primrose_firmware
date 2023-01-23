@@ -19,7 +19,7 @@
 class ODriveS1{
 
 public:
-    String name = "";
+    String* name = nullptr; // The name of the ODrive
     uint8_t can_id = 0;
 
 private:
@@ -79,7 +79,7 @@ private:
 
 public:
 
-    ODriveS1(uint8_t can_id, String name, FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64>* can_bus);
+    ODriveS1(uint8_t can_id, String* name, FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64>* can_bus);
 
     void init(); // Initialize the ODrive module
 

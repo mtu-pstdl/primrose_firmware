@@ -7,9 +7,9 @@
 //#include <utility>
 //#include "odrive_constants.h"
 
-ODriveS1::ODriveS1(uint8_t can_id, String name, FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64> *can_bus) {
+ODriveS1::ODriveS1(uint8_t can_id, String* name, FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64> *can_bus) {
     this->can_id = can_id;
-    this->name = std::move(name);
+    this->name = name;
     this->can_bus = can_bus;
 }
 
@@ -168,7 +168,7 @@ void ODriveS1::set_config(ODRIVE_MOTOR_CONFIG* config) {
 String* ODriveS1::get_state_string() {
     // Check if there are any errors
     auto* state_string = new String();
-    state_string->concat("CAN ID: " + String(this->can_id) + " | " + this->name + "\n");
+    state_string->concat("CAN ID: " + String(this->can_id) + " | " + *this->name + "\n");
     if (this->ACTIVE_ERRORS != 0){
         String* error_string = odrive::get_error_string(this->ACTIVE_ERRORS);
         state_string->concat("ACTIVE ERRORS: " + *error_string + "\n");
