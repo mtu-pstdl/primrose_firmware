@@ -11,6 +11,8 @@
 ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64> can1;
 
+//#define HIGH_SPEED_USB
+
 ODriveS1* odrives[6];
 ODrive_ROS* odrive_ros[6];
 
@@ -37,7 +39,11 @@ void setup() {
 //    Serial.begin(9600); // 115kbps
 //    Serial1.begin(38400); // 38.4kbps
 
-    node_handle.getHardware()->setBaud(115200);
+#ifdef HIGH_SPEED_USB
+    node_handle.getHardware()->setBaud(500000); // 500kbps
+#else
+    node_handle.getHardware()->setBaud(115200); // 115kbps
+#endif
     node_handle.setSpinTimeout(50); // 50ms
     node_handle.initNode();
 //    node_handle.spinOnce();
@@ -48,8 +54,8 @@ void setup() {
     node_handle.loginfo(log_msg.c_str());
 
     // Set up the CAN bus
-//    can1.begin();
-//    can1.setBaudRate(500000); // 500kbps
+    can1.begin();
+    can1.setBaudRate(500000); // 500kbps
 
     log_msg = "CAN bus initialised";
     node_handle.loginfo(log_msg.c_str());
@@ -77,15 +83,18 @@ void setup() {
         if (odrive == nullptr) {
             continue;
         }
-        node_handle.spinOnce();
+        odrive->advertise(&node_handle);
     }
 
-
 //
-////     Set MailBox 0 to receive all messages
-//    can1.setMBFilter(MB0, 0x000, 0x7FF);
-////     Setup a callback for MB 0
-//    can1.onReceive(MB0, can_event);
+//     Set MailBox 0 to receive all messages
+    can1.setMBFilter(MB0, 0x000, 0x7FF);
+//     Setup a callback for MB 0
+    can1.onReceive(MB0, can_event);
+
+    for (ODriveS1* odrive : odrives) {
+        odrive->init();
+    }
 
     startup_info_print_once = false;
 
@@ -100,15 +109,15 @@ void loop() {
     system_temperature.data = (float) tempmonGetTemp();
     system_temperature_pub.publish(&system_temperature);
 
-    if (!startup_info_print_once) {
-        node_handle.loginfo("Startup complete");
-        for (ODrive_ROS* odrive : odrive_ros) {
-            if (odrive == nullptr) {
-                continue;
-            }
-            odrive->advertise(&node_handle);
+//    for (ODriveS1* odrive : odrives) {
+//        odrive->refresh_data();
+//    }
+
+    for (ODrive_ROS* odrive : odrive_ros) {
+        if (odrive == nullptr) {
+            continue;
         }
-        startup_info_print_once = true;
+        odrive->publish_all();
     }
 
     if (!node_handle.connected()){
@@ -137,7 +146,7 @@ void loop() {
     digitalWriteFast(LED_BUILTIN, LOW); // Turn off the LED
     // Wait until the loop has been running for 50ms
     while (micros() - loop_start < 50000) {
-        delayMicroseconds(10);
+        yield();  // Yield to other tasks
     }
 
 }

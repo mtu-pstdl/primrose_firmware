@@ -53,6 +53,7 @@ void ODrive_ROS::publish_all() {
     this->condition_pub_.publish(&condition_topic);
 
     // Publish the encoder topic
+
     encoder_topic.data[0] = this->odrive->get_pos_estimate();
     encoder_topic.data[1] = this->odrive->get_vel_estimate();
     encoder_topic.data[2] = this->odrive->get_Iq_setpoint();

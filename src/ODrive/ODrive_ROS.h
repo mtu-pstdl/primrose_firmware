@@ -23,16 +23,16 @@
 class ODrive_ROS {
 
     const char* topic_names[6][6] = {
-        {TOPIC_BASE "/00/condition", TOPIC_BASE "/01/condition", TOPIC_BASE "/02/condition",
-                TOPIC_BASE "/03/condition", TOPIC_BASE "/04/condition", TOPIC_BASE "/05/condition"},
-        {TOPIC_BASE "/00/encoder", TOPIC_BASE "/01/encoder", TOPIC_BASE "/02/encoder",
-                TOPIC_BASE "/03/encoder", TOPIC_BASE "/04/encoder", TOPIC_BASE "/05/encoder"},
-        {TOPIC_BASE "/00/state", TOPIC_BASE "/01/state", TOPIC_BASE "/02/state",
-                TOPIC_BASE "/03/state", TOPIC_BASE "/04/state", TOPIC_BASE "/05/state"},
-        {TOPIC_BASE "/00/setpoint", TOPIC_BASE "/01/setpoint", TOPIC_BASE "/02/setpoint",
-                TOPIC_BASE "/03/setpoint", TOPIC_BASE "/04/setpoint", TOPIC_BASE "/05/setpoint"},
-        {TOPIC_BASE "/00/control_mode", TOPIC_BASE "/01/control_mode", TOPIC_BASE "/02/control_mode",
-                TOPIC_BASE "/03/control_mode", TOPIC_BASE "/04/control_mode", TOPIC_BASE "/05/control_mode"},
+        {TOPIC_BASE "/x00/condition", TOPIC_BASE "/x01/condition", TOPIC_BASE "/x02/condition",
+                TOPIC_BASE "/x03/condition", TOPIC_BASE "/x04/condition", TOPIC_BASE "/x05/condition"},
+        {TOPIC_BASE "/x00/encoder", TOPIC_BASE "/x01/encoder", TOPIC_BASE "/x02/encoder",
+                TOPIC_BASE "/x03/encoder", TOPIC_BASE "/x04/encoder", TOPIC_BASE "/x05/encoder"},
+        {TOPIC_BASE "/x00/state", TOPIC_BASE "/x01/state", TOPIC_BASE "/x02/state",
+                TOPIC_BASE "/x03/state", TOPIC_BASE "/x04/state", TOPIC_BASE "/x05/state"},
+        {TOPIC_BASE "/x00/setpoint", TOPIC_BASE "/x01/setpoint", TOPIC_BASE "/x02/setpoint",
+                TOPIC_BASE "/x03/setpoint", TOPIC_BASE "/x04/setpoint", TOPIC_BASE "/x05/setpoint"},
+        {TOPIC_BASE "/x00/control_mode", TOPIC_BASE "/x01/control_mode", TOPIC_BASE "/x02/control_mode",
+                TOPIC_BASE "/x03/control_mode", TOPIC_BASE "/x04/control_mode", TOPIC_BASE "/x05/control_mode"},
     };
 
 
@@ -67,12 +67,18 @@ private:
 public:
 
     ODrive_ROS(ODriveS1* odrive, uint8_t number) :
-            setpoint_sub(topic_names[4][number], &ODrive_ROS::setpoint_callback, this),
-            control_mode_sub(topic_names[5][number], &ODrive_ROS::control_mode_callback, this),
+            setpoint_sub(topic_names[3][number], &ODrive_ROS::setpoint_callback, this),
+            control_mode_sub(topic_names[4][number], &ODrive_ROS::control_mode_callback, this),
             condition_pub_(topic_names[0][number], &condition_topic),
             encoder_pub_(topic_names[1][number], &encoder_topic),
             state_pub_(topic_names[2][number], &state_topic) {
         this->odrive = odrive;
+        this->condition_topic.data_length = 5;
+        this->condition_topic.data = new float_t[5];
+        this->encoder_topic.data_length = 5;
+        this->encoder_topic.data = new float_t[5];
+        this->state_topic.data_length = 4;
+        this->state_topic.data = new uint32_t[4];
     }
 
     ODriveS1* get_odrive();
