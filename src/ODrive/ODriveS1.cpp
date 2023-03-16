@@ -43,8 +43,9 @@ void ODriveS1::on_message(const CAN_message_t &msg) {
     }
     switch (static_cast<ODriveS1::command_ids>(msg_type)){
         case Heartbeat: // Lower 4 bytes are AXIS_ERROR and the upper 4 bytes are AXIS_STATE
-            this->AXIS_ERROR = (float) lower_32;
-            this->AXIS_STATE = upper_32;
+            this->AXIS_ERROR = upper_32;
+            // Bitmask the lowest byte of the lower 32 bits to get the axis state
+            this->AXIS_STATE = lower_32 & 0xFF;
             this->refresh_flags |= AXIS_REFRESH_BIT;
             break;
         case Get_Error:
@@ -98,11 +99,11 @@ void ODriveS1::refresh_data() {
         this->last_refresh_attempt = millis();
         this->refresh_flags = 0;
 
-        this->send_command(ODriveS1::command_ids::Get_Error);
-        this->send_command(ODriveS1::command_ids::Get_Encoder_Estimates);
-        this->send_command(ODriveS1::command_ids::Get_Iq);
-        this->send_command(ODriveS1::command_ids::Get_Temperature);
-        this->send_command(ODriveS1::command_ids::Get_Vbus_Voltage_Current);
+//        this->send_command(ODriveS1::command_ids::Get_Error);
+//        this->send_command(ODriveS1::command_ids::Get_Encoder_Estimates);
+//        this->send_command(ODriveS1::command_ids::Get_Iq);
+//        this->send_command(ODriveS1::command_ids::Get_Temperature);
+//        this->send_command(ODriveS1::command_ids::Get_Vbus_Voltage_Current);
     }
 }
 

@@ -26,7 +26,7 @@ private:
     FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64>* can_bus = nullptr; // The CAN bus pointer
 
 #define AXIS_REFRESH_BIT 0x01
-    float_t    AXIS_ERROR = 0;   // Axis error code
+    uint32_t   AXIS_ERROR = 0;   // Axis error code
     uint32_t   AXIS_STATE = 0;   // Axis state code
 #define ERROR_REFRESH_BIT 0x02
     uint32_t   ACTIVE_ERRORS = 0;  // Active errors
@@ -67,6 +67,7 @@ private:
         Reboot = 0x016, Get_Vbus_Voltage_Current = 0x017,
         Clear_Errors = 0x018, Set_Absolute_Position = 0x019,
         Set_Pos_Gains = 0x01a, Set_Vel_Gains = 0x01b,
+        Get_ADC_Voltage = 0x01c, Get_Controller_Error = 0x01d,
     };
 
     uint8_t send_command(command_ids command_id);
