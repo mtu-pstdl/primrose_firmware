@@ -73,7 +73,7 @@ void Actuators::process_data_serial(message *msg) {
 
 boolean Actuators::spin(boolean lastSpin) {
     if (this->waiting_for_response){
-        message* msg = this->priority_message_queue[this->message_queue_dequeue_position];
+        message* msg = this->message_queue[this->message_queue_dequeue_position];
         if(!msg->expect_response) {
             this->process_no_data_serial(msg);
         } else {
@@ -109,6 +109,31 @@ Actuators::message *Actuators::get_next_message() {
         if (this->message_queue_dequeue_position >= 20){
             this->message_queue_dequeue_position = 0;
         }
-        return this->priority_message_queue[this->message_queue_dequeue_position];
+        return this->message_queue[this->message_queue_dequeue_position];
+    }
+}
+
+void Actuators::queue_message(Actuators::message *message) {
+    this->message_queue_enqueue_position++;
+    if (this->message_queue_enqueue_position >= 20){
+        this->message_queue_enqueue_position = 0;
+    }
+    this->message_queue[this->message_queue_enqueue_position] = message;
+
+}
+
+bool Actuators::space_available() const {
+    if (this->message_queue_enqueue_position == this->message_queue_dequeue_position){
+        return true;
+    } else {
+        int next_position = this->message_queue_enqueue_position + 1;
+        if (next_position >= 20){
+            next_position = 0;
+        }
+        if (next_position == this->message_queue_dequeue_position){
+            return false;
+        } else {
+            return true;
+        }
     }
 }

@@ -25,6 +25,8 @@ public:
         read_motor_currents = 49,
         read_temperature = 82,
         read_status = 90,
+        drive_m1_duty_cycle = 32,
+        drive_m2_duty_cycle = 33,
         set_position_m1 = 65,
         set_position_m2 = 66,
         set_positions = 67,
@@ -42,13 +44,14 @@ public:
         // The callback function to call when the message is received
         void* object;
         void (*callback)(void* actuator, message* msg);
+        boolean free_after_callback = false; // If true the message will be deleted after the callback is called
     };
 
 private:
 
     // The message queue is a buffer for having object objects send messages to their respective actuators
 
-    message* priority_message_queue[20] = {nullptr};
+    message* message_queue[20] = {nullptr};
     uint8_t message_queue_enqueue_position = 0;
     uint8_t message_queue_dequeue_position = 0;
     boolean waiting_for_response = false;
@@ -61,25 +64,25 @@ private:
 
     void process_data_serial(message* msg);
 
-    /**
-     * Sendsd messages to the actuators from the message queue
-     * @param lastSpin - True if this is the last time the spin function will be called
-     * @return True if there are more messages to send
-     */
-    boolean spin(boolean lastSpin);
-
 public:
 
     Actuators(){
         Serial2.begin(115200);
-        for (auto & i : priority_message_queue){
+        for (auto & i : message_queue){
             i = nullptr;
         }
     }
 
-    void queueMessage(message *message);
+    void queue_message(message *message);
 
-    bool spaceAvailable();
+    bool space_available() const;
+
+    /**
+    * Sendsd messages to the actuators from the message queue
+    * @param lastSpin - True if this is the last time the spin function will be called
+    * @return True if there are more messages to send
+    */
+    boolean spin(boolean lastSpin);
 
 };
 
