@@ -41,6 +41,7 @@ ActuatorUnit::build_message(Actuators::serial_commands command, uint32_t send_in
     telem->msg->sent_received = false;
     telem->msg->object = this;
     telem->msg->callback = callback;
+    telem->msg->failure_callback = &ActuatorUnit::message_failure_callback;
     telem->send_interval = send_interval;
     telem->last_send_time = 0;
     return telem;
@@ -67,13 +68,18 @@ void ActuatorUnit::emergency_stop() {
 
 
 void ActuatorUnit::update() {
-    queue_telemetry_messages();
+    if (this->connected) {
+        this->queue_telemetry_messages();
+    } else {
+        this->check_connection();
+    }
     for (int i = 0; i < 2; i++) {
         auto& motor = motors[i];
         switch (motor.control_mode) {
             case control_modes::position:
             case control_modes::speed:
             case control_modes::stopped:
+                break;
             case control_modes::homing:
                 // Check if the motor has stopped moving
                 if (motor.current_speed == 0 && motor.current_current == 0) {
@@ -138,6 +144,19 @@ void ActuatorUnit::set_control_mode(control_modes mode, uint8_t motor) {
 
 }
 
+void ActuatorUnit::check_connection() {
+    auto* msg = new Actuators::message;
+    msg->command = Actuators::serial_commands::read_encoder_count_m1;
+    msg->data_length = 5;
+    msg->failure_callback = ActuatorUnit::message_failure_callback;
+    msg->callback = ActuatorUnit::detailed_encoder_count_callback;
+    msg->object = this;
+    msg->free_after_callback = true;
+    msg->expect_response = true;
+    command_bus->queue_message(msg);
+}
+
+
 // Welcome to pointer hell
 
 void ActuatorUnit::detailed_encoder_count_callback(void *actuator, Actuators::message *msg) {
@@ -156,6 +175,8 @@ void ActuatorUnit::detailed_encoder_count_callback(void *actuator, Actuators::me
         default:
             break;
     }
+    actuator_unit->message_failure_count = 0;
+    actuator_unit->connected = true;
 }
 
 void ActuatorUnit::encoder_count_callback(void *actuator, Actuators::message *msg) {
@@ -199,6 +220,14 @@ void ActuatorUnit::controller_status_callback(void *actuator, Actuators::message
     actuator_unit->status = msg->data[1] << 8 | msg->data[0];
 }
 
+void ActuatorUnit::message_failure_callback(void *actuator, Actuators::message *msg) {
+    auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
+    actuator_unit->message_failure_count++;
+    if (actuator_unit->message_failure_count > actuator_unit->message_failure_threshold) {
+        actuator_unit->connected = false;
+    }
+}
+
 // Debug serial
 
 String* ActuatorUnit::get_status_string() {
@@ -209,6 +238,12 @@ String* ActuatorUnit::get_status_string() {
     status_string->concat("Status: " + String(this->status) + "\n\r");
     status_string->concat("Motor 1 Status: " + String(this->motors[0].control_mode) + "\n\r");
     status_string->concat("Motor 2 Status: " + String(this->motors[1].control_mode) + "\n\r");
+    status_string->concat("Motor 1 Current: " + String(this->motors[0].current_current) + "\n\r");
+    status_string->concat("Motor 2 Current: " + String(this->motors[1].current_current) + "\n\r");
+    status_string->concat("Message Failure Count: " + String(this->message_failure_count) + "\n\r");
     return status_string;
 }
+
+
+
 

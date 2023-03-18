@@ -45,16 +45,24 @@ public:
         void* object;
         void (*callback)(void* actuator, message* msg);
         boolean free_after_callback = false; // If true the message will be deleted after the callback is called
+        void (*failure_callback)(void* actuator, message* msg); // The callback to call if the message fails to send
     };
 
 private:
 
     // The message queue is a buffer for having object objects send messages to their respective actuators
 
+
     message* message_queue[20] = {nullptr};
     uint8_t message_queue_enqueue_position = 0;
-    uint8_t message_queue_dequeue_position = 0;
+    uint8_t message_queue_dequeue_position = 19;
     boolean waiting_for_response = false;
+
+    // Variables used for generating debug information
+    uint32_t last_message_sent_time = 0;
+    uint32_t last_message_round_trip = 0;
+    uint32_t spin_start_time = 0;
+
 
     uint16_t crc16(const uint8_t *packet, uint32_t nBytes);
 
@@ -64,10 +72,17 @@ private:
 
     void process_data_serial(message* msg);
 
+    uint8_t get_queue_size() const;
+
 public:
 
+    // Debug variables
+    uint32_t average_time_per_message = 0;
+    uint32_t message_count = 0;
+    uint32_t spin_total_time = 0;
+
     Actuators(){
-        Serial2.begin(115200);
+        Serial1.begin(115200);
         for (auto & i : message_queue){
             i = nullptr;
         }
@@ -83,6 +98,8 @@ public:
     * @return True if there are more messages to send
     */
     boolean spin(boolean lastSpin);
+
+    String* get_status_string();
 
 };
 

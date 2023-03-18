@@ -169,38 +169,38 @@ void ODriveS1::set_config(ODRIVE_MOTOR_CONFIG* config) {
 String* ODriveS1::get_state_string() {
     // Check if there are any errors
     auto* state_string = new String();
-    state_string->concat("CAN ID: " + String(this->can_id) + " | " + *this->name + "\n");
+    state_string->concat("CAN ID: " + String(this->can_id) + " | " + *this->name + "\r\n");
     if (this->ACTIVE_ERRORS != 0){
         String* error_string = odrive::get_error_string(this->ACTIVE_ERRORS);
-        state_string->concat("ACTIVE ERRORS: " + *error_string + "\n");
+        state_string->concat("ACTIVE ERRORS: " + *error_string + "\r\n");
         free(error_string);
     } else {
-        state_string->concat("ACTIVE ERRORS: None\n");
+        state_string->concat("ACTIVE ERRORS: None\r\n");
     }
     if (this->DISARM_REASON != 0){
         String* error_string = odrive::get_error_string(this->DISARM_REASON);
-        state_string->concat("DISARM REASON: " + *error_string + "\n");
+        state_string->concat("DISARM REASON: " + *error_string + "\r\n");
         free(error_string);
     } else {
-        state_string->concat("DISARM REASON: None\n");
+        state_string->concat("DISARM REASON: None\r\n");
     }
     String* axis_state = odrive::get_axis_state_string(static_cast<odrive::axis_states>(this->AXIS_STATE));
-    state_string->concat("AXIS_STATE: " + *axis_state + "\n");
+    state_string->concat("AXIS_STATE: " + *axis_state + "\r\n");
     free(axis_state);
 
-    state_string->concat("TARGET_IQ: " + String(this->Iq_Setpoint) + "\n");
-    state_string->concat("MEASURED_IQ: " + String(this->Iq_Measured) + "\n");
+    state_string->concat("TARGET_IQ: " + String(this->Iq_Setpoint) + "\r\n");
+    state_string->concat("MEASURED_IQ: " + String(this->Iq_Measured) + "\r\n");
 
     state_string->concat("VBUS: " + String(this->VBUS_VOLTAGE) + "V | "
-    + String(this->VBUS_CURRENT) + "A\n");
+    + String(this->VBUS_CURRENT) + "A\r\n");
 
     state_string->concat("TEMP FET: " + String(this->FET_TEMP) + "C | MOTOR: " +
-    String(this->MOTOR_TEMP) + "C\n");
+    String(this->MOTOR_TEMP) + "C\r\n");
 
     state_string->concat("ENCODER ESTIMATES: POS: " + String(this->POS_ESTIMATE) + " | VEL: " +
     String(this->VEL_ESTIMATE));
 
-    state_string->concat("LAST UPDATE: " + String(millis() - this->next_refresh) + "ms ago\n");
+    state_string->concat("LAST UPDATE: " + String(millis() - this->next_refresh) + "ms ago\r\n");
     return state_string;
 }
 
