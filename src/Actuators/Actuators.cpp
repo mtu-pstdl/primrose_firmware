@@ -73,31 +73,36 @@ void Actuators::process_data_serial(message *msg) {
     }
 }
 
-boolean Actuators::spin(boolean lastSpin) {
-    if (this->waiting_for_response){
-        message* msg = this->message_queue[this->message_queue_dequeue_position];
-        if(!msg->expect_response) {
-            this->process_no_data_serial(msg);
-        } else {
-            this->process_data_serial(msg);
-        }
-        if (this->waiting_for_response && ((millis() - this->last_message_sent_time) > 10)){
-            // If we have waited more than 10ms second for a response, then we abort this message and remove it
-            // from the queue
-            this->waiting_for_response = false;
-            auto object = msg->object;
-            if (msg->failure_callback == nullptr) return true;
+void Actuators::check_for_response(){
+    message* msg = this->message_queue[this->message_queue_dequeue_position];
+    if(!msg->expect_response) {
+        this->process_no_data_serial(msg);
+    } else {
+        this->process_data_serial(msg);
+    }
+    if (this->waiting_for_response && ((millis() - this->last_message_sent_time) > 10)){
+        // If we have waited more than 10ms second for a response, then we abort this message and remove it
+        // from the queue
+        this->waiting_for_response = false;
+        auto object = msg->object;
+        if (msg->failure_callback != nullptr) {
             auto callback = msg->failure_callback; // Cast the callback to a function pointer
             callback(object, msg);
             if (msg->free_after_callback) delete msg;
-            this->message_queue[this->message_queue_dequeue_position] = nullptr;
         }
-        if (!this->waiting_for_response){
-            this-> last_message_round_trip = millis() - this->last_message_sent_time;
-            this->last_message_sent_time = 0;
-            // Update the average round trip time
-            this->average_time_per_message = (this->average_time_per_message * 9 + this->last_message_round_trip) / 10;
-        }
+        this->message_queue[this->message_queue_dequeue_position] = nullptr;
+    }
+    if (!this->waiting_for_response){
+        this-> last_message_round_trip = millis() - this->last_message_sent_time;
+        this->last_message_sent_time = 0;
+        // Update the average round trip time
+        this->average_time_per_message = (this->average_time_per_message * 9 + this->last_message_round_trip) / 10;
+    }
+}
+
+boolean Actuators::spin(boolean lastSpin) {
+    if (this->waiting_for_response){
+        this->check_for_response();
         return true;
     } else {
         if (this->spin_start_time == 0){

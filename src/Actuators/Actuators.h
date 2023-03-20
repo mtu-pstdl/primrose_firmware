@@ -68,6 +68,8 @@ private:
 
     message* get_next_message();
 
+    void check_for_response();
+
     void process_no_data_serial(message* msg);
 
     void process_data_serial(message* msg);
