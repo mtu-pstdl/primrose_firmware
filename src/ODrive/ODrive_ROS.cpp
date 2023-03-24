@@ -61,10 +61,10 @@ void ODrive_ROS::publish_all() {
     this->encoder_pub_.publish(&encoder_topic);
 
     // Publish the state topic
-    state_topic.data[0] = this->odrive->get_axis_state();
-    state_topic.data[1] = this->odrive->get_axis_error();
-    state_topic.data[2] = this->odrive->get_active_errors();
-    state_topic.data[3] = this->odrive->get_disarm_reason();
+//    state_topic.data[0] = this->odrive->get_axis_state();
+//    state_topic.data[1] = this->odrive->get_axis_error();
+//    state_topic.data[2] = this->odrive->get_active_errors();
+//    state_topic.data[3] = this->odrive->get_disarm_reason();
     this->state_pub_.publish(&state_topic);
 }
 

@@ -7,7 +7,7 @@
 //#include <utility>
 //#include "odrive_constants.h"
 
-ODriveS1::ODriveS1(uint8_t can_id, String* name, FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64> *can_bus) {
+ODriveS1::ODriveS1(uint8_t can_id, String* name, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> *can_bus) {
     this->can_id = can_id;
     this->name = name;
     this->can_bus = can_bus;
@@ -41,11 +41,12 @@ void ODriveS1::on_message(const CAN_message_t &msg) {
         upper_32 = 0;
         lower_32 = 0;
     }
+    this->last_message = millis();
     switch (static_cast<ODriveS1::command_ids>(msg_type)){
         case Heartbeat: // Lower 4 bytes are AXIS_ERROR and the upper 4 bytes are AXIS_STATE
             this->AXIS_ERROR = upper_32;
             // Bitmask the lowest byte of the lower 32 bits to get the axis state
-            this->AXIS_STATE = lower_32 & 0xFF;
+            this->AXIS_STATE = lower_32;
             this->last_axis_state = millis();
             break;
         case Get_Error:
@@ -64,11 +65,14 @@ void ODriveS1::on_message(const CAN_message_t &msg) {
             this->last_iq_update = millis();
             break;
         case Get_Temperature:
+            // Temperature is sent as a fix
             this->FET_TEMP =    (float_t) lower_32;
             this->MOTOR_TEMP =  (float_t) upper_32;
             this->last_temp_update = millis();
             break;
         case Get_Vbus_Voltage_Current:
+            // Print the binary representation of the voltage and current for debugging
+
             this->VBUS_VOLTAGE = (float_t) lower_32;
             this->VBUS_CURRENT = (float_t) upper_32;
             this->last_vbus_update = millis();
@@ -164,6 +168,13 @@ String* ODriveS1::get_state_string() {
     } else {
         state_string->concat("ACTIVE ERRORS: None\r\n");
     }
+    if (this->AXIS_ERROR != 0){
+        String* error_string = odrive::get_error_string(this->AXIS_ERROR);
+        state_string->concat("AXIS ERROR: " + *error_string + "\r\n");
+        free(error_string);
+    } else {
+        state_string->concat("AXIS ERROR: None\r\n");
+    }
     if (this->DISARM_REASON != 0){
         String* error_string = odrive::get_error_string(this->DISARM_REASON);
         state_string->concat("DISARM REASON: " + *error_string + "\r\n");
@@ -187,7 +198,7 @@ String* ODriveS1::get_state_string() {
     state_string->concat("ENCODER ESTIMATES: POS: " + String(this->POS_ESTIMATE) + " | VEL: " +
     String(this->VEL_ESTIMATE) + "\r\n");
 
-    state_string->concat("LAST UPDATE: " + String(millis() - this->next_refresh) + "ms ago\r\n");
+    state_string->concat("LAST UPDATE: " + String(millis() - this->last_message) + "ms ago\r\n");
     state_string->concat("SENT COMMANDS: " + String(this->sent_messages) + "\r\n");
     return state_string;
 }

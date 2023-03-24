@@ -73,7 +73,7 @@ namespace odrive {
             case ENCODER_HALL_PHASE_CALIBRATION:
                 return new String("ENCODER_HALL_PHASE_CALIBRATION");
             default:
-                return new String("UNKNOWN");
+                return new String("UNKNOWN") + axis_state;
         }
     }
 

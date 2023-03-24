@@ -17,6 +17,8 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/UInt32MultiArray.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Empty.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/KeyValue.h"
 
 #define TOPIC_BASE "/mciu/ODrives"
 
@@ -57,7 +59,7 @@ private:
     ros::Publisher encoder_pub_;
 
     // Publishes the values of AXIS_STATE, AXIS_ERROR, ACTIVE_ERRORS, DISARM_REASON
-    std_msgs::UInt32MultiArray state_topic;
+    diagnostic_msgs::DiagnosticStatus state_topic;
     ros::Publisher state_pub_;
 
     // Setup service server
@@ -77,8 +79,9 @@ public:
         this->condition_topic.data = new float_t[5];
         this->encoder_topic.data_length = 5;
         this->encoder_topic.data = new float_t[5];
-        this->state_topic.data_length = 4;
-        this->state_topic.data = new uint32_t[4];
+        this->state_topic.values_length = 4;
+        this->state_topic.values = new diagnostic_msgs::KeyValue[4];
+
     }
 
     ODriveS1* get_odrive();

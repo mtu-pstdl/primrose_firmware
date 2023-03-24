@@ -18,8 +18,8 @@ namespace odrive {
 #define BAD_CONFIG                  0x10        // The controller has a bad configuration
 #define DRV_FAULT                   0x20        // The gate driver has likely failed
 #define MISSING_INPUT               0x40        // The controller was missing a required input
-#define DC_BUS_OVER_VOLTAGE         0x100       // The DC bus voltage is too high
-#define DC_BUS_UNDER_VOLTAGE        0x200       // The DC bus voltage is too low
+#define DC_BUS_UNDER_VOLTAGE        0x100       // The DC bus voltage is too low
+#define DC_BUS_OVER_VOLTAGE         0x200       // The DC bus voltage is too high
 #define DC_BUS_OVER_CURRENT         0x400       // The DC bus current is too high
 #define DC_BUS_OVER_REGEN_CURRENT   0x800       // The DC bus regen current is too high
 #define CURRENT_LIMIT_VIOLATION     0x1000      // The current limit has been violated

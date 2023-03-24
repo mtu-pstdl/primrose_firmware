@@ -23,7 +23,9 @@ public:
     uint8_t can_id = 0;
 
 private:
-    FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64>* can_bus = nullptr; // The CAN bus pointer
+    FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64>* can_bus = nullptr; // The CAN bus pointer
+
+    uint32_t last_message = 0; // The last time a message was received from the ODrive
 
 #define AXIS_STATE_UPDATE_RATE 100 // The rate at which the axis state is updated in ms
     uint32_t   last_axis_state = 0; // The last axis state
@@ -88,7 +90,7 @@ private:
 
 public:
 
-    ODriveS1(uint8_t can_id, String* name, FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64>* can_bus);
+    ODriveS1(uint8_t can_id, String* name, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64>* can_bus);
 
     void init(); // Initialize the ODrive module
 

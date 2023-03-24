@@ -11,7 +11,7 @@
 #include "Actuators/ActuatorUnit.h"
 
 //ros::NodeHandle node_handle;
-FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64> can1;
+FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
 
 //#define HIGH_SPEED_USB
 
@@ -31,11 +31,10 @@ uint32_t last_print = 0;
 
 bool startup_info_print_once = false;
 
-
 void can_event(const CAN_message_t &msg) {
     // Check node ID (Upper 6 bits of CAN ID)
     uint8_t node_id = msg.id >> 5;
-    Serial.printf("CAN event %d\n", node_id);
+//    Serial.printf("CAN event %d\n", node_id);
     for (ODriveS1* odrive : odrives) {
         if (odrive == nullptr) continue;
         if (odrive->get_can_id() == node_id) {
@@ -82,15 +81,14 @@ void setup() {
     // Set up the CAN bus
     can1.begin();
     can1.setBaudRate(500000); // 500kbps
-    can1.enableFIFO();
-    can1.enableMBInterrupts();
-    can1.setMBFilter(MB0, 0, 0, true);
-    can1.enableMBInterrupts(MB0);
+//    can1.setMaxMB(64);  // 64 message buffers
     can1.onReceive(can_event);
+    can1.enableFIFO();
+    can1.enableFIFOInterrupt();
+
 
 //    log_msg = "CAN bus initialised";
 //    node_handle.loginfo(log_msg.c_str());
-
 
 
     odrives[0] = new ODriveS1(0, new String("00"), &can1);
@@ -114,14 +112,6 @@ void setup() {
 //        odrive->advertise(&node_handle);
 //    }
 
-//
-//     Set MailBox 0 to receive all messages
-//    can1.setMBFilter(MB0, 0x000, 0x7FF);
-////     Setup a callback for MB 0
-//    can1.onReceive(MB0, can_event);
-//
-//    can1.enableM
-
 //    for (ODriveS1* odrive : odrives) {
 //        odrive->init();
 //    }
@@ -135,7 +125,7 @@ void setup() {
 void loop() {
 
     uint32_t loop_start = micros(); // Get the time at the start of the loop
-    digitalWriteFast(LED_BUILTIN, HIGH); // Turn on the LED
+    digitalWriteFast(LED_BUILTIN, LOW); // Turn on the LED
 
     // Get the teensy temperature
 //    system_temperature.data = (float) tempmonGetTemp();
@@ -207,9 +197,14 @@ void loop() {
 //            Serial.print(*data);
 //        }
 //        delete data;
+        String sys_info = "--- Sys Info ---\r\n";
+        sys_info += "CAN bus: " + String(can1.getRXQueueCount()) + " RX messages in queue\r\n";
+        sys_info += "CAN bus: " + String(can1.getTXQueueCount()) + " TX messages in queue\r\n";
+        sys_info += "Temperature: " + String(tempmonGetTemp()) + "\r\n";
+        Serial.println(sys_info);
     }
-//
-    digitalWriteFast(LED_BUILTIN, LOW); // Turn off the LED
+
+    digitalWriteFast(LED_BUILTIN, HIGH); // Turn off the LED
     // Allow the actuator bus to preform serial communication for the remaining time in the loop
     while (actuator_bus.spin(micros() - loop_start > 50000)) {
         yield();  // Yield to other tasks
