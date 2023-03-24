@@ -24,11 +24,11 @@ void ActuatorsROS::control_mode_callback(const std_msgs::Int32MultiArray &msg) {
 void ActuatorsROS::update() {
     this->actuator->update();
     condition_topic.level = 0;
-    condition_topic.values[0].value = "0";
-    condition_topic.values[1].value = "0";
-    condition_topic.values[2].value = "0";
-    condition_topic.values[3].value = "0";
-    condition_topic.values[4].value = "0";
+    condition_topic.values[0].value = "0";  // Temperature
+    condition_topic.values[1].value = "0";  // Current
+    condition_topic.values[2].value = "0";  // Main Volts
+    condition_topic.values[3].value = "0";  // Logic Volts
+    condition_topic.values[4].value = "0";  // Status
 }
 
 void ActuatorsROS::publish() {

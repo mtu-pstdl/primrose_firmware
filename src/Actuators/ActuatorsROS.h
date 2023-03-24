@@ -59,13 +59,15 @@ public:
             state_pub_(node_names[2][node_id], &state_topic){
         this->actuator = actuator;
         // Add key-value pairs to the condition topic
-        this->condition_topic.values_length = 5;
-        this->condition_topic.values = new diagnostic_msgs::KeyValue[5];
+        this->condition_topic.values_length = 6;
+        this->condition_topic.values = new diagnostic_msgs::KeyValue[6];
         this->condition_topic.values[0].key = "Temperature";
-        this->condition_topic.values[1].key = "Current";
-        this->condition_topic.values[2].key = "Main Volts";
-        this->condition_topic.values[3].key = "Logic Volts";
-        this->condition_topic.values[4].key = "Status";
+        this->condition_topic.values[1].key = "Current-M1";
+        this->condition_topic.values[2].key = "Current-M2";
+        this->condition_topic.values[3].key = "Main Volts";
+        this->condition_topic.values[4].key = "Logic Volts";
+        this->condition_topic.values[5].key = "Status";
+        this->condition_topic.hardware_id = String("act" + String(node_id)).c_str();
     }
 
     /**

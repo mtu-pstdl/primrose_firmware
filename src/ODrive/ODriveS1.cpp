@@ -46,32 +46,32 @@ void ODriveS1::on_message(const CAN_message_t &msg) {
             this->AXIS_ERROR = upper_32;
             // Bitmask the lowest byte of the lower 32 bits to get the axis state
             this->AXIS_STATE = lower_32 & 0xFF;
-            this->refresh_flags |= AXIS_REFRESH_BIT;
+            this->last_axis_state = millis();
             break;
         case Get_Error:
             this->ACTIVE_ERRORS = lower_32;
             this->DISARM_REASON = upper_32;
-            this->refresh_flags |= ERROR_REFRESH_BIT;
+            this->last_errors = millis();
             break;
         case Get_Encoder_Estimates:
             this->POS_ESTIMATE = (float_t) lower_32;
             this->VEL_ESTIMATE = (float_t) upper_32;
-            this->refresh_flags |= ENCODER_REFRESH_BIT;
+            this->last_encoder_state = millis();
             break;
         case Get_Iq:
             this->Iq_Setpoint = (float_t) lower_32;
             this->Iq_Measured = (float_t) upper_32;
-            this->refresh_flags |= IQ_REFRESH_BIT;
+            this->last_iq_update = millis();
             break;
         case Get_Temperature:
             this->FET_TEMP =    (float_t) lower_32;
             this->MOTOR_TEMP =  (float_t) upper_32;
-            this->refresh_flags |= TEMP_REFRESH_BIT;
+            this->last_temp_update = millis();
             break;
         case Get_Vbus_Voltage_Current:
             this->VBUS_VOLTAGE = (float_t) lower_32;
             this->VBUS_CURRENT = (float_t) upper_32;
-            this->refresh_flags |= VBUS_REFRESH_BIT;
+            this->last_vbus_update = millis();
             break;
         default:
             break;
@@ -79,32 +79,19 @@ void ODriveS1::on_message(const CAN_message_t &msg) {
 }
 
 void ODriveS1::refresh_data() {
-
-    // Check if the last refresh attempt was successful
-    if (this->refresh_flags != ODRIVE_REFRESH_FLAG_MASK){
-        // If not check if that attempt has been going on for more than 1 second
-        if (millis() - this->last_refresh_attempt > 1000){
-            // If so, reset the refresh flags and try again
-            this->refresh_flags = 0;
-            this->last_refresh_attempt = millis();
-        }
-    } else {
-        // If the last refresh attempt was successful, reset the refresh flags and try again
-        this->refresh_flags = 0;
-        // Slightly randomize the next refresh attempt to avoid collisions with other ODrives
-        this->next_refresh = millis() + 50;
-    }
-
-    if (this->next_refresh < millis()) {
-        this->last_refresh_attempt = millis();
-        this->refresh_flags = 0;
-
-//        this->send_command(ODriveS1::command_ids::Get_Error);
-//        this->send_command(ODriveS1::command_ids::Get_Encoder_Estimates);
-//        this->send_command(ODriveS1::command_ids::Get_Iq);
-//        this->send_command(ODriveS1::command_ids::Get_Temperature);
-//        this->send_command(ODriveS1::command_ids::Get_Vbus_Voltage_Current);
-    }
+    // For each refresh bit that is not set, send the corresponding command to the ODrive
+    if (this->last_axis_state + AXIS_STATE_UPDATE_RATE < millis())
+        this->send_command(ODriveS1::Heartbeat);
+    if (this->last_errors + ERROR_UPDATE_RATE < millis())
+        this->send_command(ODriveS1::Get_Error);
+    if (this->last_encoder_state + ENCODER_UPDATE_RATE < millis())
+        this->send_command(ODriveS1::Get_Encoder_Estimates);
+    if (this->last_iq_update + IQ_UPDATE_RATE < millis())
+        this->send_command(ODriveS1::Get_Iq);
+    if (this->last_temp_update + TEMP_UPDATE_RATE < millis())
+        this->send_command(ODriveS1::Get_Temperature);
+    if (this->last_vbus_update + VBUS_UPDATE_RATE < millis())
+        this->send_command(ODriveS1::Get_Vbus_Voltage_Current);
 }
 
 
@@ -198,9 +185,10 @@ String* ODriveS1::get_state_string() {
     String(this->MOTOR_TEMP) + "C\r\n");
 
     state_string->concat("ENCODER ESTIMATES: POS: " + String(this->POS_ESTIMATE) + " | VEL: " +
-    String(this->VEL_ESTIMATE));
+    String(this->VEL_ESTIMATE) + "\r\n");
 
     state_string->concat("LAST UPDATE: " + String(millis() - this->next_refresh) + "ms ago\r\n");
+    state_string->concat("SENT COMMANDS: " + String(this->sent_messages) + "\r\n");
     return state_string;
 }
 

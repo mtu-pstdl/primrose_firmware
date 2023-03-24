@@ -25,33 +25,41 @@ public:
 private:
     FlexCAN_T4<CAN1, RX_SIZE_256, TX_SIZE_64>* can_bus = nullptr; // The CAN bus pointer
 
-#define AXIS_REFRESH_BIT 0x01
+#define AXIS_STATE_UPDATE_RATE 100 // The rate at which the axis state is updated in ms
+    uint32_t   last_axis_state = 0; // The last axis state
     uint32_t   AXIS_ERROR = 0;   // Axis error code
     uint32_t   AXIS_STATE = 0;   // Axis state code
-#define ERROR_REFRESH_BIT 0x02
+
+#define ERROR_UPDATE_RATE 100 // The rate at which the error state is updated in ms
+    uint32_t   last_errors = 0; // The last motor state
     uint32_t   ACTIVE_ERRORS = 0;  // Active errors
     uint32_t   DISARM_REASON = 0;  // Disarm reason
-#define ENCODER_REFRESH_BIT 0x04
+
+#define ENCODER_UPDATE_RATE 100 // The rate at which the encoder state is updated in ms
+    uint32_t   last_encoder_state = 0; // The last encoder state
     float_t    POS_ESTIMATE = 0; // Encoder position in counts
     float_t    VEL_ESTIMATE = 0; // Encoder velocity in counts per second
-#define IQ_REFRESH_BIT 0x08
+
+#define IQ_UPDATE_RATE 100 // The rate at which the motor state is updated in ms
+    uint32_t   last_iq_update = 0; // The last iq state
     float_t    Iq_Setpoint = 0;  // Iq setpoint in amps
     float_t    Iq_Measured = 0;  // Iq measured in amps
-#define TEMP_REFRESH_BIT 0x10
+
+#define TEMP_UPDATE_RATE 100 // The rate at which the temperature state is updated in ms
+    uint32_t   last_temp_update = 0; // The last temperature state
     float_t    FET_TEMP     = 0; // FET temperature in degrees Celsius
     float_t    MOTOR_TEMP   = 0; // Motor temperature in degrees Celsius
-#define VBUS_REFRESH_BIT 0x20
+
+#define VBUS_UPDATE_RATE 100 // The rate at which the vbus state is updated in ms
+    uint32_t   last_vbus_update = 0; // The last vbus state
     float_t    VBUS_VOLTAGE = 0; // Vbus voltage in volts
     float_t    VBUS_CURRENT = 0; // Vbus current in amps
-
-    uint8_t  refresh_flags = 0; // Flags for which data has been refreshed to indicate if the refresh was successful
-#define ODRIVE_REFRESH_FLAG_MASK 0x3F // Mask for the refresh flags
-    uint32_t next_refresh = 0; // The last time the data completely refreshed
-    uint32_t last_refresh_attempt = 0; // The last time the data was attempted to be refreshed
 
     float_t setpoint = 0; // The setpoint of the ODrive
     float_t velocity = 0; // The velocity of the ODrive
     float_t torque   = 0; // The torque of the ODrive
+
+    uint32_t sent_messages = 0; // The number of messages sent to the ODrive
 
     bool conn_established = false; // Flag for if a connection has been established with the ODrive
 
