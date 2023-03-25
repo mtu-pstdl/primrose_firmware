@@ -2,30 +2,43 @@
 #include <Arduino.h>
 #include <Actuators/Actuators.h>
 #include <FlexCAN_T4.h>
-//#include <ros.h>
-//#include <std_srvs/SetBool.h>
+#include <ros.h>
 //#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros.h"
 #include "ODrive/ODriveS1.h"
-//#include "ODrive/ODrive_ROS.h"
-//#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32.h"
+#include "ODrive/ODrive_ROS.h"
 #include "Actuators/ActuatorUnit.h"
+#include "Actuators/ActuatorsROS.h"
+#include <std_srvs/SetBool.h>
+#include <std_msgs/Float32.h>
 
-//ros::NodeHandle node_handle;
+//#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32.h"
+#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
+#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticArray.h"
+//#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/publisher.h"
+//#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32.h"
+
+ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
 
 //#define HIGH_SPEED_USB
 
 ODriveS1* odrives[6];
-//ODrive_ROS* odrive_ros[6];
+ODrive_ROS* odrive_ros[6];
 
 ActuatorUnit* actuators[4];
-//ActuatorsROS* actuators_ros[4];
+ActuatorsROS* actuators_ros[4];
 Actuators actuator_bus;
 
 // Setup global publishers
-//std_msgs::Float32 system_temperature;
-//diagnostic_msgs::DiagnosticStatus system_info;
-//ros::Publisher system_temperature_pub("/mciu/system_temperature", &system_temperature);
+diagnostic_msgs::DiagnosticArray odrive_diagnostics;
+diagnostic_msgs::DiagnosticArray actuator_diagnostics;
+diagnostic_msgs::DiagnosticArray system_diagnostics;
+
+diagnostic_msgs::DiagnosticStatus system_info;
+
+ros::Publisher odrive_diag_pub("/diagnostics", &system_diagnostics);
+ros::Publisher actuator_diag_pub("/diagnostics", &actuator_diagnostics);
+ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
 
 uint32_t last_print = 0;
 
@@ -55,8 +68,8 @@ void can_event(const CAN_message_t &msg) {
 void setup() {
 
 //    Serial.begin(9600); // 115kbps
-    Serial.begin(115200); // 115kbps
-    Serial.println("Starting up");
+//    Serial.begin(115200); // 115kbps
+//    Serial.println("Starting up");
 //    Serial1.begin(38400); // 38.4kbps
 
     pinMode(LED_BUILTIN, OUTPUT);
@@ -67,16 +80,17 @@ void setup() {
 #ifdef HIGH_SPEED_USB
 //    node_handle.getHardware()->setBaud(500000); // 500kbps
 #else
-//    node_handle.getHardware()->setBaud(115200); // 115kbps
+    node_handle.getHardware()->setBaud(115200); // 115kbps
 #endif
-//    node_handle.setSpinTimeout(50); // 50ms
-//    node_handle.initNode();
-//    node_handle.spinOnce();
+    node_handle.setSpinTimeout(100); // 50ms
+    node_handle.initNode();
+    node_handle.requestSyncTime();
 
-//    node_handle.advertise(system_temperature_pub);
+    String log_msg = "Starting MCIU with build version: " + String(__DATE__) + " " + String(__TIME__);
+    node_handle.loginfo(log_msg.c_str());
 
-//    String log_msg = "Initialising CAN bus at 500kbps";
-//    node_handle.loginfo(log_msg.c_str());
+    log_msg = "Initialising CAN bus at 500kbps";
+    node_handle.loginfo(log_msg.c_str());
 
     // Set up the CAN bus
     can1.begin();
@@ -87,39 +101,100 @@ void setup() {
     can1.enableFIFOInterrupt();
 
 
-//    log_msg = "CAN bus initialised";
-//    node_handle.loginfo(log_msg.c_str());
+    log_msg = "CAN bus initialised";
+    node_handle.loginfo(log_msg.c_str());
 
 
     odrives[0] = new ODriveS1(0, new String("00"), &can1);
-//    odrives[1] = new ODriveS1(1, new String("01"), &can1);
-//    odrives[2] = new ODriveS1(2, new String("02"), &can1);
-//    odrives[3] = new ODriveS1(3, new String("03"), &can1);
-//    odrives[4] = new ODriveS1(4, new String("04"), &can1);
-//    odrives[5] = new ODriveS1(5, new String("05"), &can1);
+    odrives[1] = new ODriveS1(1, new String("01"), &can1);
+    odrives[2] = new ODriveS1(2, new String("02"), &can1);
+    odrives[3] = new ODriveS1(3, new String("03"), &can1);
+    odrives[4] = new ODriveS1(4, new String("04"), &can1);
+    odrives[5] = new ODriveS1(5, new String("05"), &can1);
+
+    // Setup the diagnostics array
+    odrive_diagnostics.status_length = 6;
+    odrive_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[6];
+
+    actuator_diagnostics.status_length = 4;
+    actuator_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[4];
+
+    system_diagnostics.status_length = 1;
+    system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[1];
+
+    odrive_ros[0] = new ODrive_ROS(odrives[0], &node_handle, &odrive_diagnostics.status[0], "Front Left");
+    odrive_ros[1] = new ODrive_ROS(odrives[1], &node_handle, &odrive_diagnostics.status[1], "Front Right");
+    odrive_ros[2] = new ODrive_ROS(odrives[2], &node_handle, &odrive_diagnostics.status[2], "Rear Left");
+    odrive_ros[3] = new ODrive_ROS(odrives[3], &node_handle, &odrive_diagnostics.status[3], "Rear Right");
+    odrive_ros[4] = new ODrive_ROS(odrives[4], &node_handle, &odrive_diagnostics.status[4], "Conveyor");
+    odrive_ros[5] = new ODrive_ROS(odrives[5], &node_handle, &odrive_diagnostics.status[5], "Trencher");
+
 //
-//    actuators[0] = new ActuatorUnit(&actuator_bus, 0x80);
-//    actuators[1] = new ActuatorUnit(&actuator_bus, 0x81);
-//    actuators[2] = new ActuatorUnit(&actuator_bus, 0x82);
-//    actuators[3] = new ActuatorUnit(&actuator_bus, 0x83);
+    actuators[0] = new ActuatorUnit(&actuator_bus, 0x80);
+    actuators[1] = new ActuatorUnit(&actuator_bus, 0x81);
+    actuators[2] = new ActuatorUnit(&actuator_bus, 0x82);
+    actuators[3] = new ActuatorUnit(&actuator_bus, 0x83);
 
-    // Make sure there are no duplicate ODrive nodes
+    actuators_ros[0] = new ActuatorsROS(actuators[0], &node_handle, &actuator_diagnostics.status[6], "Front Left");
+    actuators_ros[1] = new ActuatorsROS(actuators[1], &node_handle, &actuator_diagnostics.status[7], "Front Right");
+    actuators_ros[2] = new ActuatorsROS(actuators[2], &node_handle, &actuator_diagnostics.status[8], "Rear Left");
+    actuators_ros[3] = new ActuatorsROS(actuators[3], &node_handle, &actuator_diagnostics.status[9], "Rear Right");
 
-//    for (ODrive_ROS* odrive : odrive_ros) {
-//        if (odrive == nullptr) {
+//    delay(1000);
+
+
+    for (ODrive_ROS* odrive : odrive_ros) {
+        if (odrive == nullptr) continue;
+        log_msg = "Advertising ODrive";
+        node_handle.loginfo(log_msg.c_str());
+        odrive->advertise_subscribe(&node_handle);
+    }
+
+
+
+    system_diagnostics.status[0] = system_info;
+    system_info.values_length = 1;
+    system_info.values = new diagnostic_msgs::KeyValue[1];
+    system_info.values[0].key = "Temperature";
+    system_info.values[0].value = "0";
+    system_info.level = diagnostic_msgs::DiagnosticStatus::OK;
+    system_info.name = "System";
+    system_info.message = "System is running";
+    system_info.hardware_id = "MCIU";
+    // For each ODrive add its diagnostic message
+
+
+//    for (int i = 0; i < 4; i++) {
+//        if (actuators[i] == nullptr) {
+//            actuators_ros[i] = nullptr;
 //            continue;
 //        }
-//        odrive->advertise(&node_handle);
+//        actuators_ros[i] = new ActuatorsROS(actuators[i], &node_handle);
+//    }
+
+//    for (ActuatorsROS* actuator : actuators_ros) {
+//        if (actuator == nullptr) {
+//            continue;
+//        }
+//        actuator->advertise_subscribe(&node_handle);
 //    }
 
 //    for (ODriveS1* odrive : odrives) {
 //        odrive->init();
 //    }
+    node_handle.advertise(odrive_diag_pub);
+    node_handle.advertise(actuator_diag_pub);
+    node_handle.advertise(sys_diag_pub);
 
-    startup_info_print_once = false;
+    odrive_diag_pub.publish(&odrive_diagnostics);
+    actuator_diag_pub.publish(&actuator_diagnostics);
+    sys_diag_pub.publish(&system_diagnostics);
 
-    Serial.printf("Setup complete (%dms)\n", millis());
-    Serial.println("Starting loop");
+    log_msg = "Attempting to preform first spin";
+    node_handle.loginfo(log_msg.c_str());
+    node_handle.spinOnce();
+    log_msg = "Setup complete";
+    node_handle.loginfo(log_msg.c_str());
 }
 
 void loop() {
@@ -128,8 +203,7 @@ void loop() {
     digitalWriteFast(LED_BUILTIN, LOW); // Turn on the LED
 
     // Get the teensy temperature
-//    system_temperature.data = (float) tempmonGetTemp();
-//    system_temperature_pub.publish(&system_temperature);
+//    diagnostic_array.status[10].values[0].value = String(tempmonGetTemp()).c_str();
 
     for (ODriveS1* odrive : odrives) {
         if (odrive == nullptr) continue;
@@ -141,67 +215,55 @@ void loop() {
         actuator->update();
     }
 
-//    for (ODrive_ROS* odrive : odrive_ros) {
-//        if (odrive == nullptr) {
-//            continue;
-//        }
-//        odrive->publish_all();
-//    }
-
-//    if (!node_handle.connected()){
-//        node_handle.logerror("NodeHandle not properly configured");
-//    }
-
-//    int8_t spin_result = node_handle.spinOnce(); // 50ms timeout
-//
-//    switch (spin_result) {
-//        case ros::SPIN_OK:
-//            break;
-//        case ros::SPIN_ERR:
-//            node_handle.logerror("Spin error");
-//            // Collect info about the error
-//
-//            break;
-//        case ros::SPIN_TIMEOUT:
-//            node_handle.logwarn("Spin timeout");
-//            break;
-//        default:
-//            String log_msg = "Unknown spin result: " + String(spin_result);
-//            node_handle.logerror(log_msg.c_str());
-//            break;
-//    }
-
-    // Print to serial the state of all devices once per 5 seconds
-    if (millis() - last_print > 5000) {
-        Serial.println("Printing status");
-        last_print = millis();
-        Serial.clear();
-        for (ODriveS1* odrive : odrives) {
-            if (odrive == nullptr) continue;
-
-            auto* data = odrive->get_state_string();
-            if (data != nullptr) {
-                Serial.println(*data);
+    if (node_handle.connected()){
+        for (ODrive_ROS* odrive : odrive_ros) {
+            if (odrive == nullptr) {
+                continue;
             }
-            delete data;
+            odrive->publish_all();
         }
-//        for (ActuatorUnit* actuator : actuators) {
-//            auto* data = actuator->get_status_string();
-//            if (data != nullptr) {
-//                Serial.print(*data);
-//            }
-//            delete data;
-//        }
-//        auto* data = actuator_bus.get_status_string();
-//        if (data != nullptr) {
-//            Serial.print(*data);
-//        }
-//        delete data;
-        String sys_info = "--- Sys Info ---\r\n";
-        sys_info += "CAN bus: " + String(can1.getRXQueueCount()) + " RX messages in queue\r\n";
-        sys_info += "CAN bus: " + String(can1.getTXQueueCount()) + " TX messages in queue\r\n";
-        sys_info += "Temperature: " + String(tempmonGetTemp()) + "\r\n";
-        Serial.println(sys_info);
+    }
+
+    odrive_diagnostics.header.stamp = node_handle.now();
+    actuator_diagnostics.header.stamp = node_handle.now();
+    system_diagnostics.header.stamp = node_handle.now();
+
+    odrive_diagnostics.header.seq++;
+    actuator_diagnostics.header.seq++;
+    system_diagnostics.header.seq++;
+
+    // Publish the diagnostics
+    odrive_diag_pub.publish(&odrive_diagnostics);
+    actuator_diag_pub.publish(&actuator_diagnostics);
+    sys_diag_pub.publish(&system_diagnostics);
+
+    int8_t spin_result = 0;
+    String log_msg = "Loop time: " + String(micros() - loop_start);
+    node_handle.loginfo(log_msg.c_str());
+    if (!node_handle.connected()){
+//        node_handle.logerror("NodeHandle not properly configured");
+    }
+    spin_result = node_handle.spinOnce(); // 50ms timeout
+
+    log_msg = "Spin time: " + String(micros() - loop_start);
+//    node_handle.loginfo(log_msg.c_str());
+
+    switch (spin_result) {
+        case ros::SPIN_OK:
+            break;
+        case ros::SPIN_ERR:
+            log_msg = "Spin error";
+            node_handle.logerror(log_msg.c_str());
+            // Collect info about the error
+            break;
+        case ros::SPIN_TIMEOUT:
+            log_msg = "Spin timeout";
+            node_handle.logwarn(log_msg.c_str());
+            break;
+        default:
+            log_msg = "Unknown spin result: " + String(spin_result);
+            node_handle.logerror(log_msg.c_str());
+            break;
     }
 
     digitalWriteFast(LED_BUILTIN, HIGH); // Turn off the LED
@@ -209,5 +271,6 @@ void loop() {
     while (actuator_bus.spin(micros() - loop_start > 50000)) {
         yield();  // Yield to other tasks
     }
-    delay(100);
+    // Delay for the remaining time in the loop
+    delayMicroseconds(50000 - (micros() - loop_start));
 }

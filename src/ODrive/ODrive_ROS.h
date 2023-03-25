@@ -52,15 +52,12 @@ private:
 
     // Publishes the values of FET_TEMP, MOTOR_TEMP, VBUS_VOLTAGE, VBUS_CURRENT
     std_msgs::Float32MultiArray condition_topic;
-    ros::Publisher condition_pub_;
 
     // Publishes the values of POS_ESTIMATE, VEL_ESTIMATE, Iq_Setpoint, Iq_Measured
     std_msgs::Float32MultiArray encoder_topic;
-    ros::Publisher encoder_pub_;
 
     // Publishes the values of AXIS_STATE, AXIS_ERROR, ACTIVE_ERRORS, DISARM_REASON
-    diagnostic_msgs::DiagnosticStatus state_topic;
-    ros::Publisher state_pub_;
+    diagnostic_msgs::DiagnosticStatus* state_topic;
 
     // Setup service server
 
@@ -68,21 +65,33 @@ private:
 
 public:
 
-    ODrive_ROS(ODriveS1* odrive, uint8_t number) :
+    ros::Publisher condition_pub_;
+    ros::Publisher encoder_pub_;
+//    ros::Publisher state_pub_;
+
+    ODrive_ROS(ODriveS1* odrive, uint8_t number, diagnostic_msgs::DiagnosticStatus* status, String disp_name) :
             setpoint_sub(topic_names[3][number], &ODrive_ROS::setpoint_callback, this),
             control_mode_sub(topic_names[4][number], &ODrive_ROS::control_mode_callback, this),
-            condition_pub_(topic_names[0][number], &condition_topic),
-            encoder_pub_(topic_names[1][number], &encoder_topic),
-            state_pub_(topic_names[2][number], &state_topic) {
+            condition_pub_("condition", &condition_topic),
+            encoder_pub_("encoder", &encoder_topic) {
         this->odrive = odrive;
         this->condition_topic.data_length = 5;
         this->condition_topic.data = new float_t[5];
         this->encoder_topic.data_length = 5;
         this->encoder_topic.data = new float_t[5];
-        this->state_topic.values_length = 4;
-        this->state_topic.values = new diagnostic_msgs::KeyValue[4];
-
+        this->state_topic = status;
+        this->state_topic->values_length = 4;
+        this->state_topic->values = new diagnostic_msgs::KeyValue[4];
+        state_topic->values[0].key = "pos_estimate";
+        state_topic->values[1].key = "vel_estimate";
+        state_topic->values[2].key = "iq_setpoint";
+        state_topic->values[3].key = "iq_measured";
+        this->name = disp_name.c_str();
+        state_topic->name = this->name.c_str();
+        state_topic->message = "Initializing";
+        state_topic->hardware_id = this->odrive->name->c_str();
     }
+
 
     ODriveS1* get_odrive();
 
@@ -90,7 +99,7 @@ public:
 
     void control_mode_callback(const std_msgs::Int32MultiArray &msg);
 
-    void advertise(ros::NodeHandle* node_handle);
+    void advertise_subscribe(ros::NodeHandle* node_handle);
 
     void publish_all();
 };

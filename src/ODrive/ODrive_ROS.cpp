@@ -9,18 +9,17 @@
 /**
  * This method sets up the ROS publishers and subscribers
  */
-void ODrive_ROS::advertise(ros::NodeHandle *nh) {
+void ODrive_ROS::advertise_subscribe(ros::NodeHandle *nh) {
     this->node_handle = nh;
 
     nh->advertise(this->condition_pub_);
     nh->advertise(this->encoder_pub_);
-    nh->advertise(this->state_pub_);
-    nh->subscribe(this->setpoint_sub);
-    nh->subscribe(this->control_mode_sub);
+//    nh->advertise(this->state_pub_);
+//    nh->subscribe(this->setpoint_sub);
+//    nh->subscribe(this->control_mode_sub);
 
-    String log = "Advertising topics for " + *this->odrive->name;
+    String log = "Advertised topics for " + *this->odrive->name;
     nh->loginfo(log.c_str());
-
 }
 
 /**
@@ -54,18 +53,18 @@ void ODrive_ROS::publish_all() {
 
     // Publish the encoder topic
 
-    encoder_topic.data[0] = this->odrive->get_pos_estimate();
-    encoder_topic.data[1] = this->odrive->get_vel_estimate();
-    encoder_topic.data[2] = this->odrive->get_Iq_setpoint();
-    encoder_topic.data[4] = this->odrive->get_setpoint();
-    this->encoder_pub_.publish(&encoder_topic);
+//    encoder_topic.data[0] = this->odrive->get_pos_estimate();
+//    encoder_topic.data[1] = this->odrive->get_vel_estimate();
+//    encoder_topic.data[2] = this->odrive->get_Iq_setpoint();
+//    encoder_topic.data[4] = this->odrive->get_setpoint();
+//    this->encoder_pub_.publish(&encoder_topic);
 
     // Publish the state topic
-//    state_topic.data[0] = this->odrive->get_axis_state();
-//    state_topic.data[1] = this->odrive->get_axis_error();
-//    state_topic.data[2] = this->odrive->get_active_errors();
-//    state_topic.data[3] = this->odrive->get_disarm_reason();
-    this->state_pub_.publish(&state_topic);
+
+    state_topic->values[0].value = String(this->odrive->get_pos_estimate()).c_str();
+    state_topic->values[1].value = String(this->odrive->get_vel_estimate()).c_str();
+    state_topic->values[2].value = String(this->odrive->get_Iq_setpoint()).c_str();
+    state_topic->values[3].value = String(this->odrive->get_setpoint()).c_str();
 }
 
 ODriveS1* ODrive_ROS::get_odrive() {
