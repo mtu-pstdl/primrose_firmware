@@ -50,40 +50,50 @@ void ODriveS1::on_message(const CAN_message_t &msg) {
             // Bitmask the lowest byte of the lower 32 bits to get the axis state
             this->AXIS_STATE       = lower_32 & 0xFF;
             this->PROCEDURE_RESULT = (lower_32 >> 8) & 0xFF;
+            this->last_axis_state  = millis();
+            this->in_flight_bitmask &= ~AXIS_STATE_FLIGHT_BIT; // Clear the bit
             break;
         case Get_Error:
             this->ACTIVE_ERRORS = lower_32;
             this->DISARM_REASON = upper_32;
             this->last_errors = millis();
+            this->in_flight_bitmask &= ~ERROR_FLIGHT_BIT; // Clear the bit
             break;
         case Get_Encoder_Estimates:
             this->POS_ESTIMATE = (float_t) lower_32;
             this->VEL_ESTIMATE = (float_t) upper_32;
             this->last_encoder_state = millis();
+            this->in_flight_bitmask &= ~ENCODER_FLIGHT_BIT; // Clear the bit
             break;
         case Get_Iq:
             this->Iq_Setpoint = (float_t) lower_32;
             this->Iq_Measured = (float_t) upper_32;
             this->last_iq_update = millis();
+            this->in_flight_bitmask &= ~IQ_FLIGHT_BIT; // Clear the bit
             break;
         case Get_Temperature:
             // Temperature is sent as a fix
             this->FET_TEMP =    (float_t) lower_32;
             this->MOTOR_TEMP =  (float_t) upper_32;
             this->last_temp_update = millis();
+            this->in_flight_bitmask &= ~TEMP_FLIGHT_BIT; // Clear the bit
             break;
         case Get_Vbus_Voltage_Current:
             // Print the binary representation of the voltage and current for debugging
-
             this->VBUS_VOLTAGE = (float_t) lower_32;
             this->VBUS_CURRENT = (float_t) upper_32;
             this->last_vbus_update = millis();
+            this->in_flight_bitmask &= ~VBUS_FLIGHT_BIT; // Clear the bit
             break;
         default:
             break;
     }
 }
-
+/**
+ * This method is called to make sure all the data from the ODrive is up to date
+ * If not if will send the corresponding data request to the ODrive
+ * This method also sends the Heartbeat message to the ODrive to prevent it from E-Stopping
+ */
 void ODriveS1::refresh_data() {
     // For each refresh bit that is not set, send the corresponding command to the ODrive
     if (this->last_axis_state + AXIS_STATE_UPDATE_RATE < millis() &&
@@ -115,6 +125,11 @@ void ODriveS1::refresh_data() {
         !(this->in_flight_bitmask & VBUS_FLIGHT_BIT)){
         if (this->send_command(ODriveS1::Get_Vbus_Voltage_Current))
             this->in_flight_bitmask |= VBUS_FLIGHT_BIT;  // Set the in flight bit to 1
+    }
+    if (this->last_heartbeat + HEARTBEAT_UPDATE_RATE < millis() &&
+        !(this->in_flight_bitmask & HEARTBEAT_FLIGHT_BIT)){
+        if (this->send_command(ODriveS1::Heartbeat))
+            this->in_flight_bitmask |= HEARTBEAT_FLIGHT_BIT;  // Set the in flight bit to 1
     }
 }
 

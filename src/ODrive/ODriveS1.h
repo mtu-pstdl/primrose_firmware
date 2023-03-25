@@ -31,6 +31,7 @@ private:
 #define AXIS_STATE_UPDATE_RATE 100 // The rate at which the axis state is updated in ms
 #define AXIS_STATE_FLIGHT_BIT 0x0001 // The bit in the in_flight_bitmask that corresponds to the axis state
     uint32_t   last_axis_state  = 0;   // The last axis state
+    uint32_t   last_heartbeat   = 0;   // The time of the last heartbeat sent
     uint32_t   AXIS_ERROR       = 0;   // Axis error code
     uint8_t    AXIS_STATE       = 0;   // Axis state code
     uint8_t    PROCEDURE_RESULT = 0;   // Axis procedure result code
@@ -65,6 +66,8 @@ private:
     float_t    VBUS_VOLTAGE = 0; // Vbus voltage in volts
     float_t    VBUS_CURRENT = 0; // Vbus current in amps
 
+#define HEARTBEAT_UPDATE_RATE 100 // The rate at which the heartbeat state is updated in ms
+#define HEARTBEAT_FLIGHT_BIT 0x0040 // The bit in the in_flight_bitmask that corresponds to the heartbeat state
 
     float_t setpoint = 0; // The setpoint of the ODrive
     float_t velocity = 0; // The velocity of the ODrive
