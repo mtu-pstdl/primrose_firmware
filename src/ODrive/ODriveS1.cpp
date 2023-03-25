@@ -255,6 +255,14 @@ uint32_t ODriveS1::get_disarm_reason() const {
     return this->DISARM_REASON;
 }
 
+bool ODriveS1::is_connected() const {
+    if (millis() - this->last_message > 1000) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
 
 
 

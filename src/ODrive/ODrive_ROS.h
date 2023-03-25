@@ -59,6 +59,8 @@ private:
     // Publishes the values of AXIS_STATE, AXIS_ERROR, ACTIVE_ERRORS, DISARM_REASON
     diagnostic_msgs::DiagnosticStatus* state_topic;
 
+    String* strings[5];
+
     // Setup service server
 
     float_t setpoint = 0; // The setpoint of the ODrive
@@ -83,13 +85,18 @@ public:
         this->state_topic->values_length = 4;
         this->state_topic->values = new diagnostic_msgs::KeyValue[4];
         state_topic->values[0].key = "pos_estimate";
+        strings[0] = new String("pos_estimate: not initialized");
         state_topic->values[1].key = "vel_estimate";
+        strings[1] = new String("vel_estimate: not initialized");
         state_topic->values[2].key = "iq_setpoint";
+        strings[2] = new String("iq_setpoint: not initialized");
         state_topic->values[3].key = "iq_measured";
+        strings[3] = new String("iq_measured: not initialized");
         this->name = disp_name.c_str();
-        state_topic->name = this->name.c_str();
+        state_topic->name = "ODrive";
         state_topic->message = "Initializing";
-        state_topic->hardware_id = this->odrive->name->c_str();
+        state_topic->level = 0;
+        state_topic->hardware_id = this->name.c_str();
     }
 
 

@@ -46,6 +46,8 @@ private:
     std_msgs::Int32MultiArray encoder_topic;
     std_msgs::Int32MultiArray state_topic;
 
+    String name;
+
     ActuatorUnit* actuator;
 
 public:
@@ -60,7 +62,10 @@ public:
         // Add key-value pairs to the condition topic
         this->diagnostic_topic = status;
         this->diagnostic_topic->values_length = 6;
-        this->diagnostic_topic->name = disp_name.c_str();
+        this->name = disp_name;
+        this->diagnostic_topic->name = "ActuatorUnit";
+        this->diagnostic_topic->message = "Initializing";
+        this->diagnostic_topic->level = 0;
         this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[6];
         this->diagnostic_topic->values[0].key = "Temperature";
         this->diagnostic_topic->values[1].key = "Current-M1";
@@ -68,7 +73,7 @@ public:
         this->diagnostic_topic->values[3].key = "Main Volts";
         this->diagnostic_topic->values[4].key = "Logic Volts";
         this->diagnostic_topic->values[5].key = "Status";
-        this->diagnostic_topic->hardware_id = disp_name.c_str();
+        this->diagnostic_topic->hardware_id = this->name.c_str();
     }
 
     /**

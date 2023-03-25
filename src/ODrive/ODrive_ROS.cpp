@@ -60,11 +60,21 @@ void ODrive_ROS::publish_all() {
 //    this->encoder_pub_.publish(&encoder_topic);
 
     // Publish the state topic
+    if (this->odrive->is_connected()){
+        strings[0]->replace(strings[0]->length(), String(this->odrive->get_pos_estimate()));
+        strings[1]->replace(strings[1]->length(), String(this->odrive->get_vel_estimate()));
+        strings[2]->replace(strings[2]->length(), String(this->odrive->get_Iq_setpoint()));
+        strings[3]->replace(strings[3]->length(), String(this->odrive->get_setpoint()));
+    } else {
+        this->state_topic->level = 2;
+        this->state_topic->message = "Not Connected!";
+    }
 
-    state_topic->values[0].value = String(this->odrive->get_pos_estimate()).c_str();
-    state_topic->values[1].value = String(this->odrive->get_vel_estimate()).c_str();
-    state_topic->values[2].value = String(this->odrive->get_Iq_setpoint()).c_str();
-    state_topic->values[3].value = String(this->odrive->get_setpoint()).c_str();
+
+    state_topic->values[0].value = strings[0]->c_str();
+    state_topic->values[1].value = strings[1]->c_str();
+    state_topic->values[2].value = strings[2]->c_str();
+    state_topic->values[3].value = strings[3]->c_str();
 }
 
 ODriveS1* ODrive_ROS::get_odrive() {

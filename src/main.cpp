@@ -229,7 +229,7 @@ void loop() {
         odrive->refresh_data();
     }
 
-    for (ActuatorUnit* actuator : actuators) {
+    for (ActuatorsROS* actuator : actuators_ros) {
         if (actuator == nullptr) continue;
         actuator->update();
     }
@@ -287,9 +287,9 @@ void loop() {
 
     digitalWriteFast(LED_BUILTIN, HIGH); // Turn off the LED
     // Allow the actuator bus to preform serial communication for the remaining time in the loop
-//    while (actuator_bus.spin(micros() - loop_start > 50000)) {
-//        yield();  // Yield to other tasks
-//    }
+    while (actuator_bus.spin(micros() - loop_start > 50000)) {
+        yield();  // Yield to other tasks
+    }
     // Delay for the remaining time in the loop
     if (50000 - (micros() - loop_start) < 0) {
         log_msg = "Loop time exceeded 50ms by: " + String(micros() - loop_start - 50000);
@@ -297,5 +297,5 @@ void loop() {
     } else {
 //        delayMicroseconds(50000 - (micros() - loop_start));
     }
-    delayMicroseconds(50000);
+//    delayMicroseconds(50000);
 }

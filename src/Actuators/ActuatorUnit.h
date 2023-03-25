@@ -12,6 +12,9 @@ class ActuatorUnit {
 
 public:
 
+    uint8_t id;
+    boolean connected = true;
+
     enum controller_status_bitmask: uint16_t {
         normal                   = 0x0000,
         m1_over_current          = 0x0001,
@@ -68,8 +71,6 @@ private:
 
     Actuators* command_bus;
 
-    uint8_t id;
-
     uint16_t message_failure_count = 0;
     const uint16_t message_failure_threshold = 5;
 
@@ -87,7 +88,6 @@ private:
     telemetry_message* reocurring_messages;
 
     // Shared variables between motor 1 and motor 2
-    boolean  connected = true;
     uint16_t controller_temperature = 0;
     uint16_t main_battery_voltage = 0;
     uint16_t logic_battery_voltage = 0;
