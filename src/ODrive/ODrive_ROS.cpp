@@ -49,7 +49,7 @@ void ODrive_ROS::publish_all() {
     condition_topic.data[2] = this->odrive->get_vbus_voltage();
     condition_topic.data[3] = this->odrive->get_vbus_current();
     condition_topic.data[4] = this->odrive->get_Iq_measured();
-    this->condition_pub_.publish(&condition_topic);
+//    this->condition_pub_.publish(&condition_topic);
 
     // Publish the encoder topic
 

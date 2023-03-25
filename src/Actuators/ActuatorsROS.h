@@ -50,7 +50,8 @@ private:
 
 public:
 
-    ActuatorsROS(ActuatorUnit* actuator, uint8_t node_id, diagnostic_msgs::DiagnosticStatus* status, String disp_name) :
+    ActuatorsROS(ActuatorUnit* actuator, uint8_t node_id, diagnostic_msgs::DiagnosticStatus* status,
+                 String disp_name) :
             setpoint_sub(node_names[3][node_id], &ActuatorsROS::setpoint_callback, this),
             control_mode_sub(node_names[4][node_id], &ActuatorsROS::control_mode_callback, this),
             encoder_pub_(node_names[1][node_id], &encoder_topic),
@@ -59,6 +60,7 @@ public:
         // Add key-value pairs to the condition topic
         this->diagnostic_topic = status;
         this->diagnostic_topic->values_length = 6;
+        this->diagnostic_topic->name = disp_name.c_str();
         this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[6];
         this->diagnostic_topic->values[0].key = "Temperature";
         this->diagnostic_topic->values[1].key = "Current-M1";
@@ -66,7 +68,7 @@ public:
         this->diagnostic_topic->values[3].key = "Main Volts";
         this->diagnostic_topic->values[4].key = "Logic Volts";
         this->diagnostic_topic->values[5].key = "Status";
-        this->diagnostic_topic->hardware_id = String("act" + String(node_id)).c_str();
+        this->diagnostic_topic->hardware_id = disp_name.c_str();
     }
 
     /**
