@@ -244,6 +244,10 @@ String* ActuatorUnit::get_status_string() {
     return status_string;
 }
 
+void ActuatorUnit::estop() {
+
+}
+
 
 
 

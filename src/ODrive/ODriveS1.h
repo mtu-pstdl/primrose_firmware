@@ -88,11 +88,14 @@ private:
     template <typename T>
     uint8_t send_command(command_ids command_id, T lower_data, T upper_data);
 
+    void* estop_callback = nullptr; // The estop callback function
+
 public:
 
     bool is_connected() const;
 
-    ODriveS1(uint8_t can_id, String* name, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64>* can_bus);
+    ODriveS1(uint8_t can_id, String* name, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64>* can_bus,
+             void* estop_callback);
 
     void init(); // Initialize the ODrive module
 
@@ -101,6 +104,11 @@ public:
     void set_config(ODRIVE_MOTOR_CONFIG* config);
 
     void refresh_data(); // Refreshes data from the ODrive
+
+    void estop(); // Sends an estop command to the ODrive
+
+
+    // Getters and setters
 
     String* get_state_string(); // Returns the state as a string
 
@@ -126,11 +134,19 @@ public:
 
     uint32_t get_axis_state() const;
 
+    String* get_axis_state_string() const;
+
     uint32_t get_axis_error() const;
+
+    String* get_axis_error_string() const;
 
     uint32_t get_active_errors() const;
 
+    String* get_active_errors_string() const;
+
     uint32_t get_disarm_reason() const;
+
+    String* get_disarm_reason_string() const;
 
 };
 

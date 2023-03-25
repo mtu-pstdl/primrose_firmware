@@ -112,6 +112,8 @@ public:
 
     void update();
 
+    void estop();
+
     /**
      * Queues all telemetry messages that need to be sent during this cycle
      */

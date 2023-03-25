@@ -17,6 +17,15 @@
 //#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/publisher.h"
 //#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32.h"
 
+#if defined(__IMXRT1062__)
+extern "C" uint32_t set_arm_clock(uint32_t frequency);
+#endif
+
+#define CPU_FREQ (600000000 / 2) // 600 MHz
+#define THROTTLE_RATE 0.5 // Percentage of the base rate to run at
+#define WARN_TEMP 65.0 // Degrees C
+#define THROTTLE_TEMP 75.0 // Degrees C
+
 ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
 
@@ -29,16 +38,27 @@ ActuatorUnit* actuators[4];
 ActuatorsROS* actuators_ros[4];
 Actuators actuator_bus;
 
+void unified_estop_callback(){
+    for (ODriveS1* odrive : odrives) {
+        if (odrive == nullptr) continue;
+        odrive->estop();
+    }
+    for (ActuatorUnit* actuator : actuators) {
+        if (actuator == nullptr) continue;
+        actuator->estop();
+    }
+}
+
 // Setup global publishers
-//diagnostic_msgs::DiagnosticArray odrive_diagnostics;
-//diagnostic_msgs::DiagnosticArray actuator_diagnostics;
 diagnostic_msgs::DiagnosticArray system_diagnostics;
 
 diagnostic_msgs::DiagnosticStatus* system_info;
 
-//ros::Publisher odrive_diag_pub("/diagnostics_motor", &system_diagnostics);
-//ros::Publisher actuator_diag_pub("/diagnostics_actuator", &actuator_diagnostics);
 ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
+
+String system_status_msg = "";
+String temperature_string = "Temperature: ";
+String loop_time_string = "Loop time: ";
 
 uint32_t last_print = 0;
 
@@ -57,20 +77,8 @@ void can_event(const CAN_message_t &msg) {
 
 }
 
-//String* can_debug(){
-//    auto *debug = new String();
-//    // Print info about state of CAN bus
-//    debug->concat("CAN1: ");
-//    debug->concat(can1.isBusOff() ? "OFF" : "ON");
-
-//}
 
 void setup() {
-
-//    Serial.begin(9600); // 115kbps
-//    Serial.begin(115200); // 115kbps
-//    Serial.println("Starting up");
-//    Serial1.begin(38400); // 38.4kbps
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH);
@@ -108,12 +116,12 @@ void setup() {
     log_msg = "Initialising ODriveS1 objects";
     node_handle.loginfo(log_msg.c_str());
 
-    odrives[0] = new ODriveS1(0, new String("00"), &can1);
-    odrives[1] = new ODriveS1(1, new String("01"), &can1);
-    odrives[2] = new ODriveS1(2, new String("02"), &can1);
-    odrives[3] = new ODriveS1(3, new String("03"), &can1);
-    odrives[4] = new ODriveS1(4, new String("04"), &can1);
-    odrives[5] = new ODriveS1(5, new String("05"), &can1);
+    odrives[0] = new ODriveS1(0, new String("00"), &can1, &unified_estop_callback);
+    odrives[1] = new ODriveS1(1, new String("01"), &can1, &unified_estop_callback);
+    odrives[2] = new ODriveS1(2, new String("02"), &can1, &unified_estop_callback);
+    odrives[3] = new ODriveS1(3, new String("03"), &can1, &unified_estop_callback);
+    odrives[4] = new ODriveS1(4, new String("04"), &can1, &unified_estop_callback);
+    odrives[5] = new ODriveS1(5, new String("05"), &can1, &unified_estop_callback);
 
     // Setup the diagnostics array
 //    odrive_diagnostics.status_length = 6;
@@ -160,7 +168,14 @@ void setup() {
         if (odrive == nullptr) continue;
         log_msg = "Advertising ODrive";
         node_handle.loginfo(log_msg.c_str());
-//        odrive->advertise_subscribe(&node_handle);
+        odrive->advertise_subscribe(&node_handle);
+    }
+
+    for (ActuatorsROS* actuator : actuators_ros) {
+        if (actuator == nullptr) continue;
+        log_msg = "Advertising Actuator";
+        node_handle.loginfo(log_msg.c_str());
+        actuator->advertise_subscribe(&node_handle);
     }
 
 
@@ -168,31 +183,18 @@ void setup() {
     node_handle.loginfo(log_msg.c_str());
 
     system_info = &system_diagnostics.status[10];
-    system_info->values_length = 1;
-    system_info->values = new diagnostic_msgs::KeyValue[1];
+    system_info->values_length = 3;
+    system_info->values = new diagnostic_msgs::KeyValue[3];
     system_info->values[0].key = "Temperature";
-    system_info->values[0].value = "0";
+    system_info->values[0].value = "00.0C";
+    system_info->values[1].key = "Loop Time";
+    system_info->values[1].value = "00.0ms";
     system_info->level = diagnostic_msgs::DiagnosticStatus::OK;
     system_info->name = "System";
     system_info->message = "System is running";
     system_info->hardware_id = "MCIU";
     // For each ODrive add its diagnostic message
 
-
-//    for (int i = 0; i < 4; i++) {
-//        if (actuators[i] == nullptr) {
-//            actuators_ros[i] = nullptr;
-//            continue;
-//        }
-//        actuators_ros[i] = new ActuatorsROS(actuators[i], &node_handle);
-//    }
-
-//    for (ActuatorsROS* actuator : actuators_ros) {
-//        if (actuator == nullptr) {
-//            continue;
-//        }
-//        actuator->advertise_subscribe(&node_handle);
-//    }
 
 //    for (ODriveS1* odrive : odrives) {
 //        odrive->init();
@@ -201,12 +203,8 @@ void setup() {
     log_msg = "Advertising diagnostics publishers";
     node_handle.loginfo(log_msg.c_str());
 
-//    node_handle.advertise(odrive_diag_pub);
-//    node_handle.advertise(actuator_diag_pub);
     node_handle.advertise(sys_diag_pub);
 
-//    odrive_diag_pub.publish(&odrive_diagnostics);
-//    actuator_diag_pub.publish(&actuator_diagnostics);
     sys_diag_pub.publish(&system_diagnostics);
 
     log_msg = "Attempting to preform first spin";
@@ -221,8 +219,25 @@ void loop() {
     uint32_t loop_start = micros(); // Get the time at the start of the loop
     digitalWriteFast(LED_BUILTIN, LOW); // Turn on the LED
 
+    system_status_msg.remove(0);
+    system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::OK;
+
     // Get the teensy temperature
-//    diagnostic_array.status[10].values[0].value = String(tempmonGetTemp()).c_str();
+    temperature_string.remove(0);
+    temperature_string += String(tempmonGetTemp()) + "C";
+    system_diagnostics.status[10].values[0].value = temperature_string.c_str();
+
+    if (tempmonGetTemp() > WARN_TEMP) {
+        system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::WARN;
+        system_status_msg.concat("Overheating, ");
+        if (tempmonGetTemp() > THROTTLE_TEMP) {
+            system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::ERROR;
+            system_status_msg.concat("Throttling, ");
+            set_arm_clock(CPU_FREQ * THROTTLE_RATE);  // 24 MHz (minimum)
+        } else {
+            set_arm_clock(CPU_FREQ);  // 600 MHz (default)
+        }
+    }
 
     for (ODriveS1* odrive : odrives) {
         if (odrive == nullptr) continue;
@@ -243,29 +258,15 @@ void loop() {
         }
     }
 
-//    odrive_diagnostics.header.stamp = node_handle.now();
-//    actuator_diagnostics.header.stamp = node_handle.now();
     system_diagnostics.header.stamp = node_handle.now();
-
-//    odrive_diagnostics.header.seq++;
-//    actuator_diagnostics.header.seq++;
     system_diagnostics.header.seq++;
 
-    // Publish the diagnostics
-//    odrive_diag_pub.publish(&odrive_diagnostics);
-//    actuator_diag_pub.publish(&actuator_diagnostics);
-    sys_diag_pub.publish(&system_diagnostics);
-
+    String log_msg = "";
     int8_t spin_result = 0;
-    String log_msg = "Loop time: " + String((micros() - loop_start) / 1000) + "ms";
-    node_handle.loginfo(log_msg.c_str());
     if (!node_handle.connected()){
 //        node_handle.logerror("NodeHandle not properly configured");
     }
     spin_result = node_handle.spinOnce(); // 50ms timeout
-
-    log_msg = "Spin time: " + String(micros() - loop_start);
-//    node_handle.loginfo(log_msg.c_str());
 
     switch (spin_result) {
         case ros::SPIN_OK:
@@ -290,12 +291,18 @@ void loop() {
     while (actuator_bus.spin(micros() - loop_start > 50000)) {
         yield();  // Yield to other tasks
     }
-    // Delay for the remaining time in the loop
-    if (50000 - (micros() - loop_start) < 0) {
-        log_msg = "Loop time exceeded 50ms by: " + String(micros() - loop_start - 50000);
-        node_handle.logwarn(log_msg.c_str());
-    } else {
-//        delayMicroseconds(50000 - (micros() - loop_start));
+
+
+    int32_t loop_time = micros() - loop_start;
+    if (loop_time > 500000) {
+        system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::WARN;
+        system_status_msg.concat("Overloaded, ");
     }
-//    delayMicroseconds(50000);
+    loop_time_string.remove(0);
+    loop_time_string += String(loop_time) + "us";
+    system_diagnostics.status[10].values[1].value = loop_time_string.c_str();
+    if (system_diagnostics.status[10].level == diagnostic_msgs::DiagnosticStatus::OK) {
+        system_diagnostics.status[10].message = "All OK";
+    } else system_diagnostics.status[10].message = system_status_msg.c_str();
+    sys_diag_pub.publish(&system_diagnostics);
 }

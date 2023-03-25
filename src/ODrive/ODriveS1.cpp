@@ -7,10 +7,12 @@
 //#include <utility>
 //#include "odrive_constants.h"
 
-ODriveS1::ODriveS1(uint8_t can_id, String* name, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> *can_bus) {
+ODriveS1::ODriveS1(uint8_t can_id, String* name, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> *can_bus,
+                   void* estop_callback) {
     this->can_id = can_id;
     this->name = name;
     this->can_bus = can_bus;
+    this->estop_callback = estop_callback;
 }
 
 void ODriveS1::init() {
@@ -243,24 +245,44 @@ uint32_t ODriveS1::get_axis_state() const {
     return this->AXIS_STATE;
 }
 
+String* ODriveS1::get_axis_state_string() const {
+    return odrive::get_axis_state_string(static_cast<odrive::axis_states>(this->AXIS_STATE));
+}
+
 uint32_t ODriveS1::get_axis_error() const {
     return this->ACTIVE_ERRORS;
+}
+
+String* ODriveS1::get_axis_error_string() const {
+    return odrive::get_error_string(this->AXIS_ERROR);
 }
 
 uint32_t ODriveS1::get_active_errors() const {
     return this->ACTIVE_ERRORS;
 }
 
+String* ODriveS1::get_active_errors_string() const {
+    return odrive::get_error_string(this->ACTIVE_ERRORS);
+}
+
 uint32_t ODriveS1::get_disarm_reason() const {
     return this->DISARM_REASON;
 }
 
+String* ODriveS1::get_disarm_reason_string() const {
+    return odrive::get_error_string(this->DISARM_REASON);
+}
+
 bool ODriveS1::is_connected() const {
-    if (millis() - this->last_message > 1000) {
+    if (millis() - this->last_message > 5000) {
         return false;
     } else {
         return true;
     }
+}
+
+void ODriveS1::estop() {
+    this->send_command(command_ids::Estop);
 }
 
 
