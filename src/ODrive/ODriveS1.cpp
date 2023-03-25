@@ -46,10 +46,10 @@ void ODriveS1::on_message(const CAN_message_t &msg) {
     this->last_message = millis();
     switch (static_cast<ODriveS1::command_ids>(msg_type)){
         case Heartbeat: // Lower 4 bytes are AXIS_ERROR and the upper 4 bytes are AXIS_STATE
-            this->AXIS_ERROR = upper_32;
+            this->AXIS_ERROR       = upper_32;
             // Bitmask the lowest byte of the lower 32 bits to get the axis state
-            this->AXIS_STATE = lower_32;
-            this->last_axis_state = millis();
+            this->AXIS_STATE       = lower_32 & 0xFF;
+            this->PROCEDURE_RESULT = (lower_32 >> 8) & 0xFF;
             break;
         case Get_Error:
             this->ACTIVE_ERRORS = lower_32;
@@ -86,18 +86,36 @@ void ODriveS1::on_message(const CAN_message_t &msg) {
 
 void ODriveS1::refresh_data() {
     // For each refresh bit that is not set, send the corresponding command to the ODrive
-    if (this->last_axis_state + AXIS_STATE_UPDATE_RATE < millis())
-        this->send_command(ODriveS1::Heartbeat);
-    if (this->last_errors + ERROR_UPDATE_RATE < millis())
-        this->send_command(ODriveS1::Get_Error);
-    if (this->last_encoder_state + ENCODER_UPDATE_RATE < millis())
-        this->send_command(ODriveS1::Get_Encoder_Estimates);
-    if (this->last_iq_update + IQ_UPDATE_RATE < millis())
-        this->send_command(ODriveS1::Get_Iq);
-    if (this->last_temp_update + TEMP_UPDATE_RATE < millis())
-        this->send_command(ODriveS1::Get_Temperature);
-    if (this->last_vbus_update + VBUS_UPDATE_RATE < millis())
-        this->send_command(ODriveS1::Get_Vbus_Voltage_Current);
+    if (this->last_axis_state + AXIS_STATE_UPDATE_RATE < millis() &&
+        !(this->in_flight_bitmask & AXIS_STATE_FLIGHT_BIT)){
+        if (this->send_command(ODriveS1::Heartbeat))
+            this->in_flight_bitmask |= AXIS_STATE_FLIGHT_BIT;  // Set the in flight bit to 1
+    }
+    if (this->last_errors + ERROR_UPDATE_RATE < millis() &&
+        !(this->in_flight_bitmask & ERROR_FLIGHT_BIT)){
+        if (this->send_command(ODriveS1::Get_Error))
+            this->in_flight_bitmask |= ERROR_FLIGHT_BIT;  // Set the in flight bit to 1
+    }
+    if (this->last_encoder_state + ENCODER_UPDATE_RATE < millis() &&
+        !(this->in_flight_bitmask & ENCODER_FLIGHT_BIT)){
+        if (this->send_command(ODriveS1::Get_Encoder_Estimates))
+            this->in_flight_bitmask |= ENCODER_FLIGHT_BIT;  // Set the in flight bit to 1
+    }
+    if (this->last_iq_update + IQ_UPDATE_RATE < millis() &&
+        !(this->in_flight_bitmask & IQ_FLIGHT_BIT)){
+        if (this->send_command(ODriveS1::Get_Iq))
+            this->in_flight_bitmask |= IQ_FLIGHT_BIT;  // Set the in flight bit to 1
+    }
+    if (this->last_temp_update + TEMP_UPDATE_RATE < millis() &&
+        !(this->in_flight_bitmask & TEMP_FLIGHT_BIT)){
+        if (this->send_command(ODriveS1::Get_Temperature))
+            this->in_flight_bitmask |= TEMP_FLIGHT_BIT;  // Set the in flight bit to 1
+    }
+    if (this->last_vbus_update + VBUS_UPDATE_RATE < millis() &&
+        !(this->in_flight_bitmask & VBUS_FLIGHT_BIT)){
+        if (this->send_command(ODriveS1::Get_Vbus_Voltage_Current))
+            this->in_flight_bitmask |= VBUS_FLIGHT_BIT;  // Set the in flight bit to 1
+    }
 }
 
 
