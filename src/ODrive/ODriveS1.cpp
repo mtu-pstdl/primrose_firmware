@@ -192,51 +192,51 @@ void ODriveS1::set_config(ODRIVE_MOTOR_CONFIG* config) {
 
 }
 
-String* ODriveS1::get_state_string() {
-    // Check if there are any errors
-    auto* state_string = new String();
-    state_string->concat("CAN ID: " + String(this->can_id) + " | " + *this->name + "\r\n");
-    if (this->ACTIVE_ERRORS != 0){
-        String* error_string = odrive::get_error_string(this->ACTIVE_ERRORS);
-        state_string->concat("ACTIVE ERRORS: " + *error_string + "\r\n");
-        free(error_string);
-    } else {
-        state_string->concat("ACTIVE ERRORS: None\r\n");
-    }
-    if (this->AXIS_ERROR != 0){
-        String* error_string = odrive::get_error_string(this->AXIS_ERROR);
-        state_string->concat("AXIS ERROR: " + *error_string + "\r\n");
-        free(error_string);
-    } else {
-        state_string->concat("AXIS ERROR: None\r\n");
-    }
-    if (this->DISARM_REASON != 0){
-        String* error_string = odrive::get_error_string(this->DISARM_REASON);
-        state_string->concat("DISARM REASON: " + *error_string + "\r\n");
-        free(error_string);
-    } else {
-        state_string->concat("DISARM REASON: None\r\n");
-    }
-    String* axis_state = odrive::get_axis_state_string(static_cast<odrive::axis_states>(this->AXIS_STATE));
-    state_string->concat("AXIS_STATE: " + *axis_state + "\r\n");
-    free(axis_state);
-
-    state_string->concat("TARGET_IQ: " + String(this->Iq_Setpoint) + "\r\n");
-    state_string->concat("MEASURED_IQ: " + String(this->Iq_Measured) + "\r\n");
-
-    state_string->concat("VBUS: " + String(this->VBUS_VOLTAGE) + "V | "
-    + String(this->VBUS_CURRENT) + "A\r\n");
-
-    state_string->concat("TEMP FET: " + String(this->FET_TEMP) + "C | MOTOR: " +
-    String(this->MOTOR_TEMP) + "C\r\n");
-
-    state_string->concat("ENCODER ESTIMATES: POS: " + String(this->POS_ESTIMATE) + " | VEL: " +
-    String(this->VEL_ESTIMATE) + "\r\n");
-
-    state_string->concat("LAST UPDATE: " + String(millis() - this->last_message) + "ms ago\r\n");
-    state_string->concat("SENT COMMANDS: " + String(this->sent_messages) + "\r\n");
-    return state_string;
-}
+//String* ODriveS1::get_state_string() {
+//    // Check if there are any errors
+//    auto* state_string = new String();
+//    state_string->concat("CAN ID: " + String(this->can_id) + " | " + *this->name + "\r\n");
+//    if (this->ACTIVE_ERRORS != 0){
+//        String* error_string = odrive::get_error_string(this->ACTIVE_ERRORS);
+//        state_string->concat("ACTIVE ERRORS: " + *error_string + "\r\n");
+//        free(error_string);
+//    } else {
+//        state_string->concat("ACTIVE ERRORS: None\r\n");
+//    }
+//    if (this->AXIS_ERROR != 0){
+//        String* error_string = odrive::get_error_string(this->AXIS_ERROR);
+//        state_string->concat("AXIS ERROR: " + *error_string + "\r\n");
+//        free(error_string);
+//    } else {
+//        state_string->concat("AXIS ERROR: None\r\n");
+//    }
+//    if (this->DISARM_REASON != 0){
+//        String* error_string = odrive::get_error_string(this->DISARM_REASON);
+//        state_string->concat("DISARM REASON: " + *error_string + "\r\n");
+//        free(error_string);
+//    } else {
+//        state_string->concat("DISARM REASON: None\r\n");
+//    }
+//    String* axis_state = odrive::get_axis_state_string(static_cast<odrive::axis_states>(this->AXIS_STATE));
+//    state_string->concat("AXIS_STATE: " + *axis_state + "\r\n");
+//    free(axis_state);
+//
+//    state_string->concat("TARGET_IQ: " + String(this->Iq_Setpoint) + "\r\n");
+//    state_string->concat("MEASURED_IQ: " + String(this->Iq_Measured) + "\r\n");
+//
+//    state_string->concat("VBUS: " + String(this->VBUS_VOLTAGE) + "V | "
+//    + String(this->VBUS_CURRENT) + "A\r\n");
+//
+//    state_string->concat("TEMP FET: " + String(this->FET_TEMP) + "C | MOTOR: " +
+//    String(this->MOTOR_TEMP) + "C\r\n");
+//
+//    state_string->concat("ENCODER ESTIMATES: POS: " + String(this->POS_ESTIMATE) + " | VEL: " +
+//    String(this->VEL_ESTIMATE) + "\r\n");
+//
+//    state_string->concat("LAST UPDATE: " + String(millis() - this->last_message) + "ms ago\r\n");
+//    state_string->concat("SENT COMMANDS: " + String(this->sent_messages) + "\r\n");
+//    return state_string;
+//}
 
 float_t ODriveS1::get_fet_temp() const {
     return this->FET_TEMP;
@@ -278,32 +278,40 @@ uint32_t ODriveS1::get_axis_state() const {
     return this->AXIS_STATE;
 }
 
-String* ODriveS1::get_axis_state_string() const {
-    return odrive::get_axis_state_string(static_cast<odrive::axis_states>(this->AXIS_STATE));
+char* ODriveS1::get_axis_state_string() const {
+    sprintf(this->axis_state_string, ""); // Clear the string
+    odrive::sprint_axis_state(this->axis_state_string, static_cast<odrive::axis_states>(this->AXIS_STATE));
+    return this->axis_state_string;
 }
 
 uint32_t ODriveS1::get_axis_error() const {
     return this->ACTIVE_ERRORS;
 }
 
-String* ODriveS1::get_axis_error_string() const {
-    return odrive::get_error_string(this->AXIS_ERROR);
+char* ODriveS1::get_axis_error_string() const {
+    sprintf(this->axis_error_string, ""); // Clear the string
+    odrive::sprintf_error_code(this->axis_error_string, this->AXIS_ERROR);
+    return this->axis_error_string;
 }
 
 uint32_t ODriveS1::get_active_errors() const {
     return this->ACTIVE_ERRORS;
 }
 
-String* ODriveS1::get_active_errors_string() const {
-    return odrive::get_error_string(this->ACTIVE_ERRORS);
+char* ODriveS1::get_active_errors_string() const {
+    sprintf(this->active_errors_string, ""); // Clear the string
+    odrive::sprintf_error_code(this->active_errors_string, this->ACTIVE_ERRORS);
+    return this->active_errors_string;
 }
 
 uint32_t ODriveS1::get_disarm_reason() const {
     return this->DISARM_REASON;
 }
 
-String* ODriveS1::get_disarm_reason_string() const {
-    return odrive::get_error_string(this->DISARM_REASON);
+char* ODriveS1::get_disarm_reason_string() const {
+    sprintf(this->disarm_reason_string, ""); // Clear the string
+    odrive::sprintf_error_code(this->disarm_reason_string, this->DISARM_REASON);
+    return this->disarm_reason_string;
 }
 
 bool ODriveS1::is_connected() const {

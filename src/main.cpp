@@ -57,8 +57,9 @@ diagnostic_msgs::DiagnosticStatus* system_info;
 ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
 
 String system_status_msg = "";
-String temperature_string = "Temperature: ";
-String loop_time_string = "Loop time: ";
+String temperature_string = "    ";
+String loop_time_string = "    ";
+String free_mem_string = "e";
 
 uint32_t last_print = 0;
 
@@ -74,7 +75,14 @@ void can_event(const CAN_message_t &msg) {
             odrive->on_message(msg);
         }
     }
+}
 
+extern unsigned long _heap_start;
+extern unsigned long _heap_end;
+extern char *__brkval;
+
+int freeram() {
+    return (char *)&_heap_end - __brkval;
 }
 
 
@@ -189,6 +197,8 @@ void setup() {
     system_info->values[0].value = "00.0C";
     system_info->values[1].key = "Loop Time";
     system_info->values[1].value = "00.0ms";
+    system_info->values[2].key = "Remaining Memory";
+    system_info->values[2].value = "00000B";
     system_info->level = diagnostic_msgs::DiagnosticStatus::OK;
     system_info->name = "System";
     system_info->message = "System is running";
@@ -298,9 +308,21 @@ void loop() {
         system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::WARN;
         system_status_msg.concat("Overloaded, ");
     }
+    uint32_t remaining_memory = freeram();
+    if (remaining_memory < 100000) {
+        system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::WARN;
+        system_status_msg.concat("Low Memory, ");
+        if (remaining_memory < 30000) {
+            system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::ERROR;
+            system_status_msg.concat("FATAL MEMORY LEAK");
+        }
+    }
+    free_mem_string.remove(0);
     loop_time_string.remove(0);
+    free_mem_string += String(remaining_memory / 1024) + "KiB";
     loop_time_string += String(loop_time) + "us";
     system_diagnostics.status[10].values[1].value = loop_time_string.c_str();
+    system_diagnostics.status[10].values[2].value = free_mem_string.c_str();
     if (system_diagnostics.status[10].level == diagnostic_msgs::DiagnosticStatus::OK) {
         system_diagnostics.status[10].message = "All OK";
     } else system_diagnostics.status[10].message = system_status_msg.c_str();

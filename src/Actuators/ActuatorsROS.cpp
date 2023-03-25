@@ -22,6 +22,8 @@ void ActuatorsROS::control_mode_callback(const std_msgs::Int32MultiArray &msg) {
 
 void ActuatorsROS::update() {
     this->actuator->update();
+
+
     if (!this->actuator->connected) {
         if (diagnostic_topic->level != 2) {
             String log_msg = "Actuator " + this->name + " went offline!";
@@ -29,15 +31,19 @@ void ActuatorsROS::update() {
         }
         diagnostic_topic->level = 2;
         diagnostic_topic->message = "Not Connected!";
-        diagnostic_topic->values[5].value = "Not Connected!";
     } else {
         diagnostic_topic->level = 0;
-        diagnostic_topic->values[0].value = "0C";  // Temperature
-        diagnostic_topic->values[1].value = "0A";  // Current
-        diagnostic_topic->values[2].value = "0A";  // Current
-        diagnostic_topic->values[3].value = "0V";  // Main Volts
-        diagnostic_topic->values[4].value = "0V";  // Logic Volts
-        diagnostic_topic->values[5].value = "Unknown";  // Status
+        sprintf(strings[0], "%ld Ticks", this->actuator->get_position(0));
+        sprintf(strings[1], "%ld Ticks", this->actuator->get_position(1));
+        sprintf(strings[2], "%ld Ticks/s", this->actuator->get_velocity(0));
+        sprintf(strings[3], "%ld Ticks/s", this->actuator->get_velocity(1));
+        sprintf(strings[4], "%.1f A", this->actuator->get_current(0));
+        sprintf(strings[5], "%.1f A", this->actuator->get_current(1));
+        sprintf(strings[6], "%.1f C", this->actuator->get_temperature());
+        sprintf(strings[7], "%.1f V", this->actuator->get_main_battery_voltage());
+        sprintf(strings[8], "%.1f V", this->actuator->get_logic_battery_voltage());
+
+        sprintf(strings[9], "Unknown");
     }
 }
 

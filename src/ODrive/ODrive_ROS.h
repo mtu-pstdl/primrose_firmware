@@ -59,7 +59,13 @@ private:
     // Publishes the values of AXIS_STATE, AXIS_ERROR, ACTIVE_ERRORS, DISARM_REASON
     diagnostic_msgs::DiagnosticStatus* state_topic;
 
-    String* strings[11];
+    char* strings[11];
+
+    void allocate_strings() {
+        for (auto & string : strings) {
+            string = new char[25];
+        }
+    }
 
     String* unknown_string = new String("Unknown");
 
@@ -84,35 +90,30 @@ public:
         this->encoder_topic.data_length = 5;
         this->encoder_topic.data = new float_t[5];
         this->state_topic = status;
+
         this->state_topic->values_length = 11;
         this->state_topic->values = new diagnostic_msgs::KeyValue[11];
         state_topic->values[0].key = "AXIS_STATE";
-        strings[0] = new String("Not initialized");
         state_topic->values[1].key = "AXIS_ERROR";
-        strings[1] = new String("Not initialized");
         state_topic->values[2].key = "ACTIVE_ERRORS";
-        strings[2] = new String("Not initialized");
         state_topic->values[3].key = "DISARM_REASON";
-        strings[3] = new String("Not initialized");
         state_topic->values[4].key = "FET_TEMP";
-        strings[4] = new String("Not initialized");
         state_topic->values[5].key = "MOTOR_TEMP";
-        strings[5] = new String("Not initialized");
         state_topic->values[6].key = "VBUS_VOLTAGE";
-        strings[6] = new String("Not initialized");
         state_topic->values[7].key = "VBUS_CURRENT";
-        strings[7] = new String("Not initialized");
         state_topic->values[8].key = "POS_ESTIMATE";
-        strings[8] = new String("Not initialized");
         state_topic->values[9].key = "VEL_ESTIMATE";
-        strings[9] = new String("Not initialized");
         state_topic->values[10].key = "Iq_Setpoint";
-        strings[10] = new String("Not initialized");
         this->name = disp_name.c_str();
         state_topic->name = "ODrive";
         state_topic->message = "Initializing";
         state_topic->level = 0;
         state_topic->hardware_id = this->name.c_str();
+
+        allocate_strings();
+        for (int i = 0; i < 11; i++) {
+            this->state_topic->values[i].value = strings[i];
+        }
     }
 
 

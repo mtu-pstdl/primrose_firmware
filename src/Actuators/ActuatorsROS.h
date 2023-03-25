@@ -48,6 +48,14 @@ private:
 
     String name;
 
+    char* strings[10];
+
+    void allocate_strings() {
+        for (auto & string : strings) {
+            string = new char[10];
+        }
+    }
+
     ActuatorUnit* actuator;
 
 public:
@@ -61,18 +69,29 @@ public:
         this->actuator = actuator;
         // Add key-value pairs to the condition topic
         this->diagnostic_topic = status;
-        this->diagnostic_topic->values_length = 6;
         this->name = disp_name;
         this->diagnostic_topic->name = "ActuatorUnit";
         this->diagnostic_topic->message = "Initializing";
         this->diagnostic_topic->level = 0;
-        this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[6];
-        this->diagnostic_topic->values[0].key = "Temperature";
-        this->diagnostic_topic->values[1].key = "Current-M1";
-        this->diagnostic_topic->values[2].key = "Current-M2";
-        this->diagnostic_topic->values[3].key = "Main Volts";
-        this->diagnostic_topic->values[4].key = "Logic Volts";
-        this->diagnostic_topic->values[5].key = "Status";
+        this->diagnostic_topic->values_length = 10;
+        this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[10];
+        this->diagnostic_topic->values[0].key = "M1-Position";
+        this->diagnostic_topic->values[1].key = "M2-Position";
+        this->diagnostic_topic->values[2].key = "M1-Velocity";
+        this->diagnostic_topic->values[3].key = "M2-Velocity";
+        this->diagnostic_topic->values[4].key = "M1-Current";
+        this->diagnostic_topic->values[5].key = "M2-Current";
+        this->diagnostic_topic->values[6].key = "Temperature";
+        this->diagnostic_topic->values[7].key = "Main Volts";
+        this->diagnostic_topic->values[8].key = "Logic Volts";
+        this->diagnostic_topic->values[9].key = "Status";
+
+        allocate_strings();
+
+        for (int i = 0; i < 10; i++) {
+            this->diagnostic_topic->values[i].value = strings[i];
+        }
+
         this->diagnostic_topic->hardware_id = this->name.c_str();
     }
 

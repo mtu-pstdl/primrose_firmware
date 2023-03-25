@@ -25,6 +25,20 @@ public:
 private:
     FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64>* can_bus = nullptr; // The CAN bus pointer
 
+    char* axis_error_string; // The axis error string
+    char* axis_state_string; // The axis state string
+    char* procedure_result_string; // The procedure result string
+    char* active_errors_string; // The active errors string
+    char* disarm_reason_string; // The disarm reason string
+
+    void allocate_strings() {
+        axis_error_string = new char[100];
+        axis_state_string = new char[100];
+        procedure_result_string = new char[100];
+        active_errors_string = new char[100];
+        disarm_reason_string = new char[100];
+    }
+
     uint32_t last_message = 0; // The last time a message was received from the ODrive
     uint32_t in_flight_bitmask = 0; // The number of messages in flight
 
@@ -122,7 +136,7 @@ public:
 
     // Getters and setters
 
-    String* get_state_string(); // Returns the state as a string
+//    String* get_state_string(); // Returns the state as a string
 
     uint8_t get_can_id() const;
 
@@ -146,19 +160,19 @@ public:
 
     uint32_t get_axis_state() const;
 
-    String* get_axis_state_string() const;
+    char* get_axis_state_string() const;
 
     uint32_t get_axis_error() const;
 
-    String* get_axis_error_string() const;
+    char* get_axis_error_string() const;
 
     uint32_t get_active_errors() const;
 
-    String* get_active_errors_string() const;
+    char* get_active_errors_string() const;
 
     uint32_t get_disarm_reason() const;
 
-    String* get_disarm_reason_string() const;
+    char* get_disarm_reason_string() const;
 
 };
 

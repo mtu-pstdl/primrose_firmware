@@ -66,9 +66,9 @@ namespace odrive {
         TRAP_TRAJ = 0x5, TORQUE_RAMP = 0x6, MIRROR = 0x7, TUNING = 0x8, UNKNOWN_INPUT_MODE = 0xFF
     };
 
-    String* get_error_string(uint32_t error_code);
+    void sprintf_error_code(char* buffer, uint32_t error_code);
 
-    String* get_axis_state_string(axis_states state);
+    void sprint_axis_state(char* buffer, axis_states state);
 
 }
 

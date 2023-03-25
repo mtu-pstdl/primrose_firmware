@@ -248,6 +248,32 @@ void ActuatorUnit::estop() {
 
 }
 
+int32_t ActuatorUnit::get_position(uint8_t motor) {
+    return this->motors[motor].current_position;
+}
+
+int32_t ActuatorUnit::get_velocity(uint8_t motor) {
+    return this->motors[motor].current_speed;
+}
+
+float_t ActuatorUnit::get_current(uint8_t motor) {
+    return (float_t) this->motors[motor].current_current / 10;
+}
+
+float_t ActuatorUnit::get_temperature() const {
+    return (float_t) this->controller_temperature / 10;
+}
+
+float_t ActuatorUnit::get_main_battery_voltage() const {
+    return (float_t) this->main_battery_voltage / 10;
+}
+
+float_t ActuatorUnit::get_logic_battery_voltage() const {
+    return (float_t) this->logic_battery_voltage / 10;
+}
+
+
+
 
 
 

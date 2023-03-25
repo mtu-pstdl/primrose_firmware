@@ -3,6 +3,7 @@
 //
 
 
+#include <cstdio>
 #include "odrive_constants.h"
 
 namespace odrive {
@@ -13,30 +14,34 @@ namespace odrive {
      * @return A string representation of the error code
      * @note The string must be freed by the caller, it is allocated on the heap
      */
-    String* get_error_string(uint32_t error_code) {
-        auto *error_string = new String();
-        if (error_code & INITIALIZING) error_string->concat("INITIALIZING, ");
-        if (error_code & SYSTEM_ERROR) error_string->concat("SYSTEM_ERROR, ");
-        if (error_code & TIMING_ERROR) error_string->concat("TIMING_ERROR, ");
-        if (error_code & MISSING_ESTIMATE) error_string->concat("MISSING_ESTIMATE, ");
-        if (error_code & BAD_CONFIG) error_string->concat("BAD_CONFIG, ");
-        if (error_code & DRV_FAULT) error_string->concat("DRV_FAULT, ");
-        if (error_code & MISSING_INPUT) error_string->concat("MISSING_INPUT, ");
-        if (error_code & DC_BUS_OVER_VOLTAGE) error_string->concat("DC_BUS_OVER_VOLTAGE, ");
-        if (error_code & DC_BUS_UNDER_VOLTAGE) error_string->concat("DC_BUS_UNDER_VOLTAGE, ");
-        if (error_code & DC_BUS_OVER_CURRENT) error_string->concat("DC_BUS_OVER_CURRENT, ");
-        if (error_code & DC_BUS_OVER_REGEN_CURRENT) error_string->concat("DC_BUS_OVER_REGEN_CURRENT, ");
-        if (error_code & CURRENT_LIMIT_VIOLATION) error_string->concat("CURRENT_LIMIT_VIOLATION, ");
-        if (error_code & MOTOR_OVER_TEMP) error_string->concat("MOTOR_OVER_TEMP, ");
-        if (error_code & INVERTER_OVER_TEMP) error_string->concat("INVERTER_OVER_TEMP, ");
-        if (error_code & VELOCITY_LIMIT_VIOLATION) error_string->concat("VELOCITY_LIMIT_VIOLATION, ");
-        if (error_code & POSITION_LIMIT_VIOLATION) error_string->concat("POSITION_LIMIT_VIOLATION, ");
-        if (error_code & WATCHDOG_TIMER_EXPIRED) error_string->concat("WATCHDOG_TIMER_EXPIRED, ");
-        if (error_code & ESTOP_REQUESTED) error_string->concat("ESTOP_REQUESTED, ");
-        if (error_code & SPINOUT_DETECTED) error_string->concat("SPINOUT_DETECTED, ");
-        if (error_code & OTHER_DEVICE_FAILED) error_string->concat("OTHER_DEVICE_FAILED, ");
-        if (error_code & CALIBRATION_ERROR) error_string->concat("CALIBRATION_ERROR, ");
-        return error_string;
+    void sprintf_error_code(char* buffer, uint32_t error_code) {
+        // For each error code, check if it is set and if so, add it to the string with a comma
+        if (error_code & INITIALIZING) sprintf(buffer, "INITIALIZING, ");
+        if (error_code & SYSTEM_ERROR) sprintf(buffer, "%sSYSTEM_ERROR, ", buffer);
+        if (error_code & TIMING_ERROR) sprintf(buffer, "%sTIMING_ERROR, ", buffer);
+        if (error_code & MISSING_ESTIMATE) sprintf(buffer, "%sMISSING_ESTIMATE, ", buffer);
+        if (error_code & BAD_CONFIG) sprintf(buffer, "%sBAD_CONFIG, ", buffer);
+        if (error_code & DRV_FAULT) sprintf(buffer, "%sDRV_FAULT, ", buffer);
+        if (error_code & MISSING_INPUT) sprintf(buffer, "%sMISSING_INPUT, ", buffer);
+        if (error_code & DC_BUS_UNDER_VOLTAGE) sprintf(buffer, "%sDC_BUS_UNDER_VOLTAGE, ", buffer);
+        if (error_code & DC_BUS_OVER_VOLTAGE) sprintf(buffer, "%sDC_BUS_OVER_VOLTAGE, ", buffer);
+        if (error_code & DC_BUS_OVER_CURRENT) sprintf(buffer, "%sDC_BUS_OVER_CURRENT, ", buffer);
+        if (error_code & DC_BUS_OVER_REGEN_CURRENT) sprintf(buffer, "%sDC_BUS_OVER_REGEN_CURRENT, ", buffer);
+        if (error_code & CURRENT_LIMIT_VIOLATION) sprintf(buffer, "%sCURRENT_LIMIT_VIOLATION, ", buffer);
+        if (error_code & MOTOR_OVER_TEMP) sprintf(buffer, "%sMOTOR_OVER_TEMP, ", buffer);
+        if (error_code & INVERTER_OVER_TEMP) sprintf(buffer, "%sINVERTER_OVER_TEMP, ", buffer);
+        if (error_code & VELOCITY_LIMIT_VIOLATION) sprintf(buffer, "%sVELOCITY_LIMIT_VIOLATION, ", buffer);
+        if (error_code & POSITION_LIMIT_VIOLATION) sprintf(buffer, "%sPOSITION_LIMIT_VIOLATION, ", buffer);
+        if (error_code & WATCHDOG_TIMER_EXPIRED) sprintf(buffer, "%sWATCHDOG_TIMER_EXPIRED, ", buffer);
+        if (error_code & ESTOP_REQUESTED) sprintf(buffer, "%sESTOP_REQUESTED, ", buffer);
+        if (error_code & SPINOUT_DETECTED) sprintf(buffer, "%sSPINOUT_DETECTED, ", buffer);
+        if (error_code & OTHER_DEVICE_FAILED) sprintf(buffer, "%sOTHER_DEVICE_FAILED, ", buffer);
+        if (error_code & CALIBRATION_ERROR) sprintf(buffer, "%sCALIBRATION_ERROR, ", buffer);
+
+        // If the string is empty, then there were no errors
+        if (strlen(buffer) == 0) {
+            sprintf(buffer, "NO_ERROR");
+        }
     }
 
     /**
@@ -44,36 +49,38 @@ namespace odrive {
      * @param axis_state The axis state
      * @return A string representation of the axis state
      */
-    String *get_axis_state_string(axis_states axis_state) {
+    void sprint_axis_state(char* buffer, axis_states axis_state) {
         switch (axis_state) {
             case UNDEFINED:
-                return new String("UNDEFINED");
+                sprintf(buffer, "UNDEFINED");
+                break;
             case IDLE:
-                return new String("IDLE");
+                sprintf(buffer, "IDLE");
+                break;
             case STARTUP_SEQUENCE:
-                return new String("STARTUP_SEQUENCE");
+                sprintf(buffer, "STARTUP_SEQUENCE");
+                break;
             case FULL_CALIBRATION_SEQUENCE:
-                return new String("FULL_CALIBRATION_SEQUENCE");
+                sprintf(buffer, "FULL_CALIBRATION_SEQUENCE");
+                break;
             case MOTOR_CALIBRATION:
-                return new String("MOTOR_CALIBRATION");
+                sprintf(buffer, "MOTOR_CALIBRATION");
+                break;
             case ENCODER_INDEX_SEARCH:
-                return new String("ENCODER_INDEX_SEARCH");
+                sprintf(buffer, "ENCODER_INDEX_SEARCH");
+                break;
             case ENCODER_OFFSET_CALIBRATION:
-                return new String("ENCODER_OFFSET_CALIBRATION");
+                sprintf(buffer, "ENCODER_OFFSET_CALIBRATION");
+                break;
             case CLOSED_LOOP_CONTROL:
-                return new String("CLOSED_LOOP_CONTROL");
+                sprintf(buffer, "CLOSED_LOOP_CONTROL");
+                break;
             case LOCKIN_SPIN:
-                return new String("LOCKIN_SPIN");
-            case ENCODER_DIR_FIND:
-                return new String("ENCODER_DIR_FIND");
-            case HOMING:
-                return new String("HOMING");
-            case ENCODER_HALL_POLARITY_CALIBRATION:
-                return new String("ENCODER_HALL_POLARITY_CALIBRATION");
-            case ENCODER_HALL_PHASE_CALIBRATION:
-                return new String("ENCODER_HALL_PHASE_CALIBRATION");
-            default:
-                return new String("UNKNOWN") + axis_state;
+                sprintf(buffer, "LOCKIN_SPIN");
+                break;
+           default:
+                sprintf(buffer, "UNKNOWN");
+                break;
         }
     }
 

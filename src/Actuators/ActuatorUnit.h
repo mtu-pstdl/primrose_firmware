@@ -127,6 +127,18 @@ public:
 
     String* get_status_string();
 
+    int32_t get_position(uint8_t motor);
+
+    int32_t get_velocity(uint8_t motor);
+
+    float_t get_current(uint8_t motor);
+
+    float_t get_temperature() const;
+
+    float_t get_main_battery_voltage() const;
+
+    float_t get_logic_battery_voltage() const;
+
     void check_connection();
 };
 
