@@ -64,6 +64,7 @@ private:
     void allocate_strings() {
         for (auto & string : strings) {
             string = new char[25];
+            sprintf(string, "%s", "Unknown");
         }
     }
 

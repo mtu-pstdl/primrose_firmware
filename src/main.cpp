@@ -21,7 +21,8 @@
 extern "C" uint32_t set_arm_clock(uint32_t frequency);
 #endif
 
-#define CPU_FREQ (600000000 / 2) // 600 MHz
+//#define CPU_FREQ 600000000 // 600 MHz
+#define CPU_FREQ 24000000 // 24 MHz
 #define THROTTLE_RATE 0.5 // Percentage of the base rate to run at
 #define WARN_TEMP 65.0 // Degrees C
 #define THROTTLE_TEMP 75.0 // Degrees C
@@ -244,10 +245,8 @@ void loop() {
             system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::ERROR;
             system_status_msg.concat("Throttling, ");
             set_arm_clock(CPU_FREQ * THROTTLE_RATE);  // 24 MHz (minimum)
-        } else {
-            set_arm_clock(CPU_FREQ);  // 600 MHz (default)
         }
-    }
+    } else set_arm_clock(CPU_FREQ);  // 600 MHz (default)
 
     for (ODriveS1* odrive : odrives) {
         if (odrive == nullptr) continue;
@@ -302,12 +301,6 @@ void loop() {
         yield();  // Yield to other tasks
     }
 
-
-    int32_t loop_time = micros() - loop_start;
-    if (loop_time > 500000) {
-        system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::WARN;
-        system_status_msg.concat("Overloaded, ");
-    }
     uint32_t remaining_memory = freeram();
     if (remaining_memory < 100000) {
         system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::WARN;
@@ -320,9 +313,14 @@ void loop() {
     free_mem_string.remove(0);
     loop_time_string.remove(0);
     free_mem_string += String(remaining_memory / 1024) + "KiB";
-    loop_time_string += String(loop_time) + "us";
     system_diagnostics.status[10].values[1].value = loop_time_string.c_str();
     system_diagnostics.status[10].values[2].value = free_mem_string.c_str();
+    uint32_t loop_time = micros() - loop_start;
+    loop_time_string += String(loop_time) + "us" + " (" + String(((float_t) loop_time / 50000.0) * 100.0) + "%)";
+    if (loop_time > 50000) {
+        system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::WARN;
+        system_status_msg.concat("Overloaded, ");
+    }
     if (system_diagnostics.status[10].level == diagnostic_msgs::DiagnosticStatus::OK) {
         system_diagnostics.status[10].message = "All OK";
     } else system_diagnostics.status[10].message = system_status_msg.c_str();

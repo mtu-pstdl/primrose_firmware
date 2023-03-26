@@ -63,17 +63,17 @@ void ODrive_ROS::publish_all() {
     if (this->odrive->is_connected()){
         this->state_topic->level = 0;
         this->state_topic->message = "Connected";
-        sprintf(strings[0], "%s", this->odrive->get_axis_state_string());
-        sprintf(strings[1], "%s", this->odrive->get_axis_error_string());
-        sprintf(strings[2], "%s", this->odrive->get_active_errors_string());
-        sprintf(strings[3], "%s", this->odrive->get_disarm_reason_string());
-        sprintf(strings[4], "%2.2f", this->odrive->get_fet_temp());
-        sprintf(strings[5], "%2.2f", this->odrive->get_motor_temp());
-        sprintf(strings[6], "%2.2f", this->odrive->get_vbus_voltage());
-        sprintf(strings[7], "%2.2f", this->odrive->get_vbus_current());
-        sprintf(strings[8], "%2.2f", this->odrive->get_pos_estimate());
-        sprintf(strings[9], "%2.2f", this->odrive->get_vel_estimate());
-        sprintf(strings[10], "%2.2f", this->odrive->get_Iq_measured());
+        sprintf(strings[0], "%24s", this->odrive->get_axis_state_string());
+        sprintf(strings[1], "%24s", this->odrive->get_axis_error_string());
+        sprintf(strings[2], "%24s", this->odrive->get_active_errors_string());
+        sprintf(strings[3], "%24s", this->odrive->get_disarm_reason_string());
+        sprintf(strings[4], "%2.2f C", this->odrive->get_fet_temp());
+        sprintf(strings[5], "%2.2f C", this->odrive->get_motor_temp());
+        sprintf(strings[6], "%2.2f V", this->odrive->get_vbus_voltage());
+        sprintf(strings[7], "%2.2f A", this->odrive->get_vbus_current());
+        sprintf(strings[8], "%2.2f Ticks", this->odrive->get_pos_estimate());
+        sprintf(strings[9], "%2.2f Ticks/s", this->odrive->get_vel_estimate());
+        sprintf(strings[10], "%2.2f A", this->odrive->get_Iq_measured());
     } else {
         this->state_topic->level = 2;
         this->state_topic->message = "Not Connected!";

@@ -13,6 +13,7 @@ ODriveS1::ODriveS1(uint8_t can_id, String* name, FlexCAN_T4<CAN1, RX_SIZE_64, TX
     this->name = name;
     this->can_bus = can_bus;
     this->estop_callback = estop_callback;
+    this->allocate_strings();
 }
 
 void ODriveS1::init() {
@@ -278,7 +279,7 @@ uint32_t ODriveS1::get_axis_state() const {
     return this->AXIS_STATE;
 }
 
-char* ODriveS1::get_axis_state_string() const {
+char* ODriveS1::get_axis_state_string() {
     sprintf(this->axis_state_string, ""); // Clear the string
     odrive::sprint_axis_state(this->axis_state_string, static_cast<odrive::axis_states>(this->AXIS_STATE));
     return this->axis_state_string;
@@ -288,7 +289,7 @@ uint32_t ODriveS1::get_axis_error() const {
     return this->ACTIVE_ERRORS;
 }
 
-char* ODriveS1::get_axis_error_string() const {
+char* ODriveS1::get_axis_error_string() {
     sprintf(this->axis_error_string, ""); // Clear the string
     odrive::sprintf_error_code(this->axis_error_string, this->AXIS_ERROR);
     return this->axis_error_string;
@@ -298,7 +299,7 @@ uint32_t ODriveS1::get_active_errors() const {
     return this->ACTIVE_ERRORS;
 }
 
-char* ODriveS1::get_active_errors_string() const {
+char* ODriveS1::get_active_errors_string() {
     sprintf(this->active_errors_string, ""); // Clear the string
     odrive::sprintf_error_code(this->active_errors_string, this->ACTIVE_ERRORS);
     return this->active_errors_string;
@@ -308,14 +309,14 @@ uint32_t ODriveS1::get_disarm_reason() const {
     return this->DISARM_REASON;
 }
 
-char* ODriveS1::get_disarm_reason_string() const {
+char* ODriveS1::get_disarm_reason_string() {
     sprintf(this->disarm_reason_string, ""); // Clear the string
     odrive::sprintf_error_code(this->disarm_reason_string, this->DISARM_REASON);
     return this->disarm_reason_string;
 }
 
 bool ODriveS1::is_connected() const {
-    if (millis() - this->last_message > 5000) {
+    if (millis() - this->last_message > 7500) {
         return false;
     } else {
         return true;

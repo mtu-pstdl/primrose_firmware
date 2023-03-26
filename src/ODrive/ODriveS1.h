@@ -32,11 +32,16 @@ private:
     char* disarm_reason_string; // The disarm reason string
 
     void allocate_strings() {
-        axis_error_string = new char[100];
-        axis_state_string = new char[100];
-        procedure_result_string = new char[100];
-        active_errors_string = new char[100];
-        disarm_reason_string = new char[100];
+        axis_error_string = new char[25];
+        sprintf(axis_error_string, "Not initialized");
+        axis_state_string = new char[25];
+        sprintf(axis_state_string, "Not initialized");
+        procedure_result_string = new char[25];
+        sprintf(procedure_result_string, "Not initialized");
+        active_errors_string = new char[25];
+        sprintf(active_errors_string, "Not initialized");
+        disarm_reason_string = new char[25];
+        sprintf(disarm_reason_string, "Not initialized");
     }
 
     uint32_t last_message = 0; // The last time a message was received from the ODrive
@@ -160,19 +165,19 @@ public:
 
     uint32_t get_axis_state() const;
 
-    char* get_axis_state_string() const;
+    char* get_axis_state_string();
 
     uint32_t get_axis_error() const;
 
-    char* get_axis_error_string() const;
+    char* get_axis_error_string();
 
     uint32_t get_active_errors() const;
 
-    char* get_active_errors_string() const;
+    char* get_active_errors_string();
 
     uint32_t get_disarm_reason() const;
 
-    char* get_disarm_reason_string() const;
+    char* get_disarm_reason_string();
 
 };
 
