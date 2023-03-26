@@ -53,7 +53,8 @@ namespace odrive {
         SUCCESS = 0x0, BUSY = 0x1, CANCELED = 0x2, NO_RESPONSE = 0x3, DISARMED = 0x4,
         POLE_PAIR_CPR_MISMATCH = 0x5, PHASE_RESISTANCE_OUT_OF_RANGE = 0x5, PHASE_INDUCTANCE_OUT_OF_RANGE = 0x6,
         INVALID_CONFIG = 0x7, UNBALANCED_PHASES = 0x8, INVALID_MOTOR_TYPE = 0x9, ILLEGAL_HALL_STATE = 0xA,
-        TIMEOUT = 0xB, HOMING_WITHOUT_ENDSTOP = 0xC, INVALID_STATE = 0xD, NOT_CALIBRATED = 0xE
+        TIMEOUT = 0xB, HOMING_WITHOUT_ENDSTOP = 0xC, INVALID_STATE = 0xD, NOT_CALIBRATED = 0xE,
+        UNKNOWN_PROCEDURE_RESULT = 0xFF
     };
 
     enum control_modes : uint8_t {
@@ -69,6 +70,10 @@ namespace odrive {
     void sprintf_error_code(char* buffer, uint32_t error_code);
 
     void sprint_axis_state(char* buffer, axis_states state);
+
+    void sprint_procedure_result(char* buffer, procedure_results result);
+
+    void sprint_control_mode(char* buffer, control_modes mode);
 
 }
 

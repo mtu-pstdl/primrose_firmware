@@ -49,26 +49,26 @@ void ODriveS1::on_message(const CAN_message_t &msg) {
         case Heartbeat: // Lower 4 bytes are AXIS_ERROR and the upper 4 bytes are AXIS_STATE
             this->AXIS_ERROR       = upper_32;
             // Bitmask the lowest byte of the lower 32 bits to get the axis state
-            this->AXIS_STATE       = lower_32 & 0xFF;
-            this->PROCEDURE_RESULT = (lower_32 >> 8) & 0xFF;
+            this->AXIS_STATE       = static_cast<odrive::axis_states> (lower_32 & 0xFF);
+            this->PROCEDURE_RESULT = static_cast<odrive::procedure_results>((lower_32 >> 8) & 0xFF);
             this->last_axis_state  = millis();
             this->in_flight_bitmask &= ~AXIS_STATE_FLIGHT_BIT; // Clear the bit
             break;
         case Get_Error:
             this->ACTIVE_ERRORS = lower_32;
             this->DISARM_REASON = upper_32;
-            this->last_errors = millis();
+            this->last_errors_update = millis();
             this->in_flight_bitmask &= ~ERROR_FLIGHT_BIT; // Clear the bit
             break;
         case Get_Encoder_Estimates:
             this->POS_ESTIMATE = (float_t) lower_32;
             this->VEL_ESTIMATE = (float_t) upper_32;
-            this->last_encoder_state = millis();
+            this->last_encoder_update = millis();
             this->in_flight_bitmask &= ~ENCODER_FLIGHT_BIT; // Clear the bit
             break;
         case Get_Iq:
-            this->Iq_Setpoint = (float_t) lower_32;
-            this->Iq_Measured = (float_t) upper_32;
+            this->IQ_SETPOINT = (float_t) lower_32;
+            this->IQ_MEASURED = (float_t) upper_32;
             this->last_iq_update = millis();
             this->in_flight_bitmask &= ~IQ_FLIGHT_BIT; // Clear the bit
             break;
@@ -102,12 +102,12 @@ void ODriveS1::refresh_data() {
         if (this->send_command(ODriveS1::Heartbeat))
             this->in_flight_bitmask |= AXIS_STATE_FLIGHT_BIT;  // Set the in flight bit to 1
     }
-    if (this->last_errors + ERROR_UPDATE_RATE < millis() &&
+    if (this->last_errors_update + ERROR_UPDATE_RATE < millis() &&
         !(this->in_flight_bitmask & ERROR_FLIGHT_BIT)){
         if (this->send_command(ODriveS1::Get_Error))
             this->in_flight_bitmask |= ERROR_FLIGHT_BIT;  // Set the in flight bit to 1
     }
-    if (this->last_encoder_state + ENCODER_UPDATE_RATE < millis() &&
+    if (this->last_encoder_update + ENCODER_UPDATE_RATE < millis() &&
         !(this->in_flight_bitmask & ENCODER_FLIGHT_BIT)){
         if (this->send_command(ODriveS1::Get_Encoder_Estimates))
             this->in_flight_bitmask |= ENCODER_FLIGHT_BIT;  // Set the in flight bit to 1
@@ -182,16 +182,16 @@ uint8_t ODriveS1::send_command(ODriveS1::command_ids command_id, T lower_data, T
     return result; // Return the result of the write (1 for success, -1 for failure)
 }
 
-void ODriveS1::set_config(ODRIVE_MOTOR_CONFIG* config) {
-    this->send_command(command_ids::Set_Limits,
-                          config->velocity_lim, config->current_lim);
-    this->send_command(command_ids::Set_Vel_Gains,
-                          config->velocity_gain, config->velocity_integrator_gain);
-    this->send_command(command_ids::Set_Pos_Gains, config->position_gain);
-    this->send_command(command_ids::Set_Traj_Acc_Limit,
-                          config->acceleration_lim, config->deceleration_lim);
-
-}
+//void ODriveS1::set_config(ODRIVE_MOTOR_CONFIG* config) {
+//    this->send_command(command_ids::Set_Limits,
+//                          config->velocity_lim, config->current_lim);
+//    this->send_command(command_ids::Set_Vel_Gains,
+//                          config->velocity_gain, config->velocity_integrator_gain);
+//    this->send_command(command_ids::Set_Pos_Gains, config->position_gain);
+//    this->send_command(command_ids::Set_Traj_Acc_Limit,
+//                          config->acceleration_lim, config->deceleration_lim);
+//
+//}
 
 //String* ODriveS1::get_state_string() {
 //    // Check if there are any errors
@@ -222,8 +222,8 @@ void ODriveS1::set_config(ODRIVE_MOTOR_CONFIG* config) {
 //    state_string->concat("AXIS_STATE: " + *axis_state + "\r\n");
 //    free(axis_state);
 //
-//    state_string->concat("TARGET_IQ: " + String(this->Iq_Setpoint) + "\r\n");
-//    state_string->concat("MEASURED_IQ: " + String(this->Iq_Measured) + "\r\n");
+//    state_string->concat("TARGET_IQ: " + String(this->IQ_SETPOINT) + "\r\n");
+//    state_string->concat("MEASURED_IQ: " + String(this->IQ_MEASURED) + "\r\n");
 //
 //    state_string->concat("VBUS: " + String(this->VBUS_VOLTAGE) + "V | "
 //    + String(this->VBUS_CURRENT) + "A\r\n");
@@ -264,18 +264,26 @@ float_t ODriveS1::get_vel_estimate() const {
 }
 
 float_t ODriveS1::get_Iq_setpoint() const {
-    return this->Iq_Setpoint;
+    return this->IQ_SETPOINT;
 }
 
 float_t ODriveS1::get_Iq_measured() const {
-    return this->Iq_Measured;
+    return this->IQ_MEASURED;
 }
 
 float_t ODriveS1::get_setpoint() const {
-    return this->setpoint;
+    if (this->control_mode == odrive::control_modes::POSITION_CONTROL) {
+        return this->position_setpoint;
+    } else if (this->control_mode == odrive::control_modes::VELOCITY_CONTROL) {
+        return this->velocity_setpoint;
+    } else if (this->control_mode == odrive::control_modes::TORQUE_CONTROL) {
+        return this->torque_setpoint;
+    } else {
+        return 0;
+    }
 }
 
-uint32_t ODriveS1::get_axis_state() const {
+odrive::axis_states ODriveS1::get_axis_state() const {
     return this->AXIS_STATE;
 }
 
@@ -326,6 +334,53 @@ bool ODriveS1::is_connected() const {
 void ODriveS1::estop() {
     this->send_command(command_ids::Estop);
 }
+
+odrive::procedure_results ODriveS1::get_procedure_results() const {
+    return this->PROCEDURE_RESULT;
+}
+
+char *ODriveS1::get_procedure_results_string() {
+    sprintf(this->procedure_result_string, ""); // Clear the string
+    odrive::sprint_procedure_result(this->procedure_result_string, this->PROCEDURE_RESULT);
+    return this->procedure_result_string;
+}
+
+bool ODriveS1::has_error() const {
+    if (this->ACTIVE_ERRORS != 0 || this->AXIS_ERROR != 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+odrive::control_modes ODriveS1::get_control_mode() const {
+    return this->control_mode;
+}
+
+char *ODriveS1::get_control_mode_string() {
+    sprintf(this->control_mode_string, ""); // Clear the string
+    odrive::sprint_control_mode(this->control_mode_string, this->control_mode);
+    return this->control_mode_string;
+}
+
+void ODriveS1::set_ticks_per_rev(float_t value) {
+    this->ticks_per_rev = value;
+    this->has_rev_conversion = true;
+}
+
+void ODriveS1::set_revs_per_meter(float_t value) {
+    this->revs_per_meter = value;
+    this->has_meter_conversion = true;
+}
+
+void ODriveS1::set_conversion(float_t ticks_value, float_t revs_value) {
+    this->ticks_per_rev = ticks_value;
+    this->revs_per_meter = revs_value;
+    this->has_rev_conversion = true;
+    this->has_meter_conversion = true;
+}
+
+
 
 
 

@@ -28,7 +28,7 @@ void ODrive_ROS::advertise_subscribe(ros::NodeHandle *nh) {
  */
 void ODrive_ROS::setpoint_callback(const std_msgs::Float32MultiArray &msg) {
     if(msg.data_length == 3){
-        this->setpoint = msg.data[0];
+//        this->setpoint = msg.data[0];
         if (this->control_mode == odrive::POSITION_CONTROL){
             // When in position control mode, the velocity and torque ff values are halfed to 16 bits
             // So we need to truncate the values of each float to 16 bits with a factor of 0.001
@@ -41,6 +41,37 @@ void ODrive_ROS::control_mode_callback(const std_msgs::Int32MultiArray &msg){
 
 }
 
+void ODrive_ROS::update_diagnostics() {
+    if (this->odrive->is_connected()) {
+
+        if (this->odrive->get_axis_state() != odrive::CLOSED_LOOP_CONTROL) {
+            update_diagnostics_keys(true);
+            sprintf(strings[0], "%24s", this->odrive->get_axis_state_string());         // Axis State
+            sprintf(strings[1], "%24s", this->odrive->get_axis_error_string());         // Axis Error
+            sprintf(strings[2], "%24s", this->odrive->get_active_errors_string());      // Active Errors
+            sprintf(strings[3], "%24s", this->odrive->get_disarm_reason_string());      // Disarm Reason
+            sprintf(strings[4], "%24s", this->odrive->get_procedure_results_string());  // Procedure Results
+            sprintf(strings[5], "%24s", this->odrive->get_control_mode_string());       // Control Mode
+        } else {
+            update_diagnostics_keys(false);
+            sprintf(strings[0], "%24s", this->odrive->get_axis_state_string());
+            sprintf(strings[1], "%24s", this->odrive->get_control_mode_string());
+            sprintf(strings[2], "%.2f", this->odrive->get_setpoint());
+            sprintf(strings[3], "%24s", this->odrive->get_disarm_reason_string());
+            sprintf(strings[4], "%.2f", this->odrive->get_pos_estimate());
+            sprintf(strings[5], "%.2f", this->odrive->get_vel_estimate());
+        }
+        sprintf(strings[6], "%2.2f C", this->odrive->get_fet_temp());
+        sprintf(strings[7], "%2.2f C", this->odrive->get_motor_temp());
+        sprintf(strings[8], "%2.2f V", this->odrive->get_vbus_voltage());
+        sprintf(strings[9], "%2.2f A", this->odrive->get_vbus_current());
+        sprintf(strings[10], "%2.2f A", this->odrive->get_Iq_measured());
+        sprintf(strings[11], "%2.2f A", this->odrive->get_Iq_setpoint());
+    } else {
+        sprintf(status_string, "Not Connected!");
+        this->state_topic->level = 2;
+    }
+}
 
 void ODrive_ROS::publish_all() {
     // Publish the condition topic
@@ -49,36 +80,8 @@ void ODrive_ROS::publish_all() {
     condition_topic.data[2] = this->odrive->get_vbus_voltage();
     condition_topic.data[3] = this->odrive->get_vbus_current();
     condition_topic.data[4] = this->odrive->get_Iq_measured();
-//    this->condition_pub_.publish(&condition_topic);
 
-    // Publish the encoder topic
-
-//    encoder_topic.data[0] = this->odrive->get_pos_estimate();
-//    encoder_topic.data[1] = this->odrive->get_vel_estimate();
-//    encoder_topic.data[2] = this->odrive->get_Iq_setpoint();
-//    encoder_topic.data[4] = this->odrive->get_setpoint();
-//    this->encoder_pub_.publish(&encoder_topic);
-
-    // Publish the state topic
-    if (this->odrive->is_connected()){
-        this->state_topic->level = 0;
-        this->state_topic->message = "Connected";
-        sprintf(strings[0], "%24s", this->odrive->get_axis_state_string());
-        sprintf(strings[1], "%24s", this->odrive->get_axis_error_string());
-        sprintf(strings[2], "%24s", this->odrive->get_active_errors_string());
-        sprintf(strings[3], "%24s", this->odrive->get_disarm_reason_string());
-        sprintf(strings[4], "%2.2f C", this->odrive->get_fet_temp());
-        sprintf(strings[5], "%2.2f C", this->odrive->get_motor_temp());
-        sprintf(strings[6], "%2.2f V", this->odrive->get_vbus_voltage());
-        sprintf(strings[7], "%2.2f A", this->odrive->get_vbus_current());
-        sprintf(strings[8], "%2.2f Ticks", this->odrive->get_pos_estimate());
-        sprintf(strings[9], "%2.2f Ticks/s", this->odrive->get_vel_estimate());
-        sprintf(strings[10], "%2.2f A", this->odrive->get_Iq_measured());
-    } else {
-        this->state_topic->level = 2;
-        this->state_topic->message = "Not Connected!";
-    }
-
+    update_diagnostics();
 }
 
 ODriveS1* ODrive_ROS::get_odrive() {

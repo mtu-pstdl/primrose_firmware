@@ -84,4 +84,77 @@ namespace odrive {
         }
     }
 
+    void sprint_procedure_result(char* buffer, procedure_results procedure_result) {
+        switch (procedure_result) {
+            case SUCCESS:
+                sprintf(buffer, "SUCCESS");
+                break;
+            case BUSY:
+                sprintf(buffer, "BUSY");
+                break;
+            case CANCELED:
+                sprintf(buffer, "CANCELED");
+                break;
+            case NO_RESPONSE:
+                sprintf(buffer, "NO_RESPONSE");
+                break;
+            case DISARMED:
+                sprintf(buffer, "DISARMED");
+                break;
+            case POLE_PAIR_CPR_MISMATCH:
+                sprintf(buffer, "POLE_PAIR_CPR_MISMATCH");
+                break;
+            case PHASE_INDUCTANCE_OUT_OF_RANGE:
+                sprintf(buffer, "PHASE_INDUCTANCE_OUT_OF_RANGE");
+                break;
+            case INVALID_CONFIG:
+                sprintf(buffer, "INVALID_CONFIG");
+                break;
+            case UNBALANCED_PHASES:
+                sprintf(buffer, "UNBALANCED_PHASES");
+                break;
+            case INVALID_MOTOR_TYPE:
+                sprintf(buffer, "INVALID_MOTOR_TYPE");
+                break;
+            case ILLEGAL_HALL_STATE:
+                sprintf(buffer, "ILLEGAL_HALL_STATE");
+                break;
+            case TIMEOUT:
+                sprintf(buffer, "TIMEOUT");
+                break;
+            case HOMING_WITHOUT_ENDSTOP:
+                sprintf(buffer, "HOMING_WITHOUT_ENDSTOP");
+                break;
+            case INVALID_STATE:
+                sprintf(buffer, "INVALID_STATE");
+                break;
+            case NOT_CALIBRATED:
+                sprintf(buffer, "NOT_CALIBRATED");
+                break;
+            default:
+                sprintf(buffer, "UNKNOWN_PROCEDURE_RESULT");
+                break;
+        }
+    }
+
+    void sprint_control_mode(char* buffer, control_modes control_mode) {
+        switch (control_mode) {
+            case VOLTAGE_CONTROL:
+                sprintf(buffer, "VOLTAGE_CONTROL");
+                break;
+            case TORQUE_CONTROL:
+                sprintf(buffer, "TORQUE_CONTROL");
+                break;
+            case VELOCITY_CONTROL:
+                sprintf(buffer, "VELOCITY_CONTROL");
+                break;
+            case POSITION_CONTROL:
+                sprintf(buffer, "POSITION_CONTROL");
+                break;
+            default:
+                sprintf(buffer, "UNKNOWN_CONTROL_MODE");
+                break;
+        }
+    }
+
 }

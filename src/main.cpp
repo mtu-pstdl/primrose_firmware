@@ -17,12 +17,13 @@
 //#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/publisher.h"
 //#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32.h"
 
-#if defined(__IMXRT1062__)
-extern "C" uint32_t set_arm_clock(uint32_t frequency);
-#endif
-
-//#define CPU_FREQ 600000000 // 600 MHz
-#define CPU_FREQ 24000000 // 24 MHz
+#define MAX_CPU_FREQ 600000000 // 600 MHz
+#define BASE_CPU_FREQ 300000000 // 300 MHz
+#define MIN_CPU_FREQ 24000000 // 24 MHz
+#define CPU_FREQ_STEP 6000000 // 6 MHz
+#define CPU_FREQ_STEP_TIME 5 // Update cycles
+uint32_t current_cpu_freq = BASE_CPU_FREQ;
+int8_t cpu_step_timer = 0;
 #define THROTTLE_RATE 0.5 // Percentage of the base rate to run at
 #define WARN_TEMP 65.0 // Degrees C
 #define THROTTLE_TEMP 75.0 // Degrees C
@@ -35,20 +36,9 @@ FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
 ODriveS1* odrives[6];
 ODrive_ROS* odrive_ros[6];
 
-ActuatorUnit* actuators[4];
-ActuatorsROS* actuators_ros[4];
+ActuatorUnit* actuators[5];
+ActuatorsROS* actuators_ros[5];
 Actuators actuator_bus;
-
-void unified_estop_callback(){
-    for (ODriveS1* odrive : odrives) {
-        if (odrive == nullptr) continue;
-        odrive->estop();
-    }
-    for (ActuatorUnit* actuator : actuators) {
-        if (actuator == nullptr) continue;
-        actuator->estop();
-    }
-}
 
 // Setup global publishers
 diagnostic_msgs::DiagnosticArray system_diagnostics;
@@ -57,14 +47,24 @@ diagnostic_msgs::DiagnosticStatus* system_info;
 
 ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
 
-String system_status_msg = "";
-String temperature_string = "    ";
-String loop_time_string = "    ";
-String free_mem_string = "e";
+#define SYSTEM_INFO_COUNT 6
+char* system_info_strings[SYSTEM_INFO_COUNT];
 
-uint32_t last_print = 0;
+char* system_status_messages[10];
+char  system_status_msg[100];
+uint8_t system_message_count = 0;
 
-bool startup_info_print_once = false;
+#if defined(__IMXRT1062__)
+extern "C" uint32_t set_arm_clock(uint32_t frequency);
+#endif
+
+extern unsigned long _heap_start;  // start of heap
+extern unsigned long _heap_end;  // end of heap
+extern char *__brkval;  // current top of heap
+
+int freeram() {
+    return (char *)&_heap_end - __brkval;
+}
 
 void can_event(const CAN_message_t &msg) {
     // Check node ID (Upper 6 bits of CAN ID)
@@ -78,14 +78,28 @@ void can_event(const CAN_message_t &msg) {
     }
 }
 
-extern unsigned long _heap_start;
-extern unsigned long _heap_end;
-extern char *__brkval;
-
-int freeram() {
-    return (char *)&_heap_end - __brkval;
+void unified_estop_callback(){
+    for (ODriveS1* odrive : odrives) {
+        if (odrive == nullptr) continue;
+        odrive->estop();
+    }
+    for (ActuatorUnit* actuator : actuators) {
+        if (actuator == nullptr) continue;
+        actuator->estop();
+    }
 }
 
+void check_temp(){
+    if (tempmonGetTemp() > WARN_TEMP) {
+        system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::WARN;
+        sprintf(system_status_messages[system_message_count++], "High temperature");
+        if (tempmonGetTemp() > THROTTLE_TEMP) {
+            system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::ERROR;
+            sprintf(system_status_messages[system_message_count++], "System throttling");
+            set_arm_clock(MIN_CPU_FREQ);
+        }
+    } else set_arm_clock(current_cpu_freq);  // 600 MHz (default)
+}
 
 void setup() {
 
@@ -117,10 +131,8 @@ void setup() {
     can1.enableFIFO();
     can1.enableFIFOInterrupt();
 
-
     log_msg = "CAN bus initialised";
     node_handle.loginfo(log_msg.c_str());
-
 
     log_msg = "Initialising ODriveS1 objects";
     node_handle.loginfo(log_msg.c_str());
@@ -132,15 +144,8 @@ void setup() {
     odrives[4] = new ODriveS1(4, new String("04"), &can1, &unified_estop_callback);
     odrives[5] = new ODriveS1(5, new String("05"), &can1, &unified_estop_callback);
 
-    // Setup the diagnostics array
-//    odrive_diagnostics.status_length = 6;
-//    odrive_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[6];
-//
-//    actuator_diagnostics.status_length = 4;
-//    actuator_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[4];
-
-    system_diagnostics.status_length = 11;
-    system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[11];
+    system_diagnostics.status_length = 12;
+    system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[12];
 
     log_msg = "Initialising ODriveS1 ROS objects";
     node_handle.loginfo(log_msg.c_str());
@@ -152,8 +157,6 @@ void setup() {
     odrive_ros[4] = new ODrive_ROS(odrives[4], &node_handle, &system_diagnostics.status[4], "Conveyor");
     odrive_ros[5] = new ODrive_ROS(odrives[5], &node_handle, &system_diagnostics.status[5], "Trencher");
 
-//
-
     log_msg = "Initialising ActuatorUnit objects";
     node_handle.loginfo(log_msg.c_str());
 
@@ -161,6 +164,7 @@ void setup() {
     actuators[1] = new ActuatorUnit(&actuator_bus, 0x81);
     actuators[2] = new ActuatorUnit(&actuator_bus, 0x82);
     actuators[3] = new ActuatorUnit(&actuator_bus, 0x83);
+//    actuators[4] = new ActuatorUnit(&actuator_bus, 0x84);
 
     log_msg = "Initialising ActuatorUnit ROS objects";
     node_handle.loginfo(log_msg.c_str());
@@ -169,8 +173,7 @@ void setup() {
     actuators_ros[1] = new ActuatorsROS(actuators[1], &node_handle, &system_diagnostics.status[7], "Front Right");
     actuators_ros[2] = new ActuatorsROS(actuators[2], &node_handle, &system_diagnostics.status[8], "Rear Left");
     actuators_ros[3] = new ActuatorsROS(actuators[3], &node_handle, &system_diagnostics.status[9], "Rear Right");
-
-//    delay(1000);
+//    actuators_ros[4] = new ActuatorsROS(actuators[4], &node_handle, &system_diagnostics.status[10], "Conveyor");
 
 
     for (ODrive_ROS* odrive : odrive_ros) {
@@ -191,18 +194,23 @@ void setup() {
     log_msg = "Setting up system diagnostics";
     node_handle.loginfo(log_msg.c_str());
 
-    system_info = &system_diagnostics.status[10];
-    system_info->values_length = 3;
-    system_info->values = new diagnostic_msgs::KeyValue[3];
+    // Allocate memory for the system diagnostics strings
+    for (auto & system_info_string : system_info_strings) system_info_string = new char[20];
+    for (auto & system_status_message : system_status_messages) system_status_message = new char[20];
+
+    system_info = &system_diagnostics.status[11];
+    system_info->values_length = SYSTEM_INFO_COUNT;
+    system_info->values = new diagnostic_msgs::KeyValue[SYSTEM_INFO_COUNT];
     system_info->values[0].key = "Temperature";
-    system_info->values[0].value = "00.0C";
-    system_info->values[1].key = "Loop Time";
-    system_info->values[1].value = "00.0ms";
-    system_info->values[2].key = "Remaining Memory";
-    system_info->values[2].value = "00000B";
+    system_info->values[1].key = "System Freq";
+    system_info->values[2].key = "Loop Time";
+    system_info->values[3].key = "Remaining Memory";
+    system_info->values[4].key = "CAN TX Mailbox";
+    system_info->values[5].key = "CAN RX Mailbox";
+    for (int i = 0; i < SYSTEM_INFO_COUNT; i++) system_info->values[i].value = system_info_strings[i];
     system_info->level = diagnostic_msgs::DiagnosticStatus::OK;
     system_info->name = "System";
-    system_info->message = "System is running";
+    system_info->message = system_status_msg;
     system_info->hardware_id = "MCIU";
     // For each ODrive add its diagnostic message
 
@@ -215,7 +223,6 @@ void setup() {
     node_handle.loginfo(log_msg.c_str());
 
     node_handle.advertise(sys_diag_pub);
-
     sys_diag_pub.publish(&system_diagnostics);
 
     log_msg = "Attempting to preform first spin";
@@ -230,36 +237,29 @@ void loop() {
     uint32_t loop_start = micros(); // Get the time at the start of the loop
     digitalWriteFast(LED_BUILTIN, LOW); // Turn on the LED
 
-    system_status_msg.remove(0);
-    system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::OK;
+    system_message_count = 0;
+    for (char *string: system_status_messages) {
+        string[0] = '\0';
+    }
+    system_info->level = diagnostic_msgs::DiagnosticStatus::OK;
 
     // Get the teensy temperature
-    temperature_string.remove(0);
-    temperature_string += String(tempmonGetTemp()) + "C";
-    system_diagnostics.status[10].values[0].value = temperature_string.c_str();
 
-    if (tempmonGetTemp() > WARN_TEMP) {
-        system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::WARN;
-        system_status_msg.concat("Overheating, ");
-        if (tempmonGetTemp() > THROTTLE_TEMP) {
-            system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::ERROR;
-            system_status_msg.concat("Throttling, ");
-            set_arm_clock(CPU_FREQ * THROTTLE_RATE);  // 24 MHz (minimum)
-        }
-    } else set_arm_clock(CPU_FREQ);  // 600 MHz (default)
+    sprintf(system_info_strings[0], "%.1fC", tempmonGetTemp());
+    check_temp();
 
-    for (ODriveS1* odrive : odrives) {
+    for (ODriveS1 *odrive: odrives) {
         if (odrive == nullptr) continue;
         odrive->refresh_data();
     }
 
-    for (ActuatorsROS* actuator : actuators_ros) {
+    for (ActuatorsROS *actuator: actuators_ros) {
         if (actuator == nullptr) continue;
         actuator->update();
     }
 
-    if (node_handle.connected()){
-        for (ODrive_ROS* odrive : odrive_ros) {
+    if (node_handle.connected()) {
+        for (ODrive_ROS *odrive: odrive_ros) {
             if (odrive == nullptr) {
                 continue;
             }
@@ -272,7 +272,7 @@ void loop() {
 
     String log_msg = "";
     int8_t spin_result = 0;
-    if (!node_handle.connected()){
+    if (!node_handle.connected()) {
 //        node_handle.logerror("NodeHandle not properly configured");
     }
     spin_result = node_handle.spinOnce(); // 50ms timeout
@@ -303,26 +303,49 @@ void loop() {
 
     uint32_t remaining_memory = freeram();
     if (remaining_memory < 100000) {
-        system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::WARN;
-        system_status_msg.concat("Low Memory, ");
+        system_info->level = diagnostic_msgs::DiagnosticStatus::WARN;
+        sprintf(system_status_messages[system_message_count++], "Low Memory");
         if (remaining_memory < 30000) {
-            system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::ERROR;
-            system_status_msg.concat("FATAL MEMORY LEAK");
+            system_info->level = diagnostic_msgs::DiagnosticStatus::ERROR;
+            sprintf(system_status_messages[system_message_count++], "Out of Memory");
         }
     }
-    free_mem_string.remove(0);
-    loop_time_string.remove(0);
-    free_mem_string += String(remaining_memory / 1024) + "KiB";
-    system_diagnostics.status[10].values[1].value = loop_time_string.c_str();
-    system_diagnostics.status[10].values[2].value = free_mem_string.c_str();
+
+    sprintf(system_info_strings[1], "%.2f Mhz (%.2f%%)", F_CPU_ACTUAL / 1000000.0,
+            100.0 * F_CPU_ACTUAL / F_CPU);
+    sprintf(system_info_strings[2], "%luus (%.2fHz)", micros() - loop_start, 1000000.0 / (micros() - loop_start));
+    sprintf(system_info_strings[3], "%.2fKib (%.2f%%)", remaining_memory / 1024.0,
+            100.0 * remaining_memory / 512000.0);
+    sprintf(system_info_strings[4], "%lu", can1.getTXQueueCount());
+    sprintf(system_info_strings[5], "%lu", can1.getRXQueueCount());
+
     uint32_t loop_time = micros() - loop_start;
-    loop_time_string += String(loop_time) + "us" + " (" + String(((float_t) loop_time / 50000.0) * 100.0) + "%)";
     if (loop_time > 50000) {
-        system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::WARN;
-        system_status_msg.concat("Overloaded, ");
+        system_info->level = diagnostic_msgs::DiagnosticStatus::WARN;
+        sprintf(system_status_messages[system_message_count++], "Slow Loop");
+        // Increase CPU speed by 1% for every loop that takes longer than 50ms
+        cpu_step_timer++;
+    } else cpu_step_timer--;
+
+    if (cpu_step_timer > CPU_FREQ_STEP_TIME) {
+        cpu_step_timer = 0;
+        current_cpu_freq = constrain(current_cpu_freq + CPU_FREQ_STEP, MIN_CPU_FREQ, MAX_CPU_FREQ);
+    } else if (cpu_step_timer < -CPU_FREQ_STEP_TIME) {
+        cpu_step_timer = 0;
+        current_cpu_freq = constrain(current_cpu_freq - CPU_FREQ_STEP, MIN_CPU_FREQ, MAX_CPU_FREQ);
     }
-    if (system_diagnostics.status[10].level == diagnostic_msgs::DiagnosticStatus::OK) {
-        system_diagnostics.status[10].message = "All OK";
-    } else system_diagnostics.status[10].message = system_status_msg.c_str();
+
+    if (system_message_count == 0) {
+        sprintf(system_status_msg, "All Ok");
+    } else {
+        for (int i = 0; i < system_message_count; i++) {
+            if (i == 0) {
+                sprintf(system_status_msg, "%s", system_status_messages[i]);
+            } else {
+                sprintf(system_status_msg, "%s, %s", system_status_msg, system_status_messages[i]);
+            }
+        }
+    }
+
     sys_diag_pub.publish(&system_diagnostics);
 }

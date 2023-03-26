@@ -53,13 +53,29 @@ private:
     // Publishes the values of FET_TEMP, MOTOR_TEMP, VBUS_VOLTAGE, VBUS_CURRENT
     std_msgs::Float32MultiArray condition_topic;
 
-    // Publishes the values of POS_ESTIMATE, VEL_ESTIMATE, Iq_Setpoint, Iq_Measured
+    // Publishes the values of POS_ESTIMATE, VEL_ESTIMATE, IQ_SETPOINT, IQ_MEASURED
     std_msgs::Float32MultiArray encoder_topic;
 
     // Publishes the values of AXIS_STATE, AXIS_ERROR, ACTIVE_ERRORS, DISARM_REASON
     diagnostic_msgs::DiagnosticStatus* state_topic;
 
-    char* strings[11];
+#define NUM_CONDITIONS 12
+    char* strings[NUM_CONDITIONS];
+    char* status_string = new char[25];
+
+    void update_diagnostics_keys(bool error_mode){
+        if (error_mode){
+            state_topic->values[1].key = "AXIS_ERROR";        // Or CONTROL_MODE
+            state_topic->values[2].key = "ACTIVE_ERRORS";     // Or SETPOINT
+            state_topic->values[4].key = "PROCEDURE_RESULT";  // Or POS_ESTIMATE
+            state_topic->values[5].key = "CONTROL_MODE";      // Or VEL_ESTIMATE
+        } else {
+            state_topic->values[1].key = "CONTROL_MODE";      // Or AXIS_ERROR
+            state_topic->values[2].key = "SETPOINT";          // Or ACTIVE_ERRORS
+            state_topic->values[4].key = "POS_ESTIMATE";      // Or PROCEDURE_RESULT
+            state_topic->values[5].key = "VEL_ESTIMATE";      // Or CONTROL_MODE
+        }
+    }
 
     void allocate_strings() {
         for (auto & string : strings) {
@@ -67,12 +83,10 @@ private:
             sprintf(string, "%s", "Unknown");
         }
     }
-
-    String* unknown_string = new String("Unknown");
-
-    // Setup service server
-
-    float_t setpoint = 0; // The setpoint of the ODrive
+    /**
+     * Updates the main status string and the condition numbers
+     */
+    void update_diagnostics();
 
 public:
 
@@ -92,27 +106,29 @@ public:
         this->encoder_topic.data = new float_t[5];
         this->state_topic = status;
 
-        this->state_topic->values_length = 11;
-        this->state_topic->values = new diagnostic_msgs::KeyValue[11];
+        this->state_topic->values_length = NUM_CONDITIONS;
+        this->state_topic->values = new diagnostic_msgs::KeyValue[NUM_CONDITIONS];
         state_topic->values[0].key = "AXIS_STATE";
-        state_topic->values[1].key = "AXIS_ERROR";
-        state_topic->values[2].key = "ACTIVE_ERRORS";
+        state_topic->values[1].key = "AXIS_ERROR";        // Or CONTROL_MODE
+        state_topic->values[2].key = "ACTIVE_ERRORS";     // Or SETPOINT
         state_topic->values[3].key = "DISARM_REASON";
-        state_topic->values[4].key = "FET_TEMP";
-        state_topic->values[5].key = "MOTOR_TEMP";
-        state_topic->values[6].key = "VBUS_VOLTAGE";
-        state_topic->values[7].key = "VBUS_CURRENT";
-        state_topic->values[8].key = "POS_ESTIMATE";
-        state_topic->values[9].key = "VEL_ESTIMATE";
-        state_topic->values[10].key = "Iq_Setpoint";
+        state_topic->values[4].key = "PROCEDURE_RESULT";  // Or POS_ESTIMATE
+        state_topic->values[5].key = "CONTROL_MODE";      // Or VEL_ESTIMATE
+        state_topic->values[6].key = "FET_TEMP";
+        state_topic->values[7].key = "MOTOR_TEMP";
+        state_topic->values[8].key = "VBUS_VOLTAGE";
+        state_topic->values[9].key = "VBUS_CURRENT";
+        state_topic->values[10].key = "IQ_SETPOINT";
+        state_topic->values[11].key = "IQ_MEASURED";
         this->name = disp_name.c_str();
         state_topic->name = "ODrive";
-        state_topic->message = "Initializing";
+        state_topic->message = status_string;
+        sprintf(status_string, "Initialising");
         state_topic->level = 0;
         state_topic->hardware_id = this->name.c_str();
 
         allocate_strings();
-        for (int i = 0; i < 11; i++) {
+        for (int i = 0; i < NUM_CONDITIONS; i++) {
             this->state_topic->values[i].value = strings[i];
         }
     }
