@@ -42,8 +42,7 @@ void ODrive_ROS::control_mode_callback(const std_msgs::Int32MultiArray &msg){
 }
 
 void ODrive_ROS::update_diagnostics() {
-    if (this->odrive->is_connected()) {
-
+    if (!this->odrive->is_connected()) {
         if (this->odrive->get_axis_state() != odrive::CLOSED_LOOP_CONTROL) {
             update_diagnostics_keys(true);
             sprintf(strings[0], "%24s", this->odrive->get_axis_state_string());         // Axis State
