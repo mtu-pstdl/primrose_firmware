@@ -36,8 +36,8 @@ FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
 ODriveS1* odrives[6];
 ODrive_ROS* odrive_ros[6];
 
-ActuatorUnit* actuators[5];
-ActuatorsROS* actuators_ros[5];
+ActuatorUnit* actuators[4];
+ActuatorsROS* actuators_ros[4];
 Actuators actuator_bus;
 
 // Setup global publishers
@@ -47,7 +47,7 @@ diagnostic_msgs::DiagnosticStatus* system_info;
 
 ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
 
-#define SYSTEM_INFO_COUNT 6
+#define SYSTEM_INFO_COUNT 7
 char* system_info_strings[SYSTEM_INFO_COUNT];
 
 char* system_status_messages[10];
@@ -66,7 +66,7 @@ int freeram() {
     return (char *)&_heap_end - __brkval;
 }
 
-void can_event(const CAN_message_t &msg) {
+void can_recieve(const CAN_message_t &msg) {
     // Check node ID (Upper 6 bits of CAN ID)
     uint8_t node_id = msg.id >> 5;
 //    Serial.printf("CAN event %d\n", node_id);
@@ -77,6 +77,8 @@ void can_event(const CAN_message_t &msg) {
         }
     }
 }
+
+
 
 void unified_estop_callback(){
     for (ODriveS1* odrive : odrives) {
@@ -127,7 +129,8 @@ void setup() {
     can1.begin();
     can1.setBaudRate(500000); // 500kbps
 //    can1.setMaxMB(64);  // 64 message buffers
-    can1.onReceive(can_event);
+    can1.onReceive(can_recieve);
+
     can1.enableFIFO();
     can1.enableFIFOInterrupt();
 
@@ -144,8 +147,8 @@ void setup() {
     odrives[4] = new ODriveS1(4, new String("04"), &can1, &unified_estop_callback);
     odrives[5] = new ODriveS1(5, new String("05"), &can1, &unified_estop_callback);
 
-    system_diagnostics.status_length = 12;
-    system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[12];
+    system_diagnostics.status_length = 11;
+    system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[11];
 
     log_msg = "Initialising ODriveS1 ROS objects";
     node_handle.loginfo(log_msg.c_str());
@@ -198,15 +201,16 @@ void setup() {
     for (auto & system_info_string : system_info_strings) system_info_string = new char[20];
     for (auto & system_status_message : system_status_messages) system_status_message = new char[20];
 
-    system_info = &system_diagnostics.status[11];
+    system_info = &system_diagnostics.status[10];
     system_info->values_length = SYSTEM_INFO_COUNT;
     system_info->values = new diagnostic_msgs::KeyValue[SYSTEM_INFO_COUNT];
     system_info->values[0].key = "Temperature";
     system_info->values[1].key = "System Freq";
     system_info->values[2].key = "Loop Time";
     system_info->values[3].key = "Remaining Memory";
-    system_info->values[4].key = "CAN TX Mailbox";
-    system_info->values[5].key = "CAN RX Mailbox";
+    system_info->values[4].key = "CAN TX Overflow";
+    system_info->values[5].key = "CAN RX Overflow";
+    system_info->values[6].key = "Actuator response time";
     for (int i = 0; i < SYSTEM_INFO_COUNT; i++) system_info->values[i].value = system_info_strings[i];
     system_info->level = diagnostic_msgs::DiagnosticStatus::OK;
     system_info->name = "System";
@@ -318,6 +322,7 @@ void loop() {
             100.0 * remaining_memory / 512000.0);
     sprintf(system_info_strings[4], "%lu", can1.getTXQueueCount());
     sprintf(system_info_strings[5], "%lu", can1.getRXQueueCount());
+    sprintf(system_info_strings[6], "%lums", actuator_bus.round_trip_time());
 
     uint32_t loop_time = micros() - loop_start;
     if (loop_time > 50000) {

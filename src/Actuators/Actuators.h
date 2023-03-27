@@ -74,8 +74,6 @@ private:
 
     void process_data_serial(message* msg);
 
-    uint8_t get_queue_size() const;
-
 public:
 
     // Debug variables
@@ -93,6 +91,10 @@ public:
     void queue_message(message *message);
 
     bool space_available() const;
+
+    uint8_t get_queue_size() const;
+
+    uint32_t round_trip_time() const;
 
     /**
     * Sendsd messages to the actuators from the message queue

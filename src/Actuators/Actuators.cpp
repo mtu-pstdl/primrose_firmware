@@ -175,11 +175,17 @@ bool Actuators::space_available() const {
 
 uint8_t Actuators::get_queue_size() const {
     // Calculate how many messages are in the queue
-    if (this->message_queue_enqueue_position >= this->message_queue_dequeue_position){
+    if (this->message_queue_enqueue_position == this->message_queue_dequeue_position){
+        return 0;
+    } else if (this->message_queue_enqueue_position > this->message_queue_dequeue_position){
         return this->message_queue_enqueue_position - this->message_queue_dequeue_position;
     } else {
         return 20 - this->message_queue_dequeue_position + this->message_queue_enqueue_position;
     }
+}
+
+uint32_t Actuators::round_trip_time() const {
+    return this->last_message_round_trip;
 }
 
 String* Actuators::get_status_string() {
