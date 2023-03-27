@@ -17,16 +17,16 @@
 //#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/publisher.h"
 //#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32.h"
 
-#define MAX_CPU_FREQ 600000000 // 600 MHz
-#define BASE_CPU_FREQ 300000000 // 300 MHz
-#define MIN_CPU_FREQ 24000000 // 24 MHz
-#define CPU_FREQ_STEP 6000000 // 6 MHz
-#define CPU_FREQ_STEP_TIME 5 // Update cycles
-uint32_t current_cpu_freq = BASE_CPU_FREQ;
-int8_t cpu_step_timer = 0;
-#define THROTTLE_RATE 0.5 // Percentage of the base rate to run at
+#define CPU_FREQ_BOOST 816000000 //
+//#define CPU_FREQ_BASE 600000000 // 300 MHz
+#define CPU_FREQ_BASE 24000000 // 300 MHz
+#define CPU_FREQ_MIN 24000000 // 24 MHz
+#define UN_BOOST_TIME 100000 // 10us
+//#define ENABLE_BOOST
 #define WARN_TEMP 65.0 // Degrees C
 #define THROTTLE_TEMP 75.0 // Degrees C
+uint32_t cpu_freq = CPU_FREQ_BASE;
+uint32_t cpu_boost_time = 0;
 
 ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
@@ -96,9 +96,9 @@ void check_temp(){
         if (tempmonGetTemp() > THROTTLE_TEMP) {
             system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::ERROR;
             sprintf(system_status_messages[system_message_count++], "System throttling");
-            set_arm_clock(MIN_CPU_FREQ);
+            set_arm_clock(CPU_FREQ_MIN);
         }
-    } else set_arm_clock(current_cpu_freq);  // 600 MHz (default)
+    } else set_arm_clock(cpu_freq);  // 600 MHz (default)
 }
 
 void setup() {
@@ -323,17 +323,18 @@ void loop() {
     if (loop_time > 50000) {
         system_info->level = diagnostic_msgs::DiagnosticStatus::WARN;
         sprintf(system_status_messages[system_message_count++], "Slow Loop");
-        // Increase CPU speed by 1% for every loop that takes longer than 50ms
-        cpu_step_timer++;
-    } else cpu_step_timer--;
-
-    if (cpu_step_timer > CPU_FREQ_STEP_TIME) {
-        cpu_step_timer = 0;
-        current_cpu_freq = constrain(current_cpu_freq + CPU_FREQ_STEP, MIN_CPU_FREQ, MAX_CPU_FREQ);
-    } else if (cpu_step_timer < -CPU_FREQ_STEP_TIME) {
-        cpu_step_timer = 0;
-        current_cpu_freq = constrain(current_cpu_freq - CPU_FREQ_STEP, MIN_CPU_FREQ, MAX_CPU_FREQ);
+        // Set the CPU to the overclocked speed
+#ifdef ENABLE_BOOST
+        if (tempmonGetTemp() < WARN_TEMP) {
+            cpu_freq = CPU_FREQ_BOOST;
+            cpu_boost_time = micros();
+        }
+    } else if (micros() - cpu_boost_time > UN_BOOST_TIME) {
+        cpu_freq = CPU_FREQ_BASE;
     }
+#else
+    }
+#endif
 
     if (system_message_count == 0) {
         sprintf(system_status_msg, "All Ok");

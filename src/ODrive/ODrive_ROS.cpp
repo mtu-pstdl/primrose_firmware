@@ -55,8 +55,8 @@ void ODrive_ROS::update_diagnostics() {
             update_diagnostics_keys(false);
             sprintf(strings[0], "%24s", this->odrive->get_axis_state_string());
             sprintf(strings[1], "%24s", this->odrive->get_control_mode_string());
-            sprintf(strings[2], "%.2f", this->odrive->get_setpoint());
-            sprintf(strings[3], "%24s", this->odrive->get_disarm_reason_string());
+            sprintf(strings[2], "%lums", this->odrive->get_last_update()); // "Last Update:
+            sprintf(strings[3], "%.2f", this->odrive->get_setpoint());
             sprintf(strings[4], "%.2f", this->odrive->get_pos_estimate());
             sprintf(strings[5], "%.2f", this->odrive->get_vel_estimate());
         }

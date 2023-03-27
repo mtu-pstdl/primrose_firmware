@@ -56,7 +56,7 @@ private:
     uint32_t   last_heartbeat   = 0;   // The time of the last heartbeat sent
 
     uint32_t                     AXIS_ERROR       = 0;   // Axis error code
-    odrive::axis_states          AXIS_STATE       = odrive::CLOSED_LOOP_CONTROL;
+    odrive::axis_states          AXIS_STATE       = odrive::UNDEFINED;
     odrive::procedure_results    PROCEDURE_RESULT = odrive::UNKNOWN_PROCEDURE_RESULT;
 
 #define ERROR_UPDATE_RATE 100 // The rate at which the error state is updated in ms
@@ -204,6 +204,8 @@ public:
     float_t get_setpoint() const;
 
     bool has_error() const;
+
+    uint32_t get_last_update() const;
 
 };
 

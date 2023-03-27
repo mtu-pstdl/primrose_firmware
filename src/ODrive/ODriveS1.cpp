@@ -380,6 +380,10 @@ void ODriveS1::set_conversion(float_t ticks_value, float_t revs_value) {
     this->has_meter_conversion = true;
 }
 
+uint32_t ODriveS1::get_last_update() const {
+    return millis() - this->last_message;
+}
+
 
 
 
