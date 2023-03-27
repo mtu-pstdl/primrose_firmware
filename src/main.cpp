@@ -47,7 +47,7 @@ diagnostic_msgs::DiagnosticStatus* system_info;
 
 ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
 
-#define SYSTEM_INFO_COUNT 7
+#define SYSTEM_INFO_COUNT 8
 char* system_info_strings[SYSTEM_INFO_COUNT];
 
 char* system_status_messages[10];
@@ -167,7 +167,6 @@ void setup() {
     actuators[1] = new ActuatorUnit(&actuator_bus, 0x81);
     actuators[2] = new ActuatorUnit(&actuator_bus, 0x82);
     actuators[3] = new ActuatorUnit(&actuator_bus, 0x83);
-//    actuators[4] = new ActuatorUnit(&actuator_bus, 0x84);
 
     log_msg = "Initialising ActuatorUnit ROS objects";
     node_handle.loginfo(log_msg.c_str());
@@ -176,8 +175,6 @@ void setup() {
     actuators_ros[1] = new ActuatorsROS(actuators[1], &node_handle, &system_diagnostics.status[7], "Front Right");
     actuators_ros[2] = new ActuatorsROS(actuators[2], &node_handle, &system_diagnostics.status[8], "Rear Left");
     actuators_ros[3] = new ActuatorsROS(actuators[3], &node_handle, &system_diagnostics.status[9], "Rear Right");
-//    actuators_ros[4] = new ActuatorsROS(actuators[4], &node_handle, &system_diagnostics.status[10], "Conveyor");
-
 
     for (ODrive_ROS* odrive : odrive_ros) {
         if (odrive == nullptr) continue;
@@ -192,7 +189,6 @@ void setup() {
         node_handle.loginfo(log_msg.c_str());
         actuator->advertise_subscribe(&node_handle);
     }
-
 
     log_msg = "Setting up system diagnostics";
     node_handle.loginfo(log_msg.c_str());
@@ -211,7 +207,9 @@ void setup() {
     system_info->values[4].key = "CAN TX Overflow";
     system_info->values[5].key = "CAN RX Overflow";
     system_info->values[6].key = "Actuator response time";
+    system_info->values[7].key = "Build Date";
     for (int i = 0; i < SYSTEM_INFO_COUNT; i++) system_info->values[i].value = system_info_strings[i];
+    sprintf(system_info_strings[7], "%s, %s", __DATE__, __TIME__);
     system_info->level = diagnostic_msgs::DiagnosticStatus::OK;
     system_info->name = "System";
     system_info->message = system_status_msg;
