@@ -41,7 +41,35 @@ void ODrive_ROS::control_mode_callback(const std_msgs::Int32MultiArray &msg){
 
 }
 
+void ODrive_ROS::update_diagnostics_label(){
+    if (!this->odrive->is_connected()){
+        if (this->odrive->get_axis_state() == odrive::CLOSED_LOOP_CONTROL){
+            this->state_topic->level = 0;
+            sprintf(status_string, "Running: %10s", this->odrive->get_control_mode_string());
+
+        } else if (this->odrive->get_axis_state() == odrive::IDLE){
+            if (this->odrive->get_active_errors() != 0){
+                this->state_topic->level = 2;
+                sprintf(status_string, "ERROR: %15s", this->odrive->get_active_errors_string());
+            } else if (this->odrive->get_disarm_reason() != 0){
+                this->state_topic->level = 1;
+                sprintf(status_string, "FAULT: %15s", this->odrive->get_disarm_reason_string());
+            } else {
+                this->state_topic->level = 0;
+                sprintf(status_string, "Disarmed");
+            }
+        } else {
+            this->state_topic->level = 2;
+            sprintf(status_string, "Error: %10s", this->odrive->get_axis_state_string());
+        }
+    } else {
+        this->state_topic->level = 2;
+        sprintf(status_string, "No Connection");
+    }
+}
+
 void ODrive_ROS::update_diagnostics() {
+    update_diagnostics_label();
     if (!this->odrive->is_connected()) {
         if (this->odrive->get_axis_state() != odrive::CLOSED_LOOP_CONTROL) {
             update_diagnostics_keys(true);
@@ -66,9 +94,6 @@ void ODrive_ROS::update_diagnostics() {
         sprintf(strings[9], "%2.2f A", this->odrive->get_vbus_current());
         sprintf(strings[10], "%2.2f A", this->odrive->get_Iq_measured());
         sprintf(strings[11], "%2.2f A", this->odrive->get_Iq_setpoint());
-    } else {
-        sprintf(status_string, "Not Connected!");
-        this->state_topic->level = 2;
     }
 }
 

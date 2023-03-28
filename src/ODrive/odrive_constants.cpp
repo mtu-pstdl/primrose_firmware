@@ -15,28 +15,30 @@ namespace odrive {
      * @note The string must be freed by the caller, it is allocated on the heap
      */
     void sprintf_error_code(char* buffer, uint32_t error_code) {
+        // Clear the buffer
+        sprintf(buffer, "");
         // For each error code, check if it is set and if so, add it to the string with a comma
-        if (error_code & INITIALIZING) sprintf(buffer, "INITIALIZING, ");
-        if (error_code & SYSTEM_ERROR) sprintf(buffer, "%sSYSTEM_ERROR, ", buffer);
-        if (error_code & TIMING_ERROR) sprintf(buffer, "%sTIMING_ERROR, ", buffer);
-        if (error_code & MISSING_ESTIMATE) sprintf(buffer, "%sMISSING_ESTIMATE, ", buffer);
-        if (error_code & BAD_CONFIG) sprintf(buffer, "%sBAD_CONFIG, ", buffer);
-        if (error_code & DRV_FAULT) sprintf(buffer, "%sDRV_FAULT, ", buffer);
-        if (error_code & MISSING_INPUT) sprintf(buffer, "%sMISSING_INPUT, ", buffer);
-        if (error_code & DC_BUS_UNDER_VOLTAGE) sprintf(buffer, "%sDC_BUS_UNDER_VOLTAGE, ", buffer);
-        if (error_code & DC_BUS_OVER_VOLTAGE) sprintf(buffer, "%sDC_BUS_OVER_VOLTAGE, ", buffer);
-        if (error_code & DC_BUS_OVER_CURRENT) sprintf(buffer, "%sDC_BUS_OVER_CURRENT, ", buffer);
-        if (error_code & DC_BUS_OVER_REGEN_CURRENT) sprintf(buffer, "%sDC_BUS_OVER_REGEN_CURRENT, ", buffer);
-        if (error_code & CURRENT_LIMIT_VIOLATION) sprintf(buffer, "%sCURRENT_LIMIT_VIOLATION, ", buffer);
-        if (error_code & MOTOR_OVER_TEMP) sprintf(buffer, "%sMOTOR_OVER_TEMP, ", buffer);
-        if (error_code & INVERTER_OVER_TEMP) sprintf(buffer, "%sINVERTER_OVER_TEMP, ", buffer);
-        if (error_code & VELOCITY_LIMIT_VIOLATION) sprintf(buffer, "%sVELOCITY_LIMIT_VIOLATION, ", buffer);
-        if (error_code & POSITION_LIMIT_VIOLATION) sprintf(buffer, "%sPOSITION_LIMIT_VIOLATION, ", buffer);
-        if (error_code & WATCHDOG_TIMER_EXPIRED) sprintf(buffer, "%sWATCHDOG_TIMER_EXPIRED, ", buffer);
-        if (error_code & ESTOP_REQUESTED) sprintf(buffer, "%sESTOP_REQUESTED, ", buffer);
-        if (error_code & SPINOUT_DETECTED) sprintf(buffer, "%sSPINOUT_DETECTED, ", buffer);
-        if (error_code & OTHER_DEVICE_FAILED) sprintf(buffer, "%sOTHER_DEVICE_FAILED, ", buffer);
-        if (error_code & CALIBRATION_ERROR) sprintf(buffer, "%sCALIBRATION_ERROR, ", buffer);
+        if (error_code & INITIALIZING) sprintf(buffer, "INITIALIZING ");
+        if (error_code & SYSTEM_ERROR) sprintf(buffer, "%sSYSTEM_ERROR ", buffer);
+        if (error_code & TIMING_ERROR) sprintf(buffer, "%sTIMING_ERROR ", buffer);
+        if (error_code & MISSING_ESTIMATE) sprintf(buffer, "%sMISSING_ESTIMATE ", buffer);
+        if (error_code & BAD_CONFIG) sprintf(buffer, "%sBAD_CONFIG ", buffer);
+        if (error_code & DRV_FAULT) sprintf(buffer, "%sDRV_FAULT ", buffer);
+        if (error_code & MISSING_INPUT) sprintf(buffer, "%sMISSING_INPUT ", buffer);
+        if (error_code & DC_BUS_UNDER_VOLTAGE) sprintf(buffer, "%sDC_BUS_UNDER_VOLTAGE ", buffer);
+        if (error_code & DC_BUS_OVER_VOLTAGE) sprintf(buffer, "%sDC_BUS_OVER_VOLTAGE ", buffer);
+        if (error_code & DC_BUS_OVER_CURRENT) sprintf(buffer, "%sDC_BUS_OVER_CURRENT ", buffer);
+        if (error_code & DC_BUS_OVER_REGEN_CURRENT) sprintf(buffer, "%sDC_BUS_OVER_REGEN_CURRENT ", buffer);
+        if (error_code & CURRENT_LIMIT_VIOLATION) sprintf(buffer, "%sCURRENT_LIMIT_VIOLATION ", buffer);
+        if (error_code & MOTOR_OVER_TEMP) sprintf(buffer, "%sMOTOR_OVER_TEMP ", buffer);
+        if (error_code & INVERTER_OVER_TEMP) sprintf(buffer, "%sINVERTER_OVER_TEMP ", buffer);
+        if (error_code & VELOCITY_LIMIT_VIOLATION) sprintf(buffer, "%sVELOCITY_LIMIT_VIOLATION ", buffer);
+        if (error_code & POSITION_LIMIT_VIOLATION) sprintf(buffer, "%sPOSITION_LIMIT_VIOLATION ", buffer);
+        if (error_code & WATCHDOG_TIMER_EXPIRED) sprintf(buffer, "%sWATCHDOG_TIMER_EXPIRED ", buffer);
+        if (error_code & ESTOP_REQUESTED) sprintf(buffer, "%sESTOP_REQUESTED ", buffer);
+        if (error_code & SPINOUT_DETECTED) sprintf(buffer, "%sSPINOUT_DETECTED ", buffer);
+        if (error_code & OTHER_DEVICE_FAILED) sprintf(buffer, "%sOTHER_DEVICE_FAILED ", buffer);
+        if (error_code & CALIBRATION_ERROR) sprintf(buffer, "%sCALIBRATION_ERROR ", buffer);
 
         // If the string is empty, then there were no errors
         if (strlen(buffer) == 0) {

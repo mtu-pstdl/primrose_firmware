@@ -78,6 +78,7 @@ private:
             state_topic->values[5].key = "VEL_ESTIMATE";      // Or CONTROL_MODE
         }
     }
+    void ODrive_ROS::update_diagnostics_label();
 
     void allocate_strings() {
         for (auto & string : strings) {

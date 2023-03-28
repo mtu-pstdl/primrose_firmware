@@ -56,15 +56,15 @@ private:
     uint32_t   last_heartbeat   = 0;   // The time of the last heartbeat sent
 
     uint32_t                     AXIS_ERROR       = 0;   // Axis error code
-    odrive::axis_states          AXIS_STATE       = odrive::UNDEFINED;
-    odrive::procedure_results    PROCEDURE_RESULT = odrive::UNKNOWN_PROCEDURE_RESULT;
+    odrive::axis_states          AXIS_STATE       = odrive::IDLE;
+    odrive::procedure_results    PROCEDURE_RESULT = odrive::CANCELED;
 
 #define ERROR_UPDATE_RATE 100 // The rate at which the error state is updated in ms
 #define ERROR_FLIGHT_BIT 0x0002 // The bit in the in_flight_bitmask that corresponds to the error state
     uint32_t   last_errors_update = 0; // The last motor state
 
-    uint32_t   ACTIVE_ERRORS = 0;  // Active errors
-    uint32_t   DISARM_REASON = 0;  // Disarm reason
+    uint32_t   ACTIVE_ERRORS = DC_BUS_UNDER_VOLTAGE | WATCHDOG_TIMER_EXPIRED;  // Active errors
+    uint32_t   DISARM_REASON = DC_BUS_UNDER_VOLTAGE;  // Disarm reason
 
 #define ENCODER_UPDATE_RATE 100 // The rate at which the encoder state is updated in ms
 #define ENCODER_FLIGHT_BIT 0x0004 // The bit in the in_flight_bitmask that corresponds to the encoder state
