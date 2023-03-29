@@ -43,27 +43,41 @@ void ODrive_ROS::control_mode_callback(const std_msgs::Int32MultiArray &msg){
 
 void ODrive_ROS::update_diagnostics_label(){
     if (!this->odrive->is_connected()){
-        if (this->odrive->get_axis_state() == odrive::CLOSED_LOOP_CONTROL){
-            this->state_topic->level = 0;
-            sprintf(status_string, "Running: %10s", this->odrive->get_control_mode_string());
-
-        } else if (this->odrive->get_axis_state() == odrive::IDLE){
-            if (this->odrive->get_active_errors() != 0){
-                this->state_topic->level = 2;
-                sprintf(status_string, "ERROR: %15s", this->odrive->get_active_errors_string());
-            } else if (this->odrive->get_disarm_reason() != 0){
-                this->state_topic->level = 1;
-                sprintf(status_string, "FAULT: %15s", this->odrive->get_disarm_reason_string());
-            } else {
-                this->state_topic->level = 0;
-                sprintf(status_string, "Disarmed");
-            }
-        } else {
-            this->state_topic->level = 2;
-            sprintf(status_string, "Error: %10s", this->odrive->get_axis_state_string());
+        switch(this->odrive->get_axis_state()) {
+            case odrive::CLOSED_LOOP_CONTROL:
+                this->state_topic->level = diagnostic_msgs::DiagnosticStatus::OK;
+                sprintf(status_string, "Running: %10s", this->odrive->get_control_mode_string());
+                break;
+            case odrive::IDLE:
+                if (this->odrive->get_active_errors() != 0) {
+                    this->state_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
+                    sprintf(status_string, "ERROR: %15s", this->odrive->get_active_errors_string());
+                } else if (this->odrive->get_disarm_reason() != 0) {
+                    this->state_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
+                    sprintf(status_string, "FAULT: %15s", this->odrive->get_disarm_reason_string());
+                } else if (this->odrive->get_procedure_results() == odrive::SUCCESS) {
+                    this->state_topic->level = diagnostic_msgs::DiagnosticStatus::IDLE;
+                    sprintf(status_string, "Ready");
+                } else {
+                    this->state_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
+                    sprintf(status_string, "FAILED CALIB: %15s", this->odrive->get_procedure_results_string());
+                }
+                break;
+            case odrive::STARTUP_SEQUENCE:
+                this->state_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
+                sprintf(status_string, "Starting");
+                break;
+            case odrive::MOTOR_CALIBRATION:
+                this->state_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
+                sprintf(status_string, "Calibrating");
+                break;
+            default:
+                this->state_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
+                sprintf(status_string, "ERROR: %15s", this->odrive->get_axis_state_string());
+                break;
         }
     } else {
-        this->state_topic->level = 2;
+        this->state_topic->level = diagnostic_msgs::DiagnosticStatus::STALE;
         sprintf(status_string, "No Connection");
     }
 }
@@ -84,9 +98,9 @@ void ODrive_ROS::update_diagnostics() {
             sprintf(strings[0], "%24s", this->odrive->get_axis_state_string());
             sprintf(strings[1], "%24s", this->odrive->get_control_mode_string());
             sprintf(strings[2], "%lums", this->odrive->get_last_update()); // "Last Update:
-            sprintf(strings[3], "%.2f", this->odrive->get_setpoint());
-            sprintf(strings[4], "%.2f", this->odrive->get_pos_estimate());
-            sprintf(strings[5], "%.2f", this->odrive->get_vel_estimate());
+            sprintf(strings[3], "%24s", this->odrive->get_setpoint_string());
+            sprintf(strings[4], "%.2f %s", this->odrive->get_pos_estimate(), this->odrive->pos_unit_string);
+            sprintf(strings[5], "%.2f %s", this->odrive->get_vel_estimate(), this->odrive->vel_unit_string);
         }
         sprintf(strings[6], "%2.2f C", this->odrive->get_fet_temp());
         sprintf(strings[7], "%2.2f C", this->odrive->get_motor_temp());

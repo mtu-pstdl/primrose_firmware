@@ -22,6 +22,9 @@ public:
     String* name = nullptr; // The name of the ODrive
     uint8_t can_id = 0;
 
+    char* vel_unit_string; // The unit string
+    char* pos_unit_string; // The unit string
+
 private:
     FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64>* can_bus = nullptr; // The CAN bus pointer
 
@@ -31,6 +34,7 @@ private:
     char* active_errors_string; // The active errors string
     char* disarm_reason_string; // The disarm reason string
     char* control_mode_string; // The control mode string
+    char* setpoint_string; // The setpoint string
 
     void allocate_strings() {
         axis_error_string = new char[25];
@@ -45,6 +49,12 @@ private:
         sprintf(disarm_reason_string, "Not initialized");
         control_mode_string = new char[25];
         sprintf(control_mode_string, "Not initialized");
+        setpoint_string = new char[25];
+        sprintf(setpoint_string, "Not initialized");
+        vel_unit_string = new char[5];
+        sprintf(vel_unit_string, "Ticks");
+        pos_unit_string = new char[5];
+        sprintf(pos_unit_string, "Ticks");
     }
 
     uint32_t last_message = 0; // The last time a message was received from the ODrive
@@ -56,22 +66,22 @@ private:
     uint32_t   last_heartbeat   = 0;   // The time of the last heartbeat sent
 
     uint32_t                     AXIS_ERROR       = 0;   // Axis error code
-    odrive::axis_states          AXIS_STATE       = odrive::IDLE;
-    odrive::procedure_results    PROCEDURE_RESULT = odrive::CANCELED;
+    odrive::axis_states          AXIS_STATE       = odrive::CLOSED_LOOP_CONTROL;
+    odrive::procedure_results    PROCEDURE_RESULT = odrive::SUCCESS;
 
 #define ERROR_UPDATE_RATE 100 // The rate at which the error state is updated in ms
 #define ERROR_FLIGHT_BIT 0x0002 // The bit in the in_flight_bitmask that corresponds to the error state
     uint32_t   last_errors_update = 0; // The last motor state
 
-    uint32_t   ACTIVE_ERRORS = DC_BUS_UNDER_VOLTAGE | WATCHDOG_TIMER_EXPIRED;  // Active errors
-    uint32_t   DISARM_REASON = DC_BUS_UNDER_VOLTAGE;  // Disarm reason
+    uint32_t   ACTIVE_ERRORS = 0;  // Active errors
+    uint32_t   DISARM_REASON = 0;  // Disarm reason
 
 #define ENCODER_UPDATE_RATE 100 // The rate at which the encoder state is updated in ms
 #define ENCODER_FLIGHT_BIT 0x0004 // The bit in the in_flight_bitmask that corresponds to the encoder state
     uint32_t   last_encoder_update = 0; // The last encoder state
 
-    float_t    POS_ESTIMATE = 0; // Encoder position in counts
-    float_t    VEL_ESTIMATE = 0; // Encoder velocity in counts per second
+    float_t    POS_ESTIMATE = 203042; // Encoder position in counts
+    float_t    VEL_ESTIMATE = 9053332.33; // Encoder velocity in counts per second
 
 #define IQ_UPDATE_RATE 100 // The rate at which the motor state is updated in ms
 #define IQ_FLIGHT_BIT 0x0008 // The bit in the in_flight_bitmask that corresponds to the motor state
@@ -84,52 +94,37 @@ private:
 #define TEMP_FLIGHT_BIT 0x0010 // The bit in the in_flight_bitmask that corresponds to the temperature state
     uint32_t   last_temp_update = 0; // The last temperature state
 
-    float_t    FET_TEMP     = 0; // FET temperature in degrees Celsius
-    float_t    MOTOR_TEMP   = 0; // Motor temperature in degrees Celsius
+    float_t    FET_TEMP     = 34; // FET temperature in degrees Celsius
+    float_t    MOTOR_TEMP   = 46; // Motor temperature in degrees Celsius
 
 #define VBUS_UPDATE_RATE 100 // The rate at which the vbus state is updated in ms
 #define VBUS_FLIGHT_BIT 0x0020 // The bit in the in_flight_bitmask that corresponds to the vbus state
     uint32_t   last_vbus_update = 0; // The last vbus state
 
-    float_t    VBUS_VOLTAGE = 0; // Vbus voltage in volts
-    float_t    VBUS_CURRENT = 0; // Vbus current in amps
+    float_t    VBUS_VOLTAGE = 49.32; // Vbus voltage in volts
+    float_t    VBUS_CURRENT = 7.21; // Vbus current in amps
 
 #define HEARTBEAT_UPDATE_RATE 100 // The rate at which the heartbeat state is updated in ms
 #define HEARTBEAT_FLIGHT_BIT 0x0040 // The bit in the in_flight_bitmask that corresponds to the heartbeat state
 
     float_t position_setpoint = 0; // The position of the ODrive
-    float_t velocity_setpoint = 0; // The velocity of the ODrive
+    float_t velocity_setpoint = 10000; // The velocity of the ODrive
     float_t torque_setpoint   = 0; // The torque of the ODrive
 
-    odrive::control_modes control_mode = odrive::TORQUE_CONTROL; // The control mode of the ODrive
+    odrive::control_modes control_mode = odrive::VELOCITY_CONTROL; // The control mode of the ODrive
 
     bool has_rev_conversion = false; // Whether or not the ODrive has a conversion from ticks to revolutions
     float_t ticks_per_rev = 0;  // The number of ticks per revolution of output shaft
     bool has_meter_conversion = false; // Whether or not the ODrive has a conversion from revs to meters
-    float_t revs_per_meter = 0; // The number of revolutions of the output shaft per meter of distance
+    float_t meter_per_rev = 0; // The number of revolutions of the output shaft per meter of distance
 
-    enum command_ids: uint8_t { // These are can bus command ids
-        Heartbeat = 0x001, Estop = 0x002,
-        Get_Error = 0x003, Set_Axis_Node_ID = 0x006,
-        Set_Axis_State = 0x007, Get_Encoder_Estimates = 0x009,
-        Set_Controller_Mode = 0x00b, Set_Input_Pos = 0x00c,
-        Set_Input_Vel = 0x00d, Set_Input_Torque = 0x00e,
-        Set_Limits = 0x00f, Set_Traj_Vel_Limit = 0x011,
-        Set_Traj_Acc_Limit = 0x012, Set_Traj_Inertia = 0x013,
-        Get_Iq = 0x014, Get_Temperature = 0x015,
-        Reboot = 0x016, Get_Vbus_Voltage_Current = 0x017,
-        Clear_Errors = 0x018, Set_Absolute_Position = 0x019,
-        Set_Pos_Gains = 0x01a, Set_Vel_Gains = 0x01b,
-        Get_ADC_Voltage = 0x01c, Get_Controller_Error = 0x01d,
-    };
-
-    uint8_t send_command(command_ids command_id);
+    uint8_t send_command(odrive::command_ids command_id);
 
     template <typename T>
-    uint8_t send_command(command_ids command_id, T value);
+    uint8_t send_command(odrive::command_ids command_id, T value);
 
-    template <typename T>
-    uint8_t send_command(command_ids command_id, T lower_data, T upper_data);
+    template <typename T1, typename T2>
+    uint8_t send_command(odrive::command_ids command_id, T1 lower_data, T2 upper_data);
 
     void* estop_callback = nullptr; // The estop callback function
 
@@ -146,9 +141,9 @@ public:
 
     void set_ticks_per_rev(float_t value);
 
-    void set_revs_per_meter(float_t value);
-
     void set_conversion(float_t ticks_value, float_t revs_value);
+
+    void set_control_mode(odrive::control_modes mode);
 
     void refresh_data(); // Refreshes data from the ODrive
 
@@ -203,10 +198,13 @@ public:
 
     float_t get_setpoint() const;
 
+    char* get_setpoint_string();
+
     bool has_error() const;
 
     uint32_t get_last_update() const;
 
+    float_t unit_conversion(float_t value, bool direction) const;
 };
 
 
