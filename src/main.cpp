@@ -141,12 +141,16 @@ void setup() {
     node_handle.loginfo(log_msg.c_str());
 
     odrives[0] = new ODriveS1(0, new String("00"), &can1, &unified_estop_callback);
-    odrives[0]->set_conversion(172892, 0.92);
     odrives[1] = new ODriveS1(1, new String("01"), &can1, &unified_estop_callback);
     odrives[2] = new ODriveS1(2, new String("02"), &can1, &unified_estop_callback);
     odrives[3] = new ODriveS1(3, new String("03"), &can1, &unified_estop_callback);
     odrives[4] = new ODriveS1(4, new String("04"), &can1, &unified_estop_callback);
     odrives[5] = new ODriveS1(5, new String("05"), &can1, &unified_estop_callback);
+
+    for (ODriveS1* odrive : odrives) {
+        if (odrive == nullptr) continue;
+        odrive->set_conversion(172892, 0.92);
+    }
 
     system_diagnostics.status_length = 11;
     system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[11];

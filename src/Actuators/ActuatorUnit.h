@@ -30,7 +30,7 @@ public:
         main_battery_high_low    = 0x0400,
         high_temperature_warn    = 0x0800,
         m1_homing                = 0x1000,
-        m2_homing                = 0x2000,
+        m2_homing                = 0x2000
     };
 
     enum control_modes {
@@ -41,14 +41,19 @@ public:
     };
 
     struct motor_info{
+        char*    name                = nullptr; // The name of the motor
         uint32_t target_position     = 0; // The target position of the motor in tenths of a degree
         uint32_t current_position    = 0; // The current position of the motor in tenths of a degree
+        uint32_t max_position        = 0; // The maximum position of the motor in tenths of a degree
         boolean  position_negative   = false; // The current direction of the motor
         uint32_t current_speed       = 0; // The current speed of the motor in tenths of a degree per second
         boolean  direction_negative  = false; // The current direction of the motor
         uint16_t current_current     = 0; // The current current draw of the motor in tenths of an amp
+        uint16_t warning_current     = 62; // The current current draw of the motor in tenths of an amp
         control_modes control_mode   = stopped; // The current control mode of the motor
         boolean  homed               = false; // Whether or not the motor has been homed
+        bool     fault               = false; // Whether or not the motor has a fault
+        char*    status_string       = nullptr; // A string describing the status of the motor
     };
 
     static void detailed_encoder_count_callback(void* actuator, Actuators::message* msg);
@@ -73,6 +78,18 @@ private:
 
     uint16_t message_failure_count = 0;
     const uint16_t message_failure_threshold = 5;
+
+    char* status_string = nullptr;
+
+    void allocate_strings(){
+        this->status_string = new char[100];
+        this->motors[0].name = new char[5];
+        this->motors[1].name = new char[5];
+        sprintf(this->motors[0].name, "M1");
+        sprintf(this->motors[1].name, "M2");
+        this->motors[0].status_string = new char[100];
+        this->motors[1].status_string = new char[100];
+    }
 
     motor_info motors[2]{
             motor_info(),
@@ -108,6 +125,7 @@ public:
         // Setup all the required messages for gathering information from the object
         this->reocurring_messages = new telemetry_message[10];
         this->build_telemetry_messages();
+        this->allocate_strings();
     }
 
     void update();
@@ -125,7 +143,11 @@ public:
 
     void emergency_stop();
 
-    String* get_status_string();
+    uint16_t get_status() const;
+
+    char* get_motor_fault_string(uint8_t motor);
+
+    char* get_status_string();
 
     int32_t get_position(uint8_t motor);
 

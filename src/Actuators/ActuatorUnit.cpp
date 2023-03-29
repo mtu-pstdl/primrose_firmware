@@ -230,19 +230,19 @@ void ActuatorUnit::message_failure_callback(void *actuator, Actuators::message *
 
 // Debug serial
 
-String* ActuatorUnit::get_status_string() {
-    auto* status_string = new String();
-    status_string->concat("------------Actuator Unit Status Report " + String(this->id) + "-------\n\r");
-    status_string->concat("Main Battery Voltage: " + String(this->main_battery_voltage) + "\n\r");
-    status_string->concat("Logic Battery Voltage: " + String(this->logic_battery_voltage) + "\n\r");
-    status_string->concat("Status: " + String(this->status) + "\n\r");
-    status_string->concat("Motor 1 Status: " + String(this->motors[0].control_mode) + "\n\r");
-    status_string->concat("Motor 2 Status: " + String(this->motors[1].control_mode) + "\n\r");
-    status_string->concat("Motor 1 Current: " + String(this->motors[0].current_current) + "\n\r");
-    status_string->concat("Motor 2 Current: " + String(this->motors[1].current_current) + "\n\r");
-    status_string->concat("Message Failure Count: " + String(this->message_failure_count) + "\n\r");
-    return status_string;
-}
+//String* ActuatorUnit::get_status_string() {
+//    auto* status_string = new String();
+//    status_string->concat("------------Actuator Unit Status Report " + String(this->id) + "-------\n\r");
+//    status_string->concat("Main Battery Voltage: " + String(this->main_battery_voltage) + "\n\r");
+//    status_string->concat("Logic Battery Voltage: " + String(this->logic_battery_voltage) + "\n\r");
+//    status_string->concat("Status: " + String(this->status) + "\n\r");
+//    status_string->concat("Motor 1 Status: " + String(this->motors[0].control_mode) + "\n\r");
+//    status_string->concat("Motor 2 Status: " + String(this->motors[1].control_mode) + "\n\r");
+//    status_string->concat("Motor 1 Current: " + String(this->motors[0].current_current) + "\n\r");
+//    status_string->concat("Motor 2 Current: " + String(this->motors[1].current_current) + "\n\r");
+//    status_string->concat("Message Failure Count: " + String(this->message_failure_count) + "\n\r");
+//    return status_string;
+//}
 
 void ActuatorUnit::estop() {
 
@@ -272,7 +272,73 @@ float_t ActuatorUnit::get_logic_battery_voltage() const {
     return (float_t) this->logic_battery_voltage / 10;
 }
 
+uint16_t ActuatorUnit::get_status() const {
+    return this->status;
+}
 
+char* ActuatorUnit::get_motor_fault_string(uint8_t motor) {
+    sprintf(this->motors[motor].status_string, "");
+    if (!motors[motor].homed) sprintf(this->status_string, "%s%s_NOT_HOMED ",
+                                      motors[motor].status_string, motors[motor].name);
+    if (motors[motor].current_current > motors[motor].warning_current)
+        sprintf(this->status_string, "%s%s_HIGH_CURRENT ", motors[motor].status_string, motors[motor].name);
+    switch (motor){
+        case 0:
+            if (status & controller_status_bitmask::m1_over_current)
+                sprintf(motors[motor].status_string, "%sM1_OVER_CURRENT ", this->status_string);
+            if (status & controller_status_bitmask::m1_driver_fault)
+                sprintf(motors[motor].status_string, "%sM1_DRIVER_FAULT ", this->status_string);
+            break;
+        case 1:
+            if (status & controller_status_bitmask::m2_over_current)
+                sprintf(motors[motor].status_string, "%sM2_OVER_CURRENT ", this->status_string);
+            if (status & controller_status_bitmask::m2_driver_fault)
+                sprintf(motors[motor].status_string, "%sM2_DRIVER_FAULT ", this->status_string);
+            break;
+        default:
+            break;
+    }
+    if (strlen(motors[motor].status_string) == 0) {
+        switch (motors[motor].control_mode){
+            case stopped:
+                sprintf(motors[motor].status_string, "%s%s_STOPPED ", motors[motor].status_string, motors[motor].name);
+                break;
+            case position:
+            case speed:
+                sprintf(motors[motor].status_string, "%s%s_ACTIVE", motors[motor].status_string, motors[motor].name);
+                break;
+            case homing:
+                sprintf(motors[motor].status_string, "%s%s_HOMING", motors[motor].status_string, motors[motor].name);
+                break;
+        }
+        motors[motor].fault = false;
+    } else {
+        motors[motor].fault = true;
+    }
+    return motors[motor].status_string;
+}
+
+char* ActuatorUnit::get_status_string() {
+    sprintf(this->status_string, "");
+    if (status == 0 || status >= controller_status_bitmask::main_battery_high_warn) {
+        sprintf(this->status_string, "OK");
+    } else {
+        sprintf(this->status_string, "");
+        if (status & controller_status_bitmask::e_stop)
+            sprintf(this->status_string, "%s%s", this->status_string, "DRIVER_E_STOP ");
+        if (status & controller_status_bitmask::high_temperature_fault)
+            sprintf(this->status_string, "%s%s", this->status_string, "HIGH_TEMPERATURE_FAULT ");
+        if (status & controller_status_bitmask::main_battery_high_fault)
+            sprintf(this->status_string, "%s%s", this->status_string, "MAIN_BATTERY_HIGH_FAULT ");
+        if (status & controller_status_bitmask::logic_battery_high_fault)
+            sprintf(this->status_string, "%s%s", this->status_string, "LOGIC_BATTERY_HIGH_FAULT ");
+        if (status & controller_status_bitmask::logic_battery_low_fault)
+            sprintf(this->status_string, "%s%s", this->status_string, "LOGIC_BATTERY_LOW_FAULT ");
+    }
+    if (motors[0].fault) sprintf(this->status_string, "%sM1_FAULT ", this->status_string);
+    if (motors[1].fault) sprintf(this->status_string, "%sM2_FAULT ", this->status_string);
+    return this->status_string;
+}
 
 
 

@@ -48,15 +48,21 @@ private:
 
     String name;
 
-    char* strings[10];
+    char* strings[11];
+    char* status_string = new char[25];
 
     void allocate_strings() {
         for (auto & string : strings) {
-            string = new char[10];
+            string = new char[20];
         }
     }
 
     ActuatorUnit* actuator;
+
+    void update_status_message();
+
+    void update_diagnostics_topic();
+
 
 public:
 
@@ -68,27 +74,28 @@ public:
             state_pub_(node_names[2][node_id], &state_topic){
         this->actuator = actuator;
         // Add key-value pairs to the condition topic
+        sprintf(status_string, "Initializing");
         this->diagnostic_topic = status;
         this->name = disp_name;
         this->diagnostic_topic->name = "ActuatorUnit";
-        this->diagnostic_topic->message = "Initializing";
+        this->diagnostic_topic->message = status_string;
         this->diagnostic_topic->level = 0;
-        this->diagnostic_topic->values_length = 10;
-        this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[10];
-        this->diagnostic_topic->values[0].key = "M1-Position";
-        this->diagnostic_topic->values[1].key = "M2-Position";
-        this->diagnostic_topic->values[2].key = "M1-Velocity";
-        this->diagnostic_topic->values[3].key = "M2-Velocity";
-        this->diagnostic_topic->values[4].key = "M1-Current";
-        this->diagnostic_topic->values[5].key = "M2-Current";
-        this->diagnostic_topic->values[6].key = "Temperature";
-        this->diagnostic_topic->values[7].key = "Main Volts";
-        this->diagnostic_topic->values[8].key = "Logic Volts";
-        this->diagnostic_topic->values[9].key = "Status";
-
+        this->diagnostic_topic->values_length = 11;
+        this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[11];
+        this->diagnostic_topic->values[0].key = "M1-Status";
+        this->diagnostic_topic->values[1].key = "M2-Status";
+        this->diagnostic_topic->values[2].key = "M1-Position";
+        this->diagnostic_topic->values[3].key = "M2-Position";
+        this->diagnostic_topic->values[4].key = "M1-Velocity";
+        this->diagnostic_topic->values[5].key = "M2-Velocity";
+        this->diagnostic_topic->values[6].key = "M1-Current";
+        this->diagnostic_topic->values[7].key = "M2-Current";
+        this->diagnostic_topic->values[8].key = "Temperature";
+        this->diagnostic_topic->values[9].key = "Main Volts";
+        this->diagnostic_topic->values[10].key = "Logic Volts";
         allocate_strings();
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 11; i++) {
             this->diagnostic_topic->values[i].value = strings[i];
         }
 
