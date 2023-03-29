@@ -280,20 +280,31 @@ char* ActuatorUnit::get_motor_fault_string(uint8_t motor) {
     sprintf(this->motors[motor].status_string, "");
     if (!motors[motor].homed) sprintf(this->motors[motor].status_string, "%s%s_NOT_HOMED ",
                                       motors[motor].status_string, motors[motor].name);
-    if (motors[motor].current_current > motors[motor].warning_current)
+    if (motors[motor].current_current > motors[motor].warning_current) {
         sprintf(this->status_string, "%s%s_HIGH_CURRENT ", motors[motor].status_string, motors[motor].name);
+        motors[motor].warn = true;
+    }
+
     switch (motor){
         case 0:
-            if (status & controller_status_bitmask::m1_over_current)
+            if (status & controller_status_bitmask::m1_over_current) {
                 sprintf(motors[motor].status_string, "%sM1_OVER_CURRENT ", this->status_string);
-            if (status & controller_status_bitmask::m1_driver_fault)
+                motors[motor].fault = true;
+            }
+            if (status & controller_status_bitmask::m1_driver_fault) {
                 sprintf(motors[motor].status_string, "%sM1_DRIVER_FAULT ", this->status_string);
+                motors[motor].fault = true;
+            }
             break;
         case 1:
-            if (status & controller_status_bitmask::m2_over_current)
+            if (status & controller_status_bitmask::m2_over_current) {
                 sprintf(motors[motor].status_string, "%sM2_OVER_CURRENT ", this->status_string);
-            if (status & controller_status_bitmask::m2_driver_fault)
+                motors[motor].fault = true;
+            }
+            if (status & controller_status_bitmask::m2_driver_fault) {
                 sprintf(motors[motor].status_string, "%sM2_DRIVER_FAULT ", this->status_string);
+                motors[motor].fault = true;
+            }
             break;
         default:
             break;
@@ -311,9 +322,6 @@ char* ActuatorUnit::get_motor_fault_string(uint8_t motor) {
                 sprintf(motors[motor].status_string, "%s%s_HOMING", motors[motor].status_string, motors[motor].name);
                 break;
         }
-        motors[motor].fault = false;
-    } else {
-        motors[motor].fault = true;
     }
     return motors[motor].status_string;
 }
@@ -321,7 +329,7 @@ char* ActuatorUnit::get_motor_fault_string(uint8_t motor) {
 char* ActuatorUnit::get_status_string() {
     sprintf(this->status_string, "");
     if (status == 0 || status >= controller_status_bitmask::main_battery_high_warn) {
-        if (!this->motors[0].fault && !this->motors[1].fault) {
+        if (!this->motors[0].fault && !this->motors[1].fault && !this->motors[0].warn && !this->motors[1].warn) {
             sprintf(this->status_string, "OK");
         }
     } else {
@@ -337,8 +345,16 @@ char* ActuatorUnit::get_status_string() {
         if (status & controller_status_bitmask::logic_battery_low_fault)
             sprintf(this->status_string, "%s%s", this->status_string, "LOGIC_BATTERY_LOW_FAULT ");
     }
-    if (motors[0].fault) sprintf(this->status_string, "%sM1_FAULT ", this->status_string);
-    if (motors[1].fault) sprintf(this->status_string, "%sM2_FAULT ", this->status_string);
+    if (motors[0].fault) {
+        sprintf(this->status_string, "%sM1_FAULT ", this->status_string);
+    } else if (motors[0].warn) {
+        sprintf(this->status_string, "%sM1_WARN ", this->status_string);
+    }
+    if (motors[1].fault) {
+        sprintf(this->status_string, "%sM2_FAULT ", this->status_string);
+    } else if (motors[1].warn) {
+        sprintf(this->status_string, "%sM2_WARN ", this->status_string);
+    }
     return this->status_string;
 }
 

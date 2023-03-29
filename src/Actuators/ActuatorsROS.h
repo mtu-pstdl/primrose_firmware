@@ -37,14 +37,12 @@ private:
     ros::NodeHandle* node_handle = nullptr; // The ROS node handle
 
     ros::Subscriber<std_msgs::Float32MultiArray, ActuatorsROS> setpoint_sub;
-    ros::Subscriber<std_msgs::Int32MultiArray, ActuatorsROS> control_mode_sub;
 
     ros::Publisher encoder_pub_;
-    ros::Publisher state_pub_;
+//    ros::Publisher state_pub_;
 
     diagnostic_msgs::DiagnosticStatus* diagnostic_topic;
     std_msgs::Int32MultiArray encoder_topic;
-    std_msgs::Int32MultiArray state_topic;
 
     String name;
 
@@ -69,14 +67,16 @@ public:
     ActuatorsROS(ActuatorUnit* actuator, uint8_t node_id, diagnostic_msgs::DiagnosticStatus* status,
                  String disp_name) :
             setpoint_sub(node_names[3][node_id], &ActuatorsROS::setpoint_callback, this),
-            control_mode_sub(node_names[4][node_id], &ActuatorsROS::control_mode_callback, this),
-            encoder_pub_(node_names[1][node_id], &encoder_topic),
-            state_pub_(node_names[2][node_id], &state_topic){
+            encoder_pub_(String(disp_name + "/encoders").c_str(), &encoder_topic){
         this->actuator = actuator;
         // Add key-value pairs to the condition topic
         sprintf(status_string, "Initializing");
         this->diagnostic_topic = status;
         this->name = disp_name;
+
+        this->encoder_topic.data_length = 2;
+        this->encoder_topic.data = new int32_t[2];
+
         this->diagnostic_topic->name = "ActuatorUnit";
         this->diagnostic_topic->message = status_string;
         this->diagnostic_topic->level = 0;
