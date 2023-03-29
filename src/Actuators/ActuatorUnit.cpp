@@ -278,7 +278,7 @@ uint16_t ActuatorUnit::get_status() const {
 
 char* ActuatorUnit::get_motor_fault_string(uint8_t motor) {
     sprintf(this->motors[motor].status_string, "");
-    if (!motors[motor].homed) sprintf(this->status_string, "%s%s_NOT_HOMED ",
+    if (!motors[motor].homed) sprintf(this->motors[motor].status_string, "%s%s_NOT_HOMED ",
                                       motors[motor].status_string, motors[motor].name);
     if (motors[motor].current_current > motors[motor].warning_current)
         sprintf(this->status_string, "%s%s_HIGH_CURRENT ", motors[motor].status_string, motors[motor].name);
@@ -321,7 +321,9 @@ char* ActuatorUnit::get_motor_fault_string(uint8_t motor) {
 char* ActuatorUnit::get_status_string() {
     sprintf(this->status_string, "");
     if (status == 0 || status >= controller_status_bitmask::main_battery_high_warn) {
-        sprintf(this->status_string, "OK");
+        if (!this->motors[0].fault && !this->motors[1].fault) {
+            sprintf(this->status_string, "OK");
+        }
     } else {
         sprintf(this->status_string, "");
         if (status & controller_status_bitmask::e_stop)
