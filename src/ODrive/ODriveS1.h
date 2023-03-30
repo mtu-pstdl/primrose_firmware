@@ -132,7 +132,7 @@ public:
 
     bool is_connected() const;
 
-    ODriveS1(uint8_t can_id, String* name, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64>* can_bus,
+    ODriveS1(uint8_t can_id, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64>* can_bus,
              void* estop_callback);
 
     void init(); // Initialize the ODrive module

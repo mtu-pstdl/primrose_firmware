@@ -140,12 +140,9 @@ void setup() {
     log_msg = "Initialising ODriveS1 objects";
     node_handle.loginfo(log_msg.c_str());
 
-    odrives[0] = new ODriveS1(0, new String("00"), &can1, &unified_estop_callback);
-    odrives[1] = new ODriveS1(1, new String("01"), &can1, &unified_estop_callback);
-    odrives[2] = new ODriveS1(2, new String("02"), &can1, &unified_estop_callback);
-    odrives[3] = new ODriveS1(3, new String("03"), &can1, &unified_estop_callback);
-    odrives[4] = new ODriveS1(4, new String("04"), &can1, &unified_estop_callback);
-    odrives[5] = new ODriveS1(5, new String("05"), &can1, &unified_estop_callback);
+    for (int i = 0; i < 6; i++) {
+        odrives[i] = new ODriveS1(i, &can1, &node_handle);
+    }
 
     for (ODriveS1* odrive : odrives) {
         if (odrive == nullptr) continue;

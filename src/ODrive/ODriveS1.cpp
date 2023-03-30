@@ -7,10 +7,9 @@
 //#include <utility>
 //#include "odrive_constants.h"
 
-ODriveS1::ODriveS1(uint8_t can_id, String* name, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> *can_bus,
+ODriveS1::ODriveS1(uint8_t can_id, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> *can_bus,
                    void* estop_callback) {
     this->can_id = can_id;
-    this->name = name;
     this->can_bus = can_bus;
     this->estop_callback = estop_callback;
     this->allocate_strings();
@@ -169,8 +168,8 @@ uint8_t ODriveS1::send_command(odrive::command_ids command_id, T1 lower_data, T2
     msg.flags.extended = false; // Set the extended flag to false (standard CAN)
     msg.len = 8;
     // Some pointer magic to convince the compiler this is a 32 bit value
-    uint32_t lower_32 = *(uint32_t*) &lower_data;  // Cast the data to a uint32_t without modifying the bits
-    uint32_t upper_32 = *(uint32_t*) &upper_data;  // Cast the data to a uint32_t without modifying the bits
+    uint32_t lower_32 = *(uint32_t*) &lower_data;
+    uint32_t upper_32 = *(uint32_t*) &upper_data;
     msg.buf[0] = (uint8_t) (lower_32 & 0xFF);         // Set the first byte to the lower 8 bits of the value
     msg.buf[1] = (uint8_t) ((lower_32 >> 8) & 0xFF);  // Set the second byte to the next 8 bits of the value
     msg.buf[2] = (uint8_t) ((lower_32 >> 16) & 0xFF); // Set the third byte to the next 8 bits of the value
@@ -404,6 +403,7 @@ uint32_t ODriveS1::get_last_update() const {
 void ODriveS1::set_control_mode(odrive::control_modes mode) {
     this->control_mode = mode;
     this->send_command(odrive::Set_Controller_Mode, mode, odrive::PASSTHROUGH);
+    this->send_command(odrive::Set_Axis_State, odrive::axis_states::CLOSED_LOOP_CONTROL, mode);
 }
 
 char *ODriveS1::get_setpoint_string() {

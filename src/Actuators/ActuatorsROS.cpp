@@ -13,11 +13,12 @@ void ActuatorsROS::advertise_subscribe(ros::NodeHandle *nh) {
 }
 
 void ActuatorsROS::setpoint_callback(const std_msgs::Float32MultiArray &msg) {
-
+    this->actuator->set_target_position(msg.data[0], msg.data[1]);
 }
 
-void ActuatorsROS::control_mode_callback(const std_msgs::Int32MultiArray &msg) {
-
+void ActuatorsROS::begin_homing() {
+    this->actuator->set_control_mode(ActuatorUnit::control_modes::homing, 0);
+    this->actuator->set_control_mode(ActuatorUnit::control_modes::homing, 1);
 }
 
 void ActuatorsROS::update_status_message(){

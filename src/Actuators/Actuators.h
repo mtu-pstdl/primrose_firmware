@@ -34,18 +34,19 @@ public:
 
 
     struct message{
-        uint8_t id;
-        serial_commands command;
-        uint8_t data_length;
-        uint8_t data[16];
-        uint8_t crc[2];
-        bool expect_response;  // If true the object will send data back
-        bool sent_received;    // True if the message has been sent and a response has been received
+        uint8_t id                  = 0;
+        serial_commands command     = read_encoder_count_m1;
+        uint8_t data_length         = 0;
+        uint8_t data[16]            = {0};
+        uint8_t crc[2]              = {0};
+        bool expect_response        = false;  // If true the object will send data back
+        bool sent_received          = false;    // True if the message has been sent and a response has been received
         // The callback function to call when the message is received
-        void* object;
-        void (*callback)(void* actuator, message* msg);
+        void* object                = nullptr;
+        void (*callback)(void* actuator, message* msg) = nullptr;
         boolean free_after_callback = false; // If true the message will be deleted after the callback is called
-        void (*failure_callback)(void* actuator, message* msg); // The callback to call if the message fails to send
+        // The callback to call if the message fails to send
+        void (*failure_callback)(void* actuator, message* msg) = nullptr;
     };
 
 private:
