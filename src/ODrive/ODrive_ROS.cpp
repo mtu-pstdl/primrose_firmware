@@ -12,8 +12,8 @@
 void ODrive_ROS::advertise_subscribe(ros::NodeHandle *nh) {
     this->node_handle = nh;
 
-    nh->advertise(this->condition_pub_);
-    nh->advertise(this->encoder_pub_);
+//    nh->advertise(this->condition_pub_);
+//    nh->advertise(this->encoder_pub_);
 //    nh->advertise(this->state_pub_);
 //    nh->subscribe(this->setpoint_sub);
 //    nh->subscribe(this->control_mode_sub);
@@ -42,7 +42,7 @@ void ODrive_ROS::control_mode_callback(const std_msgs::Int32MultiArray &msg){
 }
 
 void ODrive_ROS::update_diagnostics_label(){
-    if (!this->odrive->is_connected()){
+    if (this->odrive->is_connected()){
         switch(this->odrive->get_axis_state()) {
             case odrive::CLOSED_LOOP_CONTROL:
                 this->state_topic->level = diagnostic_msgs::DiagnosticStatus::OK;
@@ -84,7 +84,7 @@ void ODrive_ROS::update_diagnostics_label(){
 
 void ODrive_ROS::update_diagnostics() {
     update_diagnostics_label();
-    if (!this->odrive->is_connected()) {
+    if (this->odrive->is_connected()) {
         if (this->odrive->get_axis_state() != odrive::CLOSED_LOOP_CONTROL) {
             update_diagnostics_keys(true);
             sprintf(strings[0], "%24s", this->odrive->get_axis_state_string());         // Axis State

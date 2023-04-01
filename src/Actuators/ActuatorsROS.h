@@ -117,6 +117,7 @@ public:
 
     void publish();
 
+    void begin_homing();
 };
 
 

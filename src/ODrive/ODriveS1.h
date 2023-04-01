@@ -66,8 +66,8 @@ private:
     uint32_t   last_heartbeat   = 0;   // The time of the last heartbeat sent
 
     uint32_t                     AXIS_ERROR       = 0;   // Axis error code
-    odrive::axis_states          AXIS_STATE       = odrive::CLOSED_LOOP_CONTROL;
-    odrive::procedure_results    PROCEDURE_RESULT = odrive::SUCCESS;
+    odrive::axis_states          AXIS_STATE       = odrive::UNDEFINED;
+    odrive::procedure_results    PROCEDURE_RESULT = odrive::UNKNOWN_PROCEDURE_RESULT;
 
 #define ERROR_UPDATE_RATE 100 // The rate at which the error state is updated in ms
 #define ERROR_FLIGHT_BIT 0x0002 // The bit in the in_flight_bitmask that corresponds to the error state
@@ -80,8 +80,8 @@ private:
 #define ENCODER_FLIGHT_BIT 0x0004 // The bit in the in_flight_bitmask that corresponds to the encoder state
     uint32_t   last_encoder_update = 0; // The last encoder state
 
-    float_t    POS_ESTIMATE = 203042; // Encoder position in counts
-    float_t    VEL_ESTIMATE = 9053332.33; // Encoder velocity in counts per second
+    float_t    POS_ESTIMATE = 0; // Encoder position in counts
+    float_t    VEL_ESTIMATE = 0; // Encoder velocity in counts per second
 
 #define IQ_UPDATE_RATE 100 // The rate at which the motor state is updated in ms
 #define IQ_FLIGHT_BIT 0x0008 // The bit in the in_flight_bitmask that corresponds to the motor state
@@ -94,21 +94,21 @@ private:
 #define TEMP_FLIGHT_BIT 0x0010 // The bit in the in_flight_bitmask that corresponds to the temperature state
     uint32_t   last_temp_update = 0; // The last temperature state
 
-    float_t    FET_TEMP     = 34; // FET temperature in degrees Celsius
-    float_t    MOTOR_TEMP   = 46; // Motor temperature in degrees Celsius
+    float_t    FET_TEMP     = 0; // FET temperature in degrees Celsius
+    float_t    MOTOR_TEMP   = 0; // Motor temperature in degrees Celsius
 
 #define VBUS_UPDATE_RATE 100 // The rate at which the vbus state is updated in ms
 #define VBUS_FLIGHT_BIT 0x0020 // The bit in the in_flight_bitmask that corresponds to the vbus state
     uint32_t   last_vbus_update = 0; // The last vbus state
 
-    float_t    VBUS_VOLTAGE = 49.32; // Vbus voltage in volts
-    float_t    VBUS_CURRENT = 7.21; // Vbus current in amps
+    float_t    VBUS_VOLTAGE = 0; // Vbus voltage in volts
+    float_t    VBUS_CURRENT = 0; // Vbus current in amps
 
 #define HEARTBEAT_UPDATE_RATE 100 // The rate at which the heartbeat state is updated in ms
 #define HEARTBEAT_FLIGHT_BIT 0x0040 // The bit in the in_flight_bitmask that corresponds to the heartbeat state
 
     float_t position_setpoint = 0; // The position of the ODrive
-    float_t velocity_setpoint = 10000; // The velocity of the ODrive
+    float_t velocity_setpoint = 0; // The velocity of the ODrive
     float_t torque_setpoint   = 0; // The torque of the ODrive
 
     odrive::control_modes control_mode = odrive::VELOCITY_CONTROL; // The control mode of the ODrive

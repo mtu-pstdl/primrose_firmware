@@ -182,7 +182,7 @@ void setup() {
         if (odrive == nullptr) continue;
         log_msg = "Advertising ODrive";
         node_handle.loginfo(log_msg.c_str());
-        odrive->advertise_subscribe(&node_handle);
+//        odrive->advertise_subscribe(&node_handle);
     }
 
     for (ActuatorsROS* actuator : actuators_ros) {

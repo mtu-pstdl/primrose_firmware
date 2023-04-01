@@ -43,13 +43,13 @@ public:
     struct motor_info{
         char*    name                = nullptr; // The name of the motor
         uint32_t target_position     = 0; // The target position of the motor in tenths of a degree
-        uint32_t current_position    = 32522; // The current position of the motor in tenths of a degree
+        uint32_t current_position    = 0; // The current position of the motor in tenths of a degree
         uint32_t max_position        = 0; // The maximum position of the motor in tenths of a degree
         boolean  position_negative   = false; // The current direction of the motor
-        uint32_t current_speed       = 1425; // The current speed of the motor in tenths of a degree per second
+        uint32_t current_speed       = 0; // The current speed of the motor in tenths of a degree per second
         boolean  direction_negative  = false; // The current direction of the motor
-        uint16_t current_current     = 65; // The current current draw of the motor in tenths of an amp
-        uint16_t warning_current     = 62; // The current current draw of the motor in tenths of an amp
+        uint16_t current_current     = 0; // The current current draw of the motor in tenths of an amp
+        uint16_t warning_current     = 50; // The current current draw of the motor in tenths of an amp
         control_modes control_mode   = stopped; // The current control mode of the motor
         boolean  homed               = false; // Whether or not the motor has been homed
         bool     fault               = false; // Whether or not the motor has a fault
@@ -106,9 +106,9 @@ private:
     telemetry_message* reocurring_messages;
 
     // Shared variables between motor 1 and motor 2
-    uint16_t controller_temperature = 567;
-    uint16_t main_battery_voltage = 485;
-    uint16_t logic_battery_voltage = 134;
+    uint16_t controller_temperature = 0;
+    uint16_t main_battery_voltage = 0;
+    uint16_t logic_battery_voltage = 0;
     uint16_t status = 0;
 
     telemetry_message* build_message(Actuators::serial_commands command, uint32_t send_interval, uint8_t data_length,
