@@ -236,6 +236,11 @@ void setup() {
     node_handle.spinOnce();
     log_msg = "Setup complete";
     node_handle.loginfo(log_msg.c_str());
+
+    for (ODriveS1* odrive: odrives) {
+        odrive->init();
+    }
+
 }
 
 void loop() {

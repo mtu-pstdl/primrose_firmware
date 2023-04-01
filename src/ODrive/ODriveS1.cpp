@@ -19,6 +19,7 @@ ODriveS1::ODriveS1(uint8_t can_id, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> *can
 void ODriveS1::init() {
     // Tell the ODrive to begin homing the motor
     this->send_command(odrive::Set_Axis_State, odrive::STARTUP_SEQUENCE);
+//    this->send_command(odrive::Set_Axis_State, odrive::FULL_CALIBRATION_SEQUENCE);
 }
 
 uint8_t ODriveS1::get_can_id() const {
@@ -49,8 +50,8 @@ void ODriveS1::on_message(const CAN_message_t &msg) {
         case odrive::Heartbeat: // Lower 4 bytes are AXIS_ERROR and the upper 4 bytes are AXIS_STATE
             this->AXIS_ERROR       = upper_32;
             // Bitmask the lowest byte of the lower 32 bits to get the axis state
-            this->AXIS_STATE       = static_cast<odrive::axis_states> (lower_32 & 0xFF);
-            this->PROCEDURE_RESULT = static_cast<odrive::procedure_results>((lower_32 >> 8) & 0xFF);
+            this->AXIS_STATE       = static_cast<odrive::axis_states> (lower_32 >> 16);
+            this->PROCEDURE_RESULT = static_cast<odrive::procedure_results>(lower_32 >> 24);
             this->last_axis_state  = millis();
             this->in_flight_bitmask &= ~AXIS_STATE_FLIGHT_BIT; // Clear the bit
             break;
@@ -73,23 +74,19 @@ void ODriveS1::on_message(const CAN_message_t &msg) {
             this->in_flight_bitmask &= ~IQ_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Temperature:
-            // Copy the message into fet_msg for debugging
+            lower_32 = (msg.buf[3] << 24) | (msg.buf[2] << 16) | (msg.buf[1] << 8) | msg.buf[0];
+            this->FET_TEMP = * (float *) &lower_32;
+            upper_32 = (msg.buf[7] << 24) | (msg.buf[6] << 16) | (msg.buf[5] << 8) | msg.buf[4];
+            this->MOTOR_TEMP = * (float *) &upper_32;
 
-            memcpy(this->fet_msg, &msg, sizeof(CAN_message_t));
-
-            this->FET_TEMP   = calculate_fixed_point((int16_t) lower_32 >> 16,
-                                                     (uint16_t) lower_32 & 0xFFFF);
-            this->MOTOR_TEMP =  calculate_fixed_point((int16_t) upper_32 >> 16,
-                                                      (uint16_t) upper_32 & 0xFFFF);
             this->last_temp_update = millis();
             this->in_flight_bitmask &= ~TEMP_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Vbus_Voltage_Current:
-            // Print the binary representation of the voltage and current for debugging
-            this->VBUS_VOLTAGE = calculate_fixed_point((int16_t) lower_32 >> 16,
-                                                       (uint16_t) lower_32 & 0xFFFF);
-            this->VBUS_CURRENT = calculate_fixed_point((int16_t) upper_32 >> 16,
-                                                       (uint16_t) upper_32 & 0xFFFF);
+            lower_32 = (msg.buf[3] << 24) | (msg.buf[2] << 16) | (msg.buf[1] << 8) | msg.buf[0];
+            upper_32 = (msg.buf[7] << 24) | (msg.buf[6] << 16) | (msg.buf[5] << 8) | msg.buf[4];
+            this->VBUS_VOLTAGE = * (float *) &lower_32;
+            this->VBUS_CURRENT = * (float *) &upper_32;
             this->last_vbus_update = millis();
             this->in_flight_bitmask &= ~VBUS_FLIGHT_BIT; // Clear the bit
             break;
@@ -147,8 +144,6 @@ void ODriveS1::refresh_data() {
 //            this->in_flight_bitmask |= HEARTBEAT_FLIGHT_BIT;  // Set the in flight bit to 1
     }
 
-    this->send_command(odrive::command_ids::Clear_Errors);
-
 //    if (this->ACTIVE_ERRORS != 0 || this->AXIS_ERROR != 0) {
 //
 //    }
@@ -173,10 +168,10 @@ uint8_t ODriveS1::send_command(odrive::command_ids command_id, T value) {
     msg.flags.remote = false;
     msg.len = 4;
     uint32_t lower_32 = *(uint32_t*) &value;
-    msg.buf[0] = (uint8_t) ((lower_32 >> 24) & 0xFF);
-    msg.buf[1] = (uint8_t) ((lower_32 >> 16) & 0xFF);
-    msg.buf[2] = (uint8_t) ((lower_32 >> 8) & 0xFF);
-    msg.buf[3] = (uint8_t) (lower_32 & 0xFF);
+    msg.buf[3] = (uint8_t) ((lower_32 >> 24) & 0xFF);
+    msg.buf[2] = (uint8_t) ((lower_32 >> 16) & 0xFF);
+    msg.buf[1] = (uint8_t) ((lower_32 >> 8) & 0xFF);
+    msg.buf[0] = (uint8_t) (lower_32 & 0xFF);
     uint8_t result = this->can_bus->write(msg);
     return result; // Return the result of the write (1 for success, -1 for failure)
 }
@@ -191,14 +186,14 @@ uint8_t ODriveS1::send_command(odrive::command_ids command_id, T1 lower_data, T2
     // Some pointer magic to convince the compiler this is a 32 bit value
     uint32_t lower_32 = *(uint32_t*) &lower_data;
     uint32_t upper_32 = *(uint32_t*) &upper_data;
-    msg.buf[0] = (uint8_t) ((lower_32 >> 24) & 0xFF);
-    msg.buf[1] = (uint8_t) ((lower_32 >> 16) & 0xFF);
-    msg.buf[2] = (uint8_t) ((lower_32 >> 8) & 0xFF);
-    msg.buf[3] = (uint8_t) (lower_32 & 0xFF);
-    msg.buf[4] = (uint8_t) ((upper_32 >> 24) & 0xFF);
-    msg.buf[5] = (uint8_t) ((upper_32 >> 16) & 0xFF);
-    msg.buf[6] = (uint8_t) ((upper_32 >> 8) & 0xFF);
-    msg.buf[7] = (uint8_t) (upper_32 & 0xFF);
+    msg.buf[3] = (uint8_t) ((lower_32 >> 24) & 0xFF);
+    msg.buf[2] = (uint8_t) ((lower_32 >> 16) & 0xFF);
+    msg.buf[1] = (uint8_t) ((lower_32 >> 8) & 0xFF);
+    msg.buf[0] = (uint8_t) (lower_32 & 0xFF);
+    msg.buf[7] = (uint8_t) ((upper_32 >> 24) & 0xFF);
+    msg.buf[6] = (uint8_t) ((upper_32 >> 16) & 0xFF);
+    msg.buf[5] = (uint8_t) ((upper_32 >> 8) & 0xFF);
+    msg.buf[4] = (uint8_t) (upper_32 & 0xFF);
     uint8_t result = this->can_bus->write(msg);
     return result; // Return the result of the write (1 for success, -1 for failure)
 }

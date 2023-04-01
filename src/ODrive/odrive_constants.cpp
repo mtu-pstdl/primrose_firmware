@@ -54,7 +54,7 @@ namespace odrive {
     void sprint_axis_state(char* buffer, axis_states axis_state) {
         switch (axis_state) {
             case UNDEFINED:
-                sprintf(buffer, "UNDEFINED");
+                sprintf(buffer, "IDLE*");
                 break;
             case IDLE:
                 sprintf(buffer, "IDLE");

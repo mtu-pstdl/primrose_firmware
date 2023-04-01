@@ -48,6 +48,7 @@ void ODrive_ROS::update_diagnostics_label(){
                 this->state_topic->level = diagnostic_msgs::DiagnosticStatus::OK;
                 sprintf(status_string, "Running: %10s", this->odrive->get_control_mode_string());
                 break;
+            case odrive::UNDEFINED:
             case odrive::IDLE:
                 if (this->odrive->get_active_errors() != 0) {
                     this->state_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
@@ -70,10 +71,6 @@ void ODrive_ROS::update_diagnostics_label(){
             case odrive::MOTOR_CALIBRATION:
                 this->state_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
                 sprintf(status_string, "Calibrating");
-                break;
-            case odrive::UNDEFINED:
-                this->state_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
-                sprintf(status_string, "UNKWN: %15s", this->odrive->get_active_errors_string());
                 break;
             default:
                 this->state_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
@@ -107,14 +104,14 @@ void ODrive_ROS::update_diagnostics() {
             sprintf(strings[5], "%.2f %s", this->odrive->get_vel_estimate(), this->odrive->vel_unit_string);
         }
 //        sprintf(strings[6], "%f C", this->odrive->get_fet_temp());
-        sprintf(strings[6], "%50s", this->odrive->get_fet_temp_frame_string());
+//        sprintf(strings[6], "%50s", this->odrive->get_fet_temp_frame_string());
         // Print the fet temp in hex
-//        sprintf(strings[6], "0x%lx", this->odrive->get_fet_temp());
-        sprintf(strings[7], "%f C", this->odrive->get_motor_temp());
-        sprintf(strings[8], "%f V", this->odrive->get_vbus_voltage());
-        sprintf(strings[9], "%f A", this->odrive->get_vbus_current());
-        sprintf(strings[10], "%f A", this->odrive->get_Iq_measured());
-        sprintf(strings[11], "%f A", this->odrive->get_Iq_setpoint());
+        sprintf(strings[6], "%.2f C", this->odrive->get_fet_temp());
+        sprintf(strings[7], "%.2f C", this->odrive->get_motor_temp());
+        sprintf(strings[8], "%.2f V", this->odrive->get_vbus_voltage());
+        sprintf(strings[9], "%.2f A", this->odrive->get_vbus_current());
+        sprintf(strings[10], "%.2f A", this->odrive->get_Iq_measured());
+        sprintf(strings[11], "%.2f A", this->odrive->get_Iq_setpoint());
         // Show the binary representation of the inflight bitmask
         for (int i = 0; i < 7; i++) {
             if (this->odrive->get_inflight_bitmask() & (1 << i)) {
