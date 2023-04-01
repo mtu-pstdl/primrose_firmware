@@ -59,7 +59,7 @@ private:
     // Publishes the values of AXIS_STATE, AXIS_ERROR, ACTIVE_ERRORS, DISARM_REASON
     diagnostic_msgs::DiagnosticStatus* state_topic;
 
-#define NUM_CONDITIONS 12
+#define NUM_CONDITIONS 13
     char* strings[NUM_CONDITIONS];
     char* status_string = new char[25];
 
@@ -82,7 +82,7 @@ private:
 
     void allocate_strings() {
         for (auto & string : strings) {
-            string = new char[25];
+            string = new char[50];
             sprintf(string, "%s", "Unknown");
         }
     }
@@ -123,6 +123,7 @@ public:
         state_topic->values[9].key = "VBUS_CURRENT";
         state_topic->values[10].key = "IQ_SETPOINT";
         state_topic->values[11].key = "IQ_MEASURED";
+        state_topic->values[12].key = "IN-FLIGHT";
         this->name = disp_name.c_str();
         state_topic->name = "ODrive";
         state_topic->message = status_string;

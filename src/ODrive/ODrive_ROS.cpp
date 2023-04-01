@@ -71,6 +71,10 @@ void ODrive_ROS::update_diagnostics_label(){
                 this->state_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
                 sprintf(status_string, "Calibrating");
                 break;
+            case odrive::UNDEFINED:
+                this->state_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
+                sprintf(status_string, "UNKWN: %15s", this->odrive->get_active_errors_string());
+                break;
             default:
                 this->state_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
                 sprintf(status_string, "ERROR: %15s", this->odrive->get_axis_state_string());
@@ -102,12 +106,23 @@ void ODrive_ROS::update_diagnostics() {
             sprintf(strings[4], "%.2f %s", this->odrive->get_pos_estimate(), this->odrive->pos_unit_string);
             sprintf(strings[5], "%.2f %s", this->odrive->get_vel_estimate(), this->odrive->vel_unit_string);
         }
-        sprintf(strings[6], "%2.2f C", this->odrive->get_fet_temp());
-        sprintf(strings[7], "%2.2f C", this->odrive->get_motor_temp());
-        sprintf(strings[8], "%2.2f V", this->odrive->get_vbus_voltage());
-        sprintf(strings[9], "%2.2f A", this->odrive->get_vbus_current());
-        sprintf(strings[10], "%2.2f A", this->odrive->get_Iq_measured());
-        sprintf(strings[11], "%2.2f A", this->odrive->get_Iq_setpoint());
+//        sprintf(strings[6], "%f C", this->odrive->get_fet_temp());
+        sprintf(strings[6], "%50s", this->odrive->get_fet_temp_frame_string());
+        // Print the fet temp in hex
+//        sprintf(strings[6], "0x%lx", this->odrive->get_fet_temp());
+        sprintf(strings[7], "%f C", this->odrive->get_motor_temp());
+        sprintf(strings[8], "%f V", this->odrive->get_vbus_voltage());
+        sprintf(strings[9], "%f A", this->odrive->get_vbus_current());
+        sprintf(strings[10], "%f A", this->odrive->get_Iq_measured());
+        sprintf(strings[11], "%f A", this->odrive->get_Iq_setpoint());
+        // Show the binary representation of the inflight bitmask
+        for (int i = 0; i < 7; i++) {
+            if (this->odrive->get_inflight_bitmask() & (1 << i)) {
+                strings[12][i] = '1';
+            } else {
+                strings[12][i] = '0';
+            }
+        }
     }
 }
 

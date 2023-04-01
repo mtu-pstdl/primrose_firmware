@@ -19,7 +19,8 @@
 
 #define CPU_FREQ_BOOST 816000000 //
 //#define CPU_FREQ_BASE 600000000 // 300 MHz
-#define CPU_FREQ_BASE 24000000 // 300 MHz
+#define CPU_FREQ_BASE 300000000
+//#define CPU_FREQ_BASE 24000000 // 300 MHz
 #define CPU_FREQ_MIN 24000000 // 24 MHz
 #define UN_BOOST_TIME 100000 // 10us
 //#define ENABLE_BOOST
@@ -130,6 +131,7 @@ void setup() {
     can1.setBaudRate(500000); // 500kbps
 //    can1.setMaxMB(64);  // 64 message buffers
     can1.onReceive(can_recieve);
+
 
     can1.enableFIFO();
     can1.enableFIFOInterrupt();
