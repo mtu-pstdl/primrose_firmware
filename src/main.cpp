@@ -17,6 +17,8 @@
 //#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/publisher.h"
 //#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32.h"
 
+#include "ros_pub_sub_serv.h"
+
 #define CPU_FREQ_BOOST 816000000 //
 //#define CPU_FREQ_BASE 600000000 // 300 MHz
 #define CPU_FREQ_BASE 300000000
@@ -40,13 +42,6 @@ ODrive_ROS* odrive_ros[6];
 ActuatorUnit* actuators[4];
 ActuatorsROS* actuators_ros[4];
 Actuators actuator_bus;
-
-// Setup global publishers
-diagnostic_msgs::DiagnosticArray system_diagnostics;
-
-diagnostic_msgs::DiagnosticStatus* system_info;
-
-ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
 
 
 #define SYSTEM_INFO_COUNT 8
