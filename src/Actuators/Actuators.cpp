@@ -148,7 +148,10 @@ Actuators::message *Actuators::get_next_message() {
 }
 
 void Actuators::queue_message(Actuators::message *message) {
-    if (!this->space_available()) return;
+    if (!this->space_available()) {
+        free(message);
+        return;
+    }
     this->message_queue_enqueue_position++;
     if (this->message_queue_enqueue_position >= 20){
         this->message_queue_enqueue_position = 0;

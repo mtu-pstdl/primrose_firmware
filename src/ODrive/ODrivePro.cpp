@@ -326,7 +326,7 @@ bool ODrivePro::is_connected() const {
     }
 }
 
-void ODrivePro::estop() {
+void ODrivePro::emergency_stop() {
     this->send_command(odrive::Estop);
 }
 

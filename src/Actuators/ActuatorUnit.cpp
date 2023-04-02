@@ -63,43 +63,44 @@ void ActuatorUnit::set_target_position(int32_t position_m1, int32_t position_m2)
 }
 
 void ActuatorUnit::emergency_stop() {
-
+    this->set_control_mode(control_modes::stopped, 0);
+    this->set_control_mode(control_modes::stopped, 1);
 }
 
 
 void ActuatorUnit::update() {
     if (this->connected) {
         this->queue_telemetry_messages();
+        for (int i = 0; i < 2; i++) {
+            auto &motor = motors[i];
+            switch (motor.control_mode) {
+                case control_modes::position:
+                case control_modes::speed:
+                case control_modes::stopped:
+                    break;
+                case control_modes::homing:
+                    // Check if the motor has stopped moving
+                    if (motor.current_speed == 0 && motor.current_current == 0) {
+                        auto *msg = new Actuators::message;
+                        if (i == 0) {
+                            msg->command = Actuators::serial_commands::set_encoder_count_m1;
+                        } else msg->command = Actuators::serial_commands::set_encoder_count_m2;
+                        msg->data_length = 4;
+                        msg->data[0] = 0;
+                        msg->data[1] = 0;
+                        msg->data[2] = 0;
+                        msg->data[3] = 0;
+                        msg->free_after_callback = true;
+                        msg->expect_response = false;
+                        command_bus->queue_message(msg);
+                    }
+                    motor.homed = true;
+                    this->set_control_mode(motor.control_mode, i);
+                    break;
+            }
+        }
     } else {
         this->check_connection();
-    }
-    for (int i = 0; i < 2; i++) {
-        auto& motor = motors[i];
-        switch (motor.control_mode) {
-            case control_modes::position:
-            case control_modes::speed:
-            case control_modes::stopped:
-                break;
-            case control_modes::homing:
-                // Check if the motor has stopped moving
-                if (motor.current_speed == 0 && motor.current_current == 0) {
-                    auto* msg = new Actuators::message;
-                    if (i == 0){
-                        msg->command = Actuators::serial_commands::set_encoder_count_m1;
-                    } else msg->command = Actuators::serial_commands::set_encoder_count_m2;
-                    msg->data_length = 4;
-                    msg->data[0] = 0;
-                    msg->data[1] = 0;
-                    msg->data[2] = 0;
-                    msg->data[3] = 0;
-                    msg->free_after_callback = true;
-                    msg->expect_response = false;
-                    command_bus->queue_message(msg);
-                }
-                motor.homed = true;
-                this->set_control_mode(motor.control_mode, i);
-                break;
-        }
     }
 }
 
@@ -244,9 +245,6 @@ void ActuatorUnit::message_failure_callback(void *actuator, Actuators::message *
 //    return status_string;
 //}
 
-void ActuatorUnit::estop() {
-
-}
 
 int32_t ActuatorUnit::get_position(uint8_t motor) {
     return this->motors[motor].current_position;

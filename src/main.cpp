@@ -63,8 +63,30 @@ extern unsigned long _heap_start;  // start of heap
 extern unsigned long _heap_end;  // end of heap
 extern char *__brkval;  // current top of heap
 
+int rolling_ram_usage[6] = {0, 0, 0, 0, 0, 0};
+int rolling_ram_usage_pos = 0;
+int last_ram = 0;
+
 int freeram() {
     return (char *)&_heap_end - __brkval;
+}
+
+int ram_usage_rate(){
+    int free_ram = freeram();
+    int ram_usage = last_ram - free_ram;
+    rolling_ram_usage[rolling_ram_usage_pos] = ram_usage;
+    rolling_ram_usage_pos = (rolling_ram_usage_pos + 1) % 6;
+    last_ram = free_ram;
+    for (int i : rolling_ram_usage) {
+        ram_usage += i;
+    }
+    return ram_usage;
+}
+
+void set_mciu_level_max(int8_t level) {
+    if (level > system_diagnostics.status[10].level) {
+        system_diagnostics.status[10].level = level;
+    }
 }
 
 void can_recieve(const CAN_message_t &msg) {
@@ -79,33 +101,13 @@ void can_recieve(const CAN_message_t &msg) {
     }
 }
 
-void home_suspension_cb(const std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
-    for (ActuatorUnit* actuator : actuators) {
-        if (actuator == nullptr) continue;
-//        actuator->home();
-    }
-}
-
-void home_steering_cb(const std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
-    for (ActuatorUnit* actuator : actuators) {
-        if (actuator == nullptr) continue;
-//        actuator->home();
-    }
-}
-
-void estop_cb(const std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
-    for (ODrivePro* odrive : odrives) {
-        if (odrive == nullptr) continue;
-//        odrive->set_estop(req.data);
-    }
-}
 
 void check_temp(){
     if (tempmonGetTemp() > WARN_TEMP) {
-        system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::WARN;
+        set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::WARN);
         sprintf(system_status_messages[system_message_count++], "High temperature");
         if (tempmonGetTemp() > THROTTLE_TEMP) {
-            system_diagnostics.status[10].level = diagnostic_msgs::DiagnosticStatus::ERROR;
+            set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::ERROR);
             sprintf(system_status_messages[system_message_count++], "System throttling");
             set_arm_clock(CPU_FREQ_MIN);
         }
@@ -217,7 +219,7 @@ void setup() {
     system_info->values[2].key = "Loop Time";
     system_info->values[3].key = "Remaining Memory";
     system_info->values[4].key = "CAN TX Overflow";
-    system_info->values[5].key = "CAN RX Overflow";
+    system_info->values[5].key = "Actuator Buffer Size";
     system_info->values[6].key = "Actuator response time";
     system_info->values[7].key = "Build Date";
     for (int i = 0; i < SYSTEM_INFO_COUNT; i++) system_info->values[i].value = system_info_strings[i];
@@ -242,6 +244,7 @@ void setup() {
 
     for (ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response>* srv: services) {
         if (srv == nullptr) continue;
+        // Check if the server has already been advertised
         node_handle.advertiseService(*srv);
     }
 
@@ -320,32 +323,38 @@ void loop() {
 
     digitalWriteFast(LED_BUILTIN, HIGH); // Turn off the LED
     // Allow the actuator bus to preform serial communication for the remaining time in the loop
+    sprintf(system_info_strings[5], "%d", actuator_bus.get_queue_size());
     while (actuator_bus.spin(micros() - loop_start > 50000)) {
         yield();  // Yield to other tasks
     }
 
     uint32_t remaining_memory = freeram();
+
+    if (ram_usage_rate() > 100) {
+        set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::ERROR);
+        sprintf(system_status_messages[system_message_count++], "Memory Leak");
+    }
+
     if (remaining_memory < 100000) {
-        system_info->level = diagnostic_msgs::DiagnosticStatus::WARN;
-        sprintf(system_status_messages[system_message_count++], "Low Memory");
         if (remaining_memory < 30000) {
-            system_info->level = diagnostic_msgs::DiagnosticStatus::ERROR;
+            set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::ERROR);
             sprintf(system_status_messages[system_message_count++], "Out of Memory");
         }
+        set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::WARN);
+        sprintf(system_status_messages[system_message_count++], "Low Memory");
     }
 
     sprintf(system_info_strings[1], "%.2f Mhz (%.2f%%)", F_CPU_ACTUAL / 1000000.0,
             100.0 * F_CPU_ACTUAL / F_CPU);
     sprintf(system_info_strings[2], "%luus (%.2fHz)", micros() - loop_start, 1000000.0 / (micros() - loop_start));
-    sprintf(system_info_strings[3], "%.2fKib (%.2f%%)", remaining_memory / 1024.0,
-            100.0 * remaining_memory / 512000.0);
+    sprintf(system_info_strings[3], "%.2fKiB (%.2f%%), %d", remaining_memory / 1024.0,
+            100.0 * remaining_memory / 512000.0, ram_usage_rate());
     sprintf(system_info_strings[4], "%lu", can1.getTXQueueCount());
-    sprintf(system_info_strings[5], "%lu", can1.getRXQueueCount());
     sprintf(system_info_strings[6], "%lums", actuator_bus.round_trip_time());
 
     uint32_t loop_time = micros() - loop_start;
     if (loop_time > 50000) {
-        system_info->level = diagnostic_msgs::DiagnosticStatus::WARN;
+        set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::WARN);
         sprintf(system_status_messages[system_message_count++], "Slow Loop");
         // Set the CPU to the overclocked speed
 #ifdef ENABLE_BOOST

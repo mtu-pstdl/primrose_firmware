@@ -28,7 +28,7 @@ namespace odrive {
 #define VELOCITY_LIMIT_VIOLATION    0x8000      // The velocity limit has been violated
 #define POSITION_LIMIT_VIOLATION    0x10000     // The position limit has been violated
 #define WATCHDOG_TIMER_EXPIRED      0x20000     // The watchdog timer has expired
-#define ESTOP_REQUESTED             0x40000     // An estop has been requested
+#define ESTOP_REQUESTED             0x40000     // An emergency_stop has been requested
 #define SPINOUT_DETECTED            0x80000     // A spinout has been detected
 #define OTHER_DEVICE_FAILED         0x100000    // Another device has failed
 #define CALIBRATION_ERROR           0x200000    // A calibration error has occurred

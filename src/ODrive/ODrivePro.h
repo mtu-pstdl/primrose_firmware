@@ -126,7 +126,7 @@ private:
     template <typename T1, typename T2>
     uint8_t send_command(odrive::command_ids command_id, T1 lower_data, T2 upper_data);
 
-    void* estop_callback = nullptr; // The estop callback function
+    void* estop_callback = nullptr; // The emergency_stop callback function
 
 public:
 
@@ -153,7 +153,7 @@ public:
 
     void refresh_data(); // Refreshes data from the ODrive
 
-    void estop(); // Sends an estop command to the ODrive
+    void emergency_stop(); // Sends an emergency_stop command to the ODrive
 
 
     // Getters and setters
