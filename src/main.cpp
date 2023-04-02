@@ -3,7 +3,6 @@
 #include <Actuators/Actuators.h>
 #include <FlexCAN_T4.h>
 #include <ros.h>
-//#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros.h"
 #include "ODrive/ODrivePro.h"
 #include "ODrive/ODrive_ROS.h"
 #include "Actuators/ActuatorUnit.h"
@@ -12,12 +11,11 @@
 #include <std_msgs/Float32.h>
 
 #include "ROS_Publishers.h"
+#include "ROS_Subscribers.h"
+#include "ROS_Services.h"
 
-//#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32.h"
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticArray.h"
-//#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/publisher.h"
-//#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32.h"
 
 #define CPU_FREQ_BOOST 816000000 //
 //#define CPU_FREQ_BASE 600000000 // 300 MHz
@@ -81,22 +79,24 @@ void can_recieve(const CAN_message_t &msg) {
     }
 }
 
-void calibrate_odrive_callback(const std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res) {
-    for (ODrivePro* odrive : odrives) {
-        if (odrive == nullptr) continue;
-//        odrive->calibrate();
-    }
-    res.success = true;
-}
-
-void unified_estop_callback(){
-    for (ODrivePro* odrive : odrives) {
-        if (odrive == nullptr) continue;
-        odrive->estop();
-    }
+void home_suspension_cb(const std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
     for (ActuatorUnit* actuator : actuators) {
         if (actuator == nullptr) continue;
-        actuator->estop();
+//        actuator->home();
+    }
+}
+
+void home_steering_cb(const std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
+    for (ActuatorUnit* actuator : actuators) {
+        if (actuator == nullptr) continue;
+//        actuator->home();
+    }
+}
+
+void estop_cb(const std_srvs::Empty::Request &req, std_srvs::Empty::Response &res) {
+    for (ODrivePro* odrive : odrives) {
+        if (odrive == nullptr) continue;
+//        odrive->set_estop(req.data);
     }
 }
 
@@ -119,7 +119,6 @@ uint32_t spin_time = 0;
 // Setup service servers
 
 // Setup service servers for commanding calibration sequences (void)
-ros::ServiceServer<std_srvs::SetBool::Request, std_srvs::SetBool::Response> calibrate_odrive_srv("/calibrate_odrive", &calibrate_odrive_callback);
 
 void setup() {
 
@@ -174,17 +173,17 @@ void setup() {
     log_msg = "Initialising ODrivePro ROS objects";
     node_handle.loginfo(log_msg.c_str());
 
-    odrive_ros[0] = new ODrive_ROS(odrives[0], &node_handle, &system_diagnostics.status[0],
-                                   odrive_encoder_msgs[0], "Front Left");
-    odrive_ros[1] = new ODrive_ROS(odrives[1], &node_handle, &system_diagnostics.status[1],
-                                   odrive_encoder_msgs[1], "Front Right");
-    odrive_ros[2] = new ODrive_ROS(odrives[2], &node_handle, &system_diagnostics.status[2],
-                                   odrive_encoder_msgs[2], "Rear Left");
-    odrive_ros[3] = new ODrive_ROS(odrives[3], &node_handle, &system_diagnostics.status[3],
-                                   odrive_encoder_msgs[3], "Rear Right");
-    odrive_ros[4] = new ODrive_ROS(odrives[4], &node_handle, &system_diagnostics.status[5],
+    odrive_ros[0] = new ODrive_ROS(odrives[0], &system_diagnostics.status[0],
+                                   odrive_encoder_msgs[0], "Front_Left");
+    odrive_ros[1] = new ODrive_ROS(odrives[1], &system_diagnostics.status[1],
+                                   odrive_encoder_msgs[1], "Front_Right");
+    odrive_ros[2] = new ODrive_ROS(odrives[2], &system_diagnostics.status[2],
+                                   odrive_encoder_msgs[2], "Rear_Left");
+    odrive_ros[3] = new ODrive_ROS(odrives[3], &system_diagnostics.status[3],
+                                   odrive_encoder_msgs[3], "Rear_Right");
+    odrive_ros[4] = new ODrive_ROS(odrives[4], &system_diagnostics.status[5],
                                    odrive_encoder_msgs[4], "Trencher");
-    odrive_ros[5] = new ODrive_ROS(odrives[5], &node_handle, &system_diagnostics.status[4],
+    odrive_ros[5] = new ODrive_ROS(odrives[5], &system_diagnostics.status[4],
                                    odrive_encoder_msgs[5], "Conveyor");
 
     log_msg = "Initialising ActuatorUnit objects";
@@ -198,24 +197,10 @@ void setup() {
     log_msg = "Initialising ActuatorUnit ROS objects";
     node_handle.loginfo(log_msg.c_str());
 
-    actuators_ros[0] = new ActuatorsROS(actuators[0], &node_handle, &system_diagnostics.status[6], "Front Left");
-    actuators_ros[1] = new ActuatorsROS(actuators[1], &node_handle, &system_diagnostics.status[7], "Front Right");
-    actuators_ros[2] = new ActuatorsROS(actuators[2], &node_handle, &system_diagnostics.status[8], "Rear Left");
-    actuators_ros[3] = new ActuatorsROS(actuators[3], &node_handle, &system_diagnostics.status[9], "Rear Right");
-
-    for (ODrive_ROS* odrive : odrive_ros) {
-        if (odrive == nullptr) continue;
-        log_msg = "Advertising ODrive";
-        node_handle.loginfo(log_msg.c_str());
-//        odrive->advertise_subscribe(&node_handle);
-    }
-
-    for (ActuatorsROS* actuator : actuators_ros) {
-        if (actuator == nullptr) continue;
-        log_msg = "Advertising Actuator";
-        node_handle.loginfo(log_msg.c_str());
-        actuator->advertise_subscribe(&node_handle);
-    }
+    actuators_ros[0] = new ActuatorsROS(actuators[0], &node_handle, &system_diagnostics.status[6], "Front_Left");
+    actuators_ros[1] = new ActuatorsROS(actuators[1], &node_handle, &system_diagnostics.status[7], "Front_Right");
+    actuators_ros[2] = new ActuatorsROS(actuators[2], &node_handle, &system_diagnostics.status[8], "Rear_Left");
+    actuators_ros[3] = new ActuatorsROS(actuators[3], &node_handle, &system_diagnostics.status[9], "Rear_Right");
 
     log_msg = "Setting up system diagnostics";
     node_handle.loginfo(log_msg.c_str());
@@ -243,26 +228,21 @@ void setup() {
     system_info->hardware_id = "MCIU";
     // For each ODrive add its diagnostic message
 
-
-//    for (ODrivePro* odrive : odrives) {
-//        odrive->init();
-//    }
-
-    log_msg = "Advertising diagnostics publishers";
-    node_handle.loginfo(log_msg.c_str());
-
     node_handle.advertise(sys_diag_pub);
     sys_diag_pub.publish(&system_diagnostics);
 
-    log_msg = "Attempting to preform first spin";
-    node_handle.loginfo(log_msg.c_str());
-    node_handle.spinOnce();
-    log_msg = "Setup complete";
-    node_handle.loginfo(log_msg.c_str());
+    for(ros::Publisher* pub: odrive_encoder_topics) {
+        if (pub == nullptr) continue;
+        node_handle.advertise(*pub);
+    }
 
-    for (ODrivePro* odrive: odrives) {
-        odrive->init();
-        odrive->test();
+    for (ODrive_ROS* odrive: odrive_ros) {
+        odrive->subscribe(&node_handle);
+    }
+
+    for (ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response>* srv: services) {
+        if (srv == nullptr) continue;
+        node_handle.advertiseService(*srv);
     }
 
 }
@@ -302,12 +282,16 @@ void loop() {
             if (odrive == nullptr) {
                 continue;
             }
-            odrive->publish_all();
+            odrive->update_all();
         }
     }
 
     system_diagnostics.header.stamp = node_handle.now();
     system_diagnostics.header.seq++;
+
+    for (int i = 0; i < 6; i++){
+        odrive_encoder_topics[i]->publish(odrive_encoder_msgs[i]);
+    }
 
     String log_msg = "";
     int8_t spin_result = 0;

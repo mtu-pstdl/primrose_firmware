@@ -20,35 +20,14 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/KeyValue.h"
 
-#define TOPIC_BASE "/mciu/ODrives"
-
 class ODrive_ROS {
-
-    const char* topic_names[6][6] = {
-        {TOPIC_BASE "/x00/condition", TOPIC_BASE "/x01/condition", TOPIC_BASE "/x02/condition",
-                TOPIC_BASE "/x03/condition", TOPIC_BASE "/x04/condition", TOPIC_BASE "/x05/condition"},
-        {TOPIC_BASE "/x00/encoder", TOPIC_BASE "/x01/encoder", TOPIC_BASE "/x02/encoder",
-                TOPIC_BASE "/x03/encoder", TOPIC_BASE "/x04/encoder", TOPIC_BASE "/x05/encoder"},
-        {TOPIC_BASE "/x00/state", TOPIC_BASE "/x01/state", TOPIC_BASE "/x02/state",
-                TOPIC_BASE "/x03/state", TOPIC_BASE "/x04/state", TOPIC_BASE "/x05/state"},
-        {TOPIC_BASE "/x00/setpoint", TOPIC_BASE "/x01/setpoint", TOPIC_BASE "/x02/setpoint",
-                TOPIC_BASE "/x03/setpoint", TOPIC_BASE "/x04/setpoint", TOPIC_BASE "/x05/setpoint"},
-        {TOPIC_BASE "/x00/control_mode", TOPIC_BASE "/x01/control_mode", TOPIC_BASE "/x02/control_mode",
-                TOPIC_BASE "/x03/control_mode", TOPIC_BASE "/x04/control_mode", TOPIC_BASE "/x05/control_mode"},
-    };
-
 
     ODrivePro *odrive = nullptr;
     String name = ""; // The name of the ODrive
 
 private:
-    ros::NodeHandle* node_handle = nullptr; // The ROS node handle
 
     ros::Subscriber<std_msgs::Float32MultiArray, ODrive_ROS> setpoint_sub;
-    ros::Subscriber<std_msgs::Int32MultiArray, ODrive_ROS> control_mode_sub;
-
-    odrive::control_modes control_mode = odrive::control_modes::UNKNOWN_CONTROL_MODE; // The control mode of the ODrive
-    odrive::input_modes input_mode = odrive::input_modes::UNKNOWN_INPUT_MODE; // The input mode of the ODrive
 
     // Publishes the values of POS_ESTIMATE, VEL_ESTIMATE, IQ_SETPOINT, IQ_MEASURED
     std_msgs::Float32MultiArray* encoder_topic;
@@ -59,6 +38,7 @@ private:
 #define NUM_CONDITIONS 13
     char* strings[NUM_CONDITIONS];
     char* status_string = new char[25];
+    char* setpoint_topic_name = new char[25];
 
     void update_diagnostics_keys(bool error_mode){
         if (error_mode){
@@ -88,21 +68,8 @@ private:
      */
     void update_diagnostics();
 
-public:
 
-
-    ODrive_ROS(ODrivePro* odrive, uint8_t number,
-               diagnostic_msgs::DiagnosticStatus* status,
-               std_msgs::Float32MultiArray* encoder_topic,
-               String disp_name) :
-            setpoint_sub(topic_names[3][number], &ODrive_ROS::setpoint_callback, this),
-            control_mode_sub(topic_names[4][number], &ODrive_ROS::control_mode_callback, this){
-        this->odrive = odrive;
-        this->encoder_topic = encoder_topic;
-        this->encoder_topic->data_length = 5;
-        this->encoder_topic->data = new float_t[5];
-        this->state_topic = status;
-
+    void configure_diagnostics_topic(){
         this->state_topic->values_length = NUM_CONDITIONS;
         this->state_topic->values = new diagnostic_msgs::KeyValue[NUM_CONDITIONS];
         state_topic->values[0].key = "AXIS_STATE";
@@ -118,17 +85,40 @@ public:
         state_topic->values[10].key = "IQ_SETPOINT";
         state_topic->values[11].key = "IQ_MEASURED";
         state_topic->values[12].key = "IN-FLIGHT";
-        this->name = disp_name.c_str();
         state_topic->name = "ODrive";
         state_topic->message = status_string;
         sprintf(status_string, "Initialising");
         state_topic->level = 0;
         state_topic->hardware_id = this->name.c_str();
-
         allocate_strings();
         for (int i = 0; i < NUM_CONDITIONS; i++) {
             this->state_topic->values[i].value = strings[i];
         }
+    }
+
+public:
+
+
+    ODrive_ROS(ODrivePro* odrive,
+               diagnostic_msgs::DiagnosticStatus* status,
+               std_msgs::Float32MultiArray* encoder_topic,
+               String disp_name) :
+            setpoint_sub("template1", &ODrive_ROS::setpoint_callback, this) {
+        this->odrive = odrive;
+        this->encoder_topic = encoder_topic;
+        this->encoder_topic->data_length = 5;
+        this->encoder_topic->data = new float_t[5];
+        this->encoder_topic->data[0] = 0;  // POS_ESTIMATE
+        this->encoder_topic->data[1] = 0;  // VEL_ESTIMATE
+        this->encoder_topic->data[2] = 0;  // RAMP_RATE
+        this->encoder_topic->data[3] = 0;  // CONTROL_MODE
+        this->encoder_topic->data[4] = 0;
+        this->state_topic = status;
+        this->name = disp_name.c_str();
+        this->configure_diagnostics_topic();
+        this->setpoint_sub.topic_ = setpoint_topic_name;
+        sprintf(setpoint_topic_name, "/mciu/%s/setpoint", disp_name.c_str());
+
     }
 
 
@@ -138,9 +128,9 @@ public:
 
     void control_mode_callback(const std_msgs::Int32MultiArray &msg);
 
-    void advertise_subscribe(ros::NodeHandle* node_handle);
+    void subscribe(ros::NodeHandle* node_handle);
 
-    void publish_all();
+    void update_all();
 };
 
 

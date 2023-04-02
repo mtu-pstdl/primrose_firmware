@@ -16,22 +16,22 @@
  */
 
 std_msgs::Float32MultiArray odrive1_encoder_msg;
-ros::Publisher odrive1_encoder_topic("mciu/front_left/encoder", &odrive1_encoder_msg);
+ros::Publisher odrive1_encoder_topic("mciu/Front_Left/encoder", &odrive1_encoder_msg);
 
 std_msgs::Float32MultiArray odrive2_encoder_msg;
-ros::Publisher odrive2_encoder_topic("mciu/front_right/encoder", &odrive2_encoder_msg);
+ros::Publisher odrive2_encoder_topic("mciu/Front_Right/encoder", &odrive2_encoder_msg);
 
 std_msgs::Float32MultiArray odrive3_encoder_msg;
-ros::Publisher odrive3_encoder_topic("mciu/rear_left/encoder", &odrive3_encoder_msg);
+ros::Publisher odrive3_encoder_topic("mciu/Rear_Left/encoder", &odrive3_encoder_msg);
 
 std_msgs::Float32MultiArray odrive4_encoder_msg;
-ros::Publisher odrive4_encoder_topic("mciu/rear_right/encoder", &odrive4_encoder_msg);
+ros::Publisher odrive4_encoder_topic("mciu/Rear_Right/encoder", &odrive4_encoder_msg);
 
 std_msgs::Float32MultiArray odrive5_encoder_msg;
-ros::Publisher odrive5_encoder_topic("mciu/trencher/encoder", &odrive5_encoder_msg);
+ros::Publisher odrive5_encoder_topic("mciu/Trencher/encoder", &odrive5_encoder_msg);
 
 std_msgs::Float32MultiArray odrive6_encoder_msg;
-ros::Publisher odrive6_encoder_topic("mciu/conveyor/encoder", &odrive6_encoder_msg);
+ros::Publisher odrive6_encoder_topic("mciu/Conveyor/encoder", &odrive6_encoder_msg);
 
 std_msgs::Float32MultiArray actuator1_encoder_msg;
 ros::Publisher actuator1_encoder_topic("mciu/actuator1/encoder", &actuator1_encoder_msg);

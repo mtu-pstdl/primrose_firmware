@@ -4,22 +4,15 @@
 
 #include "ODrive_ROS.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/time.h"
 
 
 /**
  * This method sets up the ROS publishers and subscribers
  */
-void ODrive_ROS::advertise_subscribe(ros::NodeHandle *nh) {
-    this->node_handle = nh;
+void ODrive_ROS::subscribe(ros::NodeHandle *nh) {
 
-//    nh->advertise(this->condition_pub_);
-//    nh->advertise(this->encoder_pub_);
-//    nh->advertise(this->state_pub_);
-//    nh->subscribe(this->setpoint_sub);
-//    nh->subscribe(this->control_mode_sub);
-
-    String log = "Advertised topics for " + *this->odrive->name;
-    nh->loginfo(log.c_str());
+    nh->subscribe(this->setpoint_sub);
 }
 
 /**
@@ -29,11 +22,7 @@ void ODrive_ROS::advertise_subscribe(ros::NodeHandle *nh) {
 void ODrive_ROS::setpoint_callback(const std_msgs::Float32MultiArray &msg) {
     if(msg.data_length == 3){
 //        this->setpoint = msg.data[0];
-        if (this->control_mode == odrive::POSITION_CONTROL){
-            // When in position control mode, the velocity and torque ff values are halfed to 16 bits
-            // So we need to truncate the values of each float to 16 bits with a factor of 0.001
 
-        }
     }
 }
 
@@ -77,8 +66,8 @@ void ODrive_ROS::update_diagnostics_label(){
             case odrive::ENCODER_OFFSET_CALIBRATION:
             case odrive::ENCODER_HALL_PHASE_CALIBRATION:
             case odrive::MOTOR_CALIBRATION:
-                this->state_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
-                sprintf(status_string, "Calibrating");
+                this->state_topic->level = diagnostic_msgs::DiagnosticStatus::OK;
+                sprintf(status_string, "%s", this->odrive->get_axis_state_string());
                 break;
             default:
                 this->state_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
@@ -86,7 +75,7 @@ void ODrive_ROS::update_diagnostics_label(){
                 break;
         }
     } else {
-        this->state_topic->level = diagnostic_msgs::DiagnosticStatus::STALE;
+        this->state_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
         sprintf(status_string, "No Connection");
     }
 }
@@ -131,9 +120,13 @@ void ODrive_ROS::update_diagnostics() {
     }
 }
 
-void ODrive_ROS::publish_all() {
+void ODrive_ROS::update_all() {
     // Publish the condition topic
-
+    this->encoder_topic->data[0] = this->odrive->get_pos_estimate();
+    this->encoder_topic->data[1] = this->odrive->get_vel_estimate();
+    this->encoder_topic->data[2] = 0;
+    this->encoder_topic->data[3] = this->odrive->get_control_mode();
+    this->encoder_topic->data[4] = this->odrive->get_setpoint();
     update_diagnostics();
 }
 
