@@ -4,7 +4,7 @@
 #include <FlexCAN_T4.h>
 #include <ros.h>
 //#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros.h"
-#include "ODrive/ODriveS1.h"
+#include "ODrive/ODrivePro.h"
 #include "ODrive/ODrive_ROS.h"
 #include "Actuators/ActuatorUnit.h"
 #include "Actuators/ActuatorsROS.h"
@@ -34,7 +34,7 @@ FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
 
 //#define HIGH_SPEED_USB
 
-ODriveS1* odrives[6];
+ODrivePro* odrives[6];
 ODrive_ROS* odrive_ros[6];
 
 ActuatorUnit* actuators[4];
@@ -47,6 +47,7 @@ diagnostic_msgs::DiagnosticArray system_diagnostics;
 diagnostic_msgs::DiagnosticStatus* system_info;
 
 ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
+
 
 #define SYSTEM_INFO_COUNT 8
 char* system_info_strings[SYSTEM_INFO_COUNT];
@@ -71,7 +72,7 @@ void can_recieve(const CAN_message_t &msg) {
     // Check node ID (Upper 6 bits of CAN ID)
     uint8_t node_id = msg.id >> 5;
 //    Serial.printf("CAN event %d\n", node_id);
-    for (ODriveS1* odrive : odrives) {
+    for (ODrivePro* odrive : odrives) {
         if (odrive == nullptr) continue;
         if (odrive->get_can_id() == node_id) {
             odrive->on_message(msg);
@@ -79,10 +80,16 @@ void can_recieve(const CAN_message_t &msg) {
     }
 }
 
-
+void calibrate_odrive_callback(const std_srvs::SetBool::Request &req, std_srvs::SetBool::Response &res) {
+    for (ODrivePro* odrive : odrives) {
+        if (odrive == nullptr) continue;
+//        odrive->calibrate();
+    }
+    res.success = true;
+}
 
 void unified_estop_callback(){
-    for (ODriveS1* odrive : odrives) {
+    for (ODrivePro* odrive : odrives) {
         if (odrive == nullptr) continue;
         odrive->estop();
     }
@@ -103,6 +110,15 @@ void check_temp(){
         }
     } else set_arm_clock(cpu_freq);  // 600 MHz (default)
 }
+
+bool send_once = false;
+bool calibrating = false;
+uint32_t spin_time = 0;
+
+// Setup service servers
+
+// Setup service servers for commanding calibration sequences (void)
+ros::ServiceServer<std_srvs::SetBool::Request, std_srvs::SetBool::Response> calibrate_odrive_srv("/calibrate_odrive", &calibrate_odrive_callback);
 
 void setup() {
 
@@ -139,30 +155,30 @@ void setup() {
     log_msg = "CAN bus initialised";
     node_handle.loginfo(log_msg.c_str());
 
-    log_msg = "Initialising ODriveS1 objects";
+    log_msg = "Initialising ODrivePro objects";
     node_handle.loginfo(log_msg.c_str());
 
     for (int i = 0; i < 6; i++) {
-        odrives[i] = new ODriveS1(i, &can1, &node_handle);
+        odrives[i] = new ODrivePro(i, &can1, &node_handle);
     }
 
-    for (ODriveS1* odrive : odrives) {
+    for (ODrivePro* odrive : odrives) {
         if (odrive == nullptr) continue;
-        odrive->set_conversion(172892, 0.92);
+//        odrive->set_conversion(172892, 0.92);
     }
 
     system_diagnostics.status_length = 11;
     system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[11];
 
-    log_msg = "Initialising ODriveS1 ROS objects";
+    log_msg = "Initialising ODrivePro ROS objects";
     node_handle.loginfo(log_msg.c_str());
 
     odrive_ros[0] = new ODrive_ROS(odrives[0], &node_handle, &system_diagnostics.status[0], "Front Left");
     odrive_ros[1] = new ODrive_ROS(odrives[1], &node_handle, &system_diagnostics.status[1], "Front Right");
     odrive_ros[2] = new ODrive_ROS(odrives[2], &node_handle, &system_diagnostics.status[2], "Rear Left");
     odrive_ros[3] = new ODrive_ROS(odrives[3], &node_handle, &system_diagnostics.status[3], "Rear Right");
-    odrive_ros[4] = new ODrive_ROS(odrives[4], &node_handle, &system_diagnostics.status[4], "Conveyor");
-    odrive_ros[5] = new ODrive_ROS(odrives[5], &node_handle, &system_diagnostics.status[5], "Trencher");
+    odrive_ros[4] = new ODrive_ROS(odrives[4], &node_handle, &system_diagnostics.status[5], "Trencher");
+    odrive_ros[5] = new ODrive_ROS(odrives[5], &node_handle, &system_diagnostics.status[4], "Conveyor");
 
     log_msg = "Initialising ActuatorUnit objects";
     node_handle.loginfo(log_msg.c_str());
@@ -221,7 +237,7 @@ void setup() {
     // For each ODrive add its diagnostic message
 
 
-//    for (ODriveS1* odrive : odrives) {
+//    for (ODrivePro* odrive : odrives) {
 //        odrive->init();
 //    }
 
@@ -237,8 +253,9 @@ void setup() {
     log_msg = "Setup complete";
     node_handle.loginfo(log_msg.c_str());
 
-    for (ODriveS1* odrive: odrives) {
+    for (ODrivePro* odrive: odrives) {
         odrive->init();
+        odrive->test();
     }
 
 }
@@ -259,10 +276,14 @@ void loop() {
     sprintf(system_info_strings[0], "%.1fC", tempmonGetTemp());
     check_temp();
 
-    for (ODriveS1 *odrive: odrives) {
+    for (ODrivePro *odrive: odrives) {
         if (odrive == nullptr) continue;
         odrive->refresh_data();
     }
+
+//    if (spin_time != 0 && micros() - spin_time > 1000000) {
+//        odrives[0]->set_setpoint(0);
+//    }
 
     for (ActuatorsROS *actuator: actuators_ros) {
         if (actuator == nullptr) continue;

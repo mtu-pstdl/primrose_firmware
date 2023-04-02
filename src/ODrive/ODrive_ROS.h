@@ -13,7 +13,7 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/service_server.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32MultiArray.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32MultiArray.h"
-#include "ODriveS1.h"
+#include "ODrivePro.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/UInt32MultiArray.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Empty.h"
@@ -38,7 +38,7 @@ class ODrive_ROS {
     };
 
 
-    ODriveS1 *odrive = nullptr;
+    ODrivePro *odrive = nullptr;
     String name = ""; // The name of the ODrive
 
 private:
@@ -97,7 +97,7 @@ public:
     ros::Publisher encoder_pub_;
 //    ros::Publisher state_pub_;
 
-    ODrive_ROS(ODriveS1* odrive, uint8_t number, diagnostic_msgs::DiagnosticStatus* status, String disp_name) :
+    ODrive_ROS(ODrivePro* odrive, uint8_t number, diagnostic_msgs::DiagnosticStatus* status, String disp_name) :
             setpoint_sub(topic_names[3][number], &ODrive_ROS::setpoint_callback, this),
             control_mode_sub(topic_names[4][number], &ODrive_ROS::control_mode_callback, this),
             condition_pub_("condition", &condition_topic),
@@ -138,7 +138,7 @@ public:
     }
 
 
-    ODriveS1* get_odrive();
+    ODrivePro* get_odrive();
 
     void setpoint_callback(const std_msgs::Float32MultiArray &msg);
 

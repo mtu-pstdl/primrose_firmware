@@ -80,8 +80,14 @@ namespace odrive {
             case LOCKIN_SPIN:
                 sprintf(buffer, "LOCKIN_SPIN");
                 break;
+            case ENCODER_HALL_PHASE_CALIBRATION:
+                sprintf(buffer, "ENCODER_HALL_PHASE_CALIBRATION");
+                break;
+            case ENCODER_HALL_POLARITY_CALIBRATION:
+                sprintf(buffer, "ENCODER_HALL_POLARITY_CALIBRATION");
+                break;
            default:
-                sprintf(buffer, "UNKNOWN");
+                sprintf(buffer, "UNKNOWN: 0x%2X", axis_state);
                 break;
         }
     }

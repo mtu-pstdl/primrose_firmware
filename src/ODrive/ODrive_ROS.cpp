@@ -50,7 +50,10 @@ void ODrive_ROS::update_diagnostics_label(){
                 break;
             case odrive::UNDEFINED:
             case odrive::IDLE:
-                if (this->odrive->get_active_errors() != 0) {
+                if (this->odrive->get_axis_error() != 0) {
+                    this->state_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
+                    sprintf(status_string, "ERROR: %15s", this->odrive->get_axis_error_string());
+                } else if (this->odrive->get_active_errors() != 0) {
                     this->state_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
                     sprintf(status_string, "ERROR: %15s", this->odrive->get_active_errors_string());
                 } else if (this->odrive->get_disarm_reason() != 0) {
@@ -68,6 +71,11 @@ void ODrive_ROS::update_diagnostics_label(){
                 this->state_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
                 sprintf(status_string, "Starting");
                 break;
+            case odrive::FULL_CALIBRATION_SEQUENCE:
+            case odrive::ENCODER_HALL_POLARITY_CALIBRATION:
+            case odrive::ENCODER_INDEX_SEARCH:
+            case odrive::ENCODER_OFFSET_CALIBRATION:
+            case odrive::ENCODER_HALL_PHASE_CALIBRATION:
             case odrive::MOTOR_CALIBRATION:
                 this->state_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
                 sprintf(status_string, "Calibrating");
@@ -134,6 +142,6 @@ void ODrive_ROS::publish_all() {
     update_diagnostics();
 }
 
-ODriveS1* ODrive_ROS::get_odrive() {
+ODrivePro* ODrive_ROS::get_odrive() {
     return this->odrive;
 }

@@ -2,27 +2,52 @@
 // Created by Jay on 12/10/2022.
 //
 
-#include "ODriveS1.h"
+#include "ODrivePro.h"
 
 //#include <utility>
 //#include "odrive_constants.h"
 
-ODriveS1::ODriveS1(uint8_t can_id, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> *can_bus,
-                   void* estop_callback) {
+ODrivePro::ODrivePro(uint8_t can_id, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> *can_bus,
+                     void* estop_callback) {
     this->can_id = can_id;
     this->can_bus = can_bus;
     this->estop_callback = estop_callback;
     this->allocate_strings();
-    fet_msg = new CAN_message_t;
 }
 
-void ODriveS1::init() {
+void ODrivePro::init() {
     // Tell the ODrive to begin homing the motor
-    this->send_command(odrive::Set_Axis_State, odrive::STARTUP_SEQUENCE);
+    this->send_command(odrive::Clear_Errors);
+//    this->send_command(odrive::Set_Axis_State, odrive::ENCODER_HALL_PHASE_CALIBRATION);
 //    this->send_command(odrive::Set_Axis_State, odrive::FULL_CALIBRATION_SEQUENCE);
 }
 
-uint8_t ODriveS1::get_can_id() const {
+void ODrivePro::test(){
+    this->set_control_mode(odrive::control_modes::VELOCITY_CONTROL);
+    this->set_setpoint(50);
+}
+
+void ODrivePro::set_setpoint(float_t value) {
+    switch(this->control_mode){
+        case odrive::VOLTAGE_CONTROL:
+            break;
+        case odrive::TORQUE_CONTROL:
+            this->torque_setpoint = value;
+            this->send_command(odrive::Set_Input_Torque, value);
+            break;
+        case odrive::VELOCITY_CONTROL:
+            this->velocity_setpoint = value;
+            this->send_command(odrive::command_ids::Set_Input_Vel, value, 0);
+            break;
+        case odrive::POSITION_CONTROL:
+            this->position_setpoint = value;
+            break;
+        case odrive::UNKNOWN_CONTROL_MODE:
+            break;
+    }
+}
+
+uint8_t ODrivePro::get_can_id() const {
     return this->can_id;
 }
 
@@ -30,14 +55,14 @@ uint8_t ODriveS1::get_can_id() const {
  * This method is called any time a message is received from the ODrive
  * @param msg A can message received from the ODrive this object represents
  */
-void ODriveS1::on_message(const CAN_message_t &msg) {
+void ODrivePro::on_message(const CAN_message_t &msg) {
     uint8_t msg_type = msg.id & 0x1F; // Use bitmask of 0b00000011111 to get the last 5 bits
     // Bytes are sent little endian
     uint32_t upper_32 = 0;
     uint32_t lower_32 = 0;
     if (msg.len == 8) { // 8 bytes
-        upper_32 = (msg.buf[4] << 24) | (msg.buf[5] << 16) | (msg.buf[6] << 8) | msg.buf[7];
-        lower_32 = (msg.buf[0] << 24) | (msg.buf[1] << 16) | (msg.buf[2] << 8) | msg.buf[3];
+        upper_32 = (msg.buf[0] << 24) | (msg.buf[1] << 16) | (msg.buf[2] << 8) | msg.buf[3];
+        lower_32 = (msg.buf[7] << 24) | (msg.buf[6] << 16) | (msg.buf[5] << 8) | msg.buf[4];
     } else if (msg.len == 4) { // 4 bytes
         upper_32 = 0;  // Set the upper 32 bits to 0 since we only have 4 bytes
         lower_32 = (msg.buf[0] << 24) | (msg.buf[1] << 16) | (msg.buf[2] << 8) | msg.buf[3];
@@ -50,8 +75,8 @@ void ODriveS1::on_message(const CAN_message_t &msg) {
         case odrive::Heartbeat: // Lower 4 bytes are AXIS_ERROR and the upper 4 bytes are AXIS_STATE
             this->AXIS_ERROR       = upper_32;
             // Bitmask the lowest byte of the lower 32 bits to get the axis state
-            this->AXIS_STATE       = static_cast<odrive::axis_states> (lower_32 >> 16);
-            this->PROCEDURE_RESULT = static_cast<odrive::procedure_results>(lower_32 >> 24);
+            this->AXIS_STATE       = static_cast<odrive::axis_states> (lower_32 & 0xFF);
+            this->PROCEDURE_RESULT = static_cast<odrive::procedure_results>((lower_32 >> 8) & 0xFF);
             this->last_axis_state  = millis();
             this->in_flight_bitmask &= ~AXIS_STATE_FLIGHT_BIT; // Clear the bit
             break;
@@ -62,21 +87,23 @@ void ODriveS1::on_message(const CAN_message_t &msg) {
             this->in_flight_bitmask &= ~ERROR_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Encoder_Estimates:
-            this->POS_ESTIMATE = (float_t) lower_32;
-            this->VEL_ESTIMATE = (float_t) upper_32;
+            this->POS_ESTIMATE = 0;
+            this->VEL_ESTIMATE = * (float *) &lower_32;
             this->last_encoder_update = millis();
             this->in_flight_bitmask &= ~ENCODER_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Iq:
-            this->IQ_SETPOINT = (float_t) lower_32;
-            this->IQ_MEASURED = (float_t) upper_32;
+            lower_32 = (msg.buf[3] << 24) | (msg.buf[2] << 16) | (msg.buf[1] << 8) | msg.buf[0];
+            upper_32 = (msg.buf[7] << 24) | (msg.buf[6] << 16) | (msg.buf[5] << 8) | msg.buf[4];
+            this->IQ_SETPOINT = * (float *) &lower_32;
+            this->IQ_MEASURED = * (float *) &upper_32;
             this->last_iq_update = millis();
             this->in_flight_bitmask &= ~IQ_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Temperature:
             lower_32 = (msg.buf[3] << 24) | (msg.buf[2] << 16) | (msg.buf[1] << 8) | msg.buf[0];
-            this->FET_TEMP = * (float *) &lower_32;
             upper_32 = (msg.buf[7] << 24) | (msg.buf[6] << 16) | (msg.buf[5] << 8) | msg.buf[4];
+            this->FET_TEMP   = * (float *) &lower_32;
             this->MOTOR_TEMP = * (float *) &upper_32;
 
             this->last_temp_update = millis();
@@ -95,16 +122,12 @@ void ODriveS1::on_message(const CAN_message_t &msg) {
     }
 }
 
-float_t ODriveS1::calculate_fixed_point(int16_t upper_16, uint16_t lower_16) {
-    return (float_t) upper_16 + ((float_t) lower_16 / 65536);
-}
-
 /**
  * This method is called to make sure all the data from the ODrive is up to date
  * If not if will send the corresponding data request to the ODrive
  * This method also sends the Heartbeat message to the ODrive to prevent it from E-Stopping
  */
-void ODriveS1::refresh_data() {
+void ODrivePro::refresh_data() {
 
     // For each refresh bit that is not set, send the corresponding command to the ODrive
     if (this->last_axis_state + AXIS_STATE_UPDATE_RATE < millis() &&
@@ -137,20 +160,14 @@ void ODriveS1::refresh_data() {
         if (this->send_command(odrive::command_ids::Get_Vbus_Voltage_Current))
             this->in_flight_bitmask |= VBUS_FLIGHT_BIT;  // Set the in flight bit to 1
     }
-    if (this->last_heartbeat + HEARTBEAT_UPDATE_RATE < millis() &&
-        !(this->in_flight_bitmask & HEARTBEAT_FLIGHT_BIT)){
+    if (this->last_heartbeat + HEARTBEAT_UPDATE_RATE < millis()) {
         this->send_command(odrive::command_ids::Heartbeat);
-//        if ()
-//            this->in_flight_bitmask |= HEARTBEAT_FLIGHT_BIT;  // Set the in flight bit to 1
+        this->last_heartbeat = millis();
     }
-
-//    if (this->ACTIVE_ERRORS != 0 || this->AXIS_ERROR != 0) {
-//
-//    }
 }
 
 
-uint8_t ODriveS1::send_command(odrive::command_ids command_id) {
+uint8_t ODrivePro::send_command(odrive::command_ids command_id) {
     CAN_message_t msg;
     msg.id = this->can_id << 5 | command_id; // 6 bits for the ID and 5 bits for the command
     msg.flags.remote = true; // Set the remote flag to true (remote transmission request)
@@ -161,7 +178,7 @@ uint8_t ODriveS1::send_command(odrive::command_ids command_id) {
 }
 
 template <typename T>
-uint8_t ODriveS1::send_command(odrive::command_ids command_id, T value) {
+uint8_t ODrivePro::send_command(odrive::command_ids command_id, T value) {
     CAN_message_t msg;
     msg.id = this->can_id << 5 | command_id; // 6 bits for the ID and 5 bits for the command
     msg.flags.extended = false;
@@ -177,7 +194,7 @@ uint8_t ODriveS1::send_command(odrive::command_ids command_id, T value) {
 }
 
 template <typename T1 , typename T2>
-uint8_t ODriveS1::send_command(odrive::command_ids command_id, T1 lower_data, T2 upper_data) {
+uint8_t ODrivePro::send_command(odrive::command_ids command_id, T1 lower_data, T2 upper_data) {
     CAN_message_t msg;
     msg.id = this->can_id << 5 | command_id; // 6 bits for the ID and 5 bits for the command
     msg.flags.remote = false; // Set the remote flag to false (data transmission)
@@ -199,23 +216,23 @@ uint8_t ODriveS1::send_command(odrive::command_ids command_id, T1 lower_data, T2
 }
 
 
-float_t ODriveS1::get_fet_temp() const {
+float_t ODrivePro::get_fet_temp() const {
     return this->FET_TEMP;
 }
 
-float_t ODriveS1::get_motor_temp() const {
+float_t ODrivePro::get_motor_temp() const {
     return this->MOTOR_TEMP;
 }
 
-float_t ODriveS1::get_vbus_voltage() const {
+float_t ODrivePro::get_vbus_voltage() const {
     return this->VBUS_VOLTAGE;
 }
 
-float_t ODriveS1::get_vbus_current() const {
+float_t ODrivePro::get_vbus_current() const {
     return this->VBUS_CURRENT;
 }
 
-float_t ODriveS1::unit_conversion(float_t value, bool direction) const {
+float_t ODrivePro::unit_conversion(float_t value, bool direction) const {
     if (this->has_rev_conversion && this->has_meter_conversion){
         if (direction){
             return (value / this->meter_per_rev) * this->ticks_per_rev;
@@ -233,23 +250,23 @@ float_t ODriveS1::unit_conversion(float_t value, bool direction) const {
     }
 }
 
-float_t ODriveS1::get_pos_estimate() const {
+float_t ODrivePro::get_pos_estimate() const {
    return this->unit_conversion(this->POS_ESTIMATE, false);
 }
 
-float_t ODriveS1::get_vel_estimate() const {
+float_t ODrivePro::get_vel_estimate() const {
     return this->unit_conversion(this->VEL_ESTIMATE, false);
 }
 
-float_t ODriveS1::get_Iq_setpoint() const {
+float_t ODrivePro::get_Iq_setpoint() const {
     return this->IQ_SETPOINT;
 }
 
-float_t ODriveS1::get_Iq_measured() const {
+float_t ODrivePro::get_Iq_measured() const {
     return this->IQ_MEASURED;
 }
 
-float_t ODriveS1::get_setpoint() const {
+float_t ODrivePro::get_setpoint() const {
     if (this->control_mode == odrive::control_modes::POSITION_CONTROL) {
         return this->unit_conversion(this->position_setpoint, false);
     } else if (this->control_mode == odrive::control_modes::VELOCITY_CONTROL) {
@@ -261,47 +278,47 @@ float_t ODriveS1::get_setpoint() const {
     }
 }
 
-odrive::axis_states ODriveS1::get_axis_state() const {
+odrive::axis_states ODrivePro::get_axis_state() const {
     return this->AXIS_STATE;
 }
 
-char* ODriveS1::get_axis_state_string() {
+char* ODrivePro::get_axis_state_string() {
     sprintf(this->axis_state_string, ""); // Clear the string
     odrive::sprint_axis_state(this->axis_state_string, static_cast<odrive::axis_states>(this->AXIS_STATE));
     return this->axis_state_string;
 }
 
-uint32_t ODriveS1::get_axis_error() const {
+uint32_t ODrivePro::get_axis_error() const {
     return this->ACTIVE_ERRORS;
 }
 
-char* ODriveS1::get_axis_error_string() {
+char* ODrivePro::get_axis_error_string() {
     sprintf(this->axis_error_string, ""); // Clear the string
     odrive::sprintf_error_code(this->axis_error_string, this->AXIS_ERROR);
     return this->axis_error_string;
 }
 
-uint32_t ODriveS1::get_active_errors() const {
+uint32_t ODrivePro::get_active_errors() const {
     return this->ACTIVE_ERRORS;
 }
 
-char* ODriveS1::get_active_errors_string() {
+char* ODrivePro::get_active_errors_string() {
     sprintf(this->active_errors_string, ""); // Clear the string
     odrive::sprintf_error_code(this->active_errors_string, this->ACTIVE_ERRORS);
     return this->active_errors_string;
 }
 
-uint32_t ODriveS1::get_disarm_reason() const {
+uint32_t ODrivePro::get_disarm_reason() const {
     return this->DISARM_REASON;
 }
 
-char* ODriveS1::get_disarm_reason_string() {
+char* ODrivePro::get_disarm_reason_string() {
     sprintf(this->disarm_reason_string, ""); // Clear the string
     odrive::sprintf_error_code(this->disarm_reason_string, this->DISARM_REASON);
     return this->disarm_reason_string;
 }
 
-bool ODriveS1::is_connected() const {
+bool ODrivePro::is_connected() const {
     if (millis() - this->last_message > 7500) {
         return false;
     } else {
@@ -309,21 +326,21 @@ bool ODriveS1::is_connected() const {
     }
 }
 
-void ODriveS1::estop() {
+void ODrivePro::estop() {
     this->send_command(odrive::Estop);
 }
 
-odrive::procedure_results ODriveS1::get_procedure_results() const {
+odrive::procedure_results ODrivePro::get_procedure_results() const {
     return this->PROCEDURE_RESULT;
 }
 
-char *ODriveS1::get_procedure_results_string() {
+char *ODrivePro::get_procedure_results_string() {
     sprintf(this->procedure_result_string, ""); // Clear the string
     odrive::sprint_procedure_result(this->procedure_result_string, this->PROCEDURE_RESULT);
     return this->procedure_result_string;
 }
 
-bool ODriveS1::has_error() const {
+bool ODrivePro::has_error() const {
     if (this->ACTIVE_ERRORS != 0 || this->AXIS_ERROR != 0) {
         return true;
     } else {
@@ -331,23 +348,23 @@ bool ODriveS1::has_error() const {
     }
 }
 
-odrive::control_modes ODriveS1::get_control_mode() const {
+odrive::control_modes ODrivePro::get_control_mode() const {
     return this->control_mode;
 }
 
-char *ODriveS1::get_control_mode_string() {
+char *ODrivePro::get_control_mode_string() {
     sprintf(this->control_mode_string, ""); // Clear the string
     odrive::sprint_control_mode(this->control_mode_string, this->control_mode);
     return this->control_mode_string;
 }
 
-void ODriveS1::set_ticks_per_rev(float_t value) {
+void ODrivePro::set_ticks_per_rev(float_t value) {
     this->ticks_per_rev = value;
     this->has_rev_conversion = true;
     sprintf(this->vel_unit_string, "RPM");
 }
 
-void ODriveS1::set_conversion(float_t ticks_value, float_t revs_value) {
+void ODrivePro::set_conversion(float_t ticks_value, float_t revs_value) {
     this->ticks_per_rev = ticks_value;
     this->meter_per_rev = revs_value;
     sprintf(this->vel_unit_string, "m/s");
@@ -356,17 +373,17 @@ void ODriveS1::set_conversion(float_t ticks_value, float_t revs_value) {
     this->has_meter_conversion = true;
 }
 
-uint32_t ODriveS1::get_last_update() const {
+uint32_t ODrivePro::get_last_update() const {
     return millis() - this->last_message;
 }
 
-void ODriveS1::set_control_mode(odrive::control_modes mode) {
+void ODrivePro::set_control_mode(odrive::control_modes mode) {
     this->control_mode = mode;
-    this->send_command(odrive::Set_Controller_Mode, mode, odrive::PASSTHROUGH);
+    this->send_command(odrive::Set_Controller_Mode, mode, odrive::VEL_RAMP);
     this->send_command(odrive::Set_Axis_State, odrive::axis_states::CLOSED_LOOP_CONTROL, mode);
 }
 
-char *ODriveS1::get_setpoint_string() {
+char *ODrivePro::get_setpoint_string() {
     sprintf(this->setpoint_string, ""); // Clear the string
     if (this->control_mode == odrive::control_modes::POSITION_CONTROL) {
         sprintf(this->setpoint_string, "%.3f %s", this->get_setpoint(), this->pos_unit_string);
@@ -380,21 +397,12 @@ char *ODriveS1::get_setpoint_string() {
     return this->setpoint_string;
 }
 
-char *ODriveS1::get_fet_temp_frame_string() {
-    sprintf(this->can_frame_string, ""); // Clear the string
-    if (this->fet_msg == nullptr) {
-        sprintf(this->can_frame_string, "No CAN message received");
-        return this->can_frame_string;
-    }
-    sprintf(this->can_frame_string, "ID: %lX, Data: %X, %X, %X, %X, %X, %X, %X, %X",
-            this->fet_msg->id, this->fet_msg->buf[0], this->fet_msg->buf[1],
-            this->fet_msg->buf[2], this->fet_msg->buf[3], this->fet_msg->buf[4], this->fet_msg->buf[5],
-            this->fet_msg->buf[6], this->fet_msg->buf[7]);
-    return this->can_frame_string;
+uint32_t ODrivePro::get_inflight_bitmask() const {
+    return this->in_flight_bitmask;
 }
 
-uint32_t ODriveS1::get_inflight_bitmask() const {
-    return this->in_flight_bitmask;
+void ODrivePro::reboot() {
+    this->send_command(odrive::Reboot);
 }
 
 
