@@ -50,11 +50,8 @@ private:
     odrive::control_modes control_mode = odrive::control_modes::UNKNOWN_CONTROL_MODE; // The control mode of the ODrive
     odrive::input_modes input_mode = odrive::input_modes::UNKNOWN_INPUT_MODE; // The input mode of the ODrive
 
-    // Publishes the values of FET_TEMP, MOTOR_TEMP, VBUS_VOLTAGE, VBUS_CURRENT
-    std_msgs::Float32MultiArray condition_topic;
-
     // Publishes the values of POS_ESTIMATE, VEL_ESTIMATE, IQ_SETPOINT, IQ_MEASURED
-    std_msgs::Float32MultiArray encoder_topic;
+    std_msgs::Float32MultiArray* encoder_topic;
 
     // Publishes the values of AXIS_STATE, AXIS_ERROR, ACTIVE_ERRORS, DISARM_REASON
     diagnostic_msgs::DiagnosticStatus* state_topic;
@@ -78,7 +75,7 @@ private:
             state_topic->values[5].key = "VEL_ESTIMATE";      // Or CONTROL_MODE
         }
     }
-    void ODrive_ROS::update_diagnostics_label();
+    void update_diagnostics_label();
 
     void allocate_strings() {
         for (auto & string : strings) {
@@ -93,20 +90,17 @@ private:
 
 public:
 
-    ros::Publisher condition_pub_;
-    ros::Publisher encoder_pub_;
-//    ros::Publisher state_pub_;
 
-    ODrive_ROS(ODrivePro* odrive, uint8_t number, diagnostic_msgs::DiagnosticStatus* status, String disp_name) :
+    ODrive_ROS(ODrivePro* odrive, uint8_t number,
+               diagnostic_msgs::DiagnosticStatus* status,
+               std_msgs::Float32MultiArray* encoder_topic,
+               String disp_name) :
             setpoint_sub(topic_names[3][number], &ODrive_ROS::setpoint_callback, this),
-            control_mode_sub(topic_names[4][number], &ODrive_ROS::control_mode_callback, this),
-            condition_pub_("condition", &condition_topic),
-            encoder_pub_("encoder", &encoder_topic) {
+            control_mode_sub(topic_names[4][number], &ODrive_ROS::control_mode_callback, this){
         this->odrive = odrive;
-        this->condition_topic.data_length = 5;
-        this->condition_topic.data = new float_t[5];
-        this->encoder_topic.data_length = 5;
-        this->encoder_topic.data = new float_t[5];
+        this->encoder_topic = encoder_topic;
+        this->encoder_topic->data_length = 5;
+        this->encoder_topic->data = new float_t[5];
         this->state_topic = status;
 
         this->state_topic->values_length = NUM_CONDITIONS;

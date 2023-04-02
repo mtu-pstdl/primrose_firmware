@@ -18,8 +18,6 @@ ODrivePro::ODrivePro(uint8_t can_id, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> *c
 void ODrivePro::init() {
     // Tell the ODrive to begin homing the motor
     this->send_command(odrive::Clear_Errors);
-//    this->send_command(odrive::Set_Axis_State, odrive::ENCODER_HALL_PHASE_CALIBRATION);
-//    this->send_command(odrive::Set_Axis_State, odrive::FULL_CALIBRATION_SEQUENCE);
 }
 
 void ODrivePro::test(){
@@ -102,6 +100,7 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
             this->in_flight_bitmask &= ~IQ_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Temperature:
+            // TODO: Because this is disgusting and I hate it
             lower_32 = (msg.buf[3] << 24) | (msg.buf[2] << 16) | (msg.buf[1] << 8) | msg.buf[0];
             upper_32 = (msg.buf[7] << 24) | (msg.buf[6] << 16) | (msg.buf[5] << 8) | msg.buf[4];
             this->FET_TEMP   = * (float *) &lower_32;

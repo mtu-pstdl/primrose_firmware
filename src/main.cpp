@@ -11,13 +11,13 @@
 #include <std_srvs/SetBool.h>
 #include <std_msgs/Float32.h>
 
+#include "ROS_Publishers.h"
+
 //#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32.h"
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticArray.h"
 //#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/publisher.h"
 //#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32.h"
-
-#include "ros_pub_sub_serv.h"
 
 #define CPU_FREQ_BOOST 816000000 //
 //#define CPU_FREQ_BASE 600000000 // 300 MHz
@@ -33,6 +33,12 @@ uint32_t cpu_boost_time = 0;
 
 ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
+
+diagnostic_msgs::DiagnosticArray system_diagnostics;
+
+diagnostic_msgs::DiagnosticStatus* system_info;
+
+ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
 
 //#define HIGH_SPEED_USB
 
@@ -154,7 +160,7 @@ void setup() {
     node_handle.loginfo(log_msg.c_str());
 
     for (int i = 0; i < 6; i++) {
-        odrives[i] = new ODrivePro(i, &can1, &node_handle);
+        odrives[i] = new ODrivePro(i + 1, &can1, &node_handle);
     }
 
     for (ODrivePro* odrive : odrives) {
@@ -168,12 +174,18 @@ void setup() {
     log_msg = "Initialising ODrivePro ROS objects";
     node_handle.loginfo(log_msg.c_str());
 
-    odrive_ros[0] = new ODrive_ROS(odrives[0], &node_handle, &system_diagnostics.status[0], "Front Left");
-    odrive_ros[1] = new ODrive_ROS(odrives[1], &node_handle, &system_diagnostics.status[1], "Front Right");
-    odrive_ros[2] = new ODrive_ROS(odrives[2], &node_handle, &system_diagnostics.status[2], "Rear Left");
-    odrive_ros[3] = new ODrive_ROS(odrives[3], &node_handle, &system_diagnostics.status[3], "Rear Right");
-    odrive_ros[4] = new ODrive_ROS(odrives[4], &node_handle, &system_diagnostics.status[5], "Trencher");
-    odrive_ros[5] = new ODrive_ROS(odrives[5], &node_handle, &system_diagnostics.status[4], "Conveyor");
+    odrive_ros[0] = new ODrive_ROS(odrives[0], &node_handle, &system_diagnostics.status[0],
+                                   odrive_encoder_msgs[0], "Front Left");
+    odrive_ros[1] = new ODrive_ROS(odrives[1], &node_handle, &system_diagnostics.status[1],
+                                   odrive_encoder_msgs[1], "Front Right");
+    odrive_ros[2] = new ODrive_ROS(odrives[2], &node_handle, &system_diagnostics.status[2],
+                                   odrive_encoder_msgs[2], "Rear Left");
+    odrive_ros[3] = new ODrive_ROS(odrives[3], &node_handle, &system_diagnostics.status[3],
+                                   odrive_encoder_msgs[3], "Rear Right");
+    odrive_ros[4] = new ODrive_ROS(odrives[4], &node_handle, &system_diagnostics.status[5],
+                                   odrive_encoder_msgs[4], "Trencher");
+    odrive_ros[5] = new ODrive_ROS(odrives[5], &node_handle, &system_diagnostics.status[4],
+                                   odrive_encoder_msgs[5], "Conveyor");
 
     log_msg = "Initialising ActuatorUnit objects";
     node_handle.loginfo(log_msg.c_str());

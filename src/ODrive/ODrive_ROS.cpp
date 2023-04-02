@@ -133,11 +133,6 @@ void ODrive_ROS::update_diagnostics() {
 
 void ODrive_ROS::publish_all() {
     // Publish the condition topic
-    condition_topic.data[0] = this->odrive->get_fet_temp();
-    condition_topic.data[1] = this->odrive->get_motor_temp();
-    condition_topic.data[2] = this->odrive->get_vbus_voltage();
-    condition_topic.data[3] = this->odrive->get_vbus_current();
-    condition_topic.data[4] = this->odrive->get_Iq_measured();
 
     update_diagnostics();
 }
