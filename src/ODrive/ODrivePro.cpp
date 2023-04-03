@@ -59,11 +59,11 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
     uint32_t upper_32 = 0;
     uint32_t lower_32 = 0;
     if (msg.len == 8) { // 8 bytes
-        upper_32 = (msg.buf[0] << 24) | (msg.buf[1] << 16) | (msg.buf[2] << 8) | msg.buf[3];
+        upper_32 = (msg.buf[3] << 24) | (msg.buf[2] << 16) | (msg.buf[1] << 8) | msg.buf[0];
         lower_32 = (msg.buf[7] << 24) | (msg.buf[6] << 16) | (msg.buf[5] << 8) | msg.buf[4];
     } else if (msg.len == 4) { // 4 bytes
         upper_32 = 0;  // Set the upper 32 bits to 0 since we only have 4 bytes
-        lower_32 = (msg.buf[0] << 24) | (msg.buf[1] << 16) | (msg.buf[2] << 8) | msg.buf[3];
+        lower_32 = (msg.buf[3] << 24) | (msg.buf[2] << 16) | (msg.buf[1] << 8) | msg.buf[0];
     } else {
         upper_32 = 0;
         lower_32 = 0;
@@ -71,7 +71,7 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
     this->last_message = millis();
     switch (static_cast<odrive::command_ids>(msg_type)){
         case odrive::Heartbeat: // Lower 4 bytes are AXIS_ERROR and the upper 4 bytes are AXIS_STATE
-            this->AXIS_ERROR       = upper_32;
+            this->AXIS_ERROR       = upper_32; // TODO: Check if this needs to have its endianness swapped
             // Bitmask the lowest byte of the lower 32 bits to get the axis state
             this->AXIS_STATE       = static_cast<odrive::axis_states> (lower_32 & 0xFF);
             this->PROCEDURE_RESULT = static_cast<odrive::procedure_results>((lower_32 >> 8) & 0xFF);
@@ -91,27 +91,18 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
             this->in_flight_bitmask &= ~ENCODER_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Iq:
-            // TODO: Make the bit decoding the same for all messages
-            lower_32 = (msg.buf[3] << 24) | (msg.buf[2] << 16) | (msg.buf[1] << 8) | msg.buf[0];
-            upper_32 = (msg.buf[7] << 24) | (msg.buf[6] << 16) | (msg.buf[5] << 8) | msg.buf[4];
             this->IQ_SETPOINT = * (float *) &lower_32;
             this->IQ_MEASURED = * (float *) &upper_32;
             this->last_iq_update = millis();
             this->in_flight_bitmask &= ~IQ_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Temperature:
-            // TODO: Because this is disgusting and I hate it
-            lower_32 = (msg.buf[3] << 24) | (msg.buf[2] << 16) | (msg.buf[1] << 8) | msg.buf[0];
-            upper_32 = (msg.buf[7] << 24) | (msg.buf[6] << 16) | (msg.buf[5] << 8) | msg.buf[4];
             this->FET_TEMP   = * (float *) &lower_32;
             this->MOTOR_TEMP = * (float *) &upper_32;
-
             this->last_temp_update = millis();
             this->in_flight_bitmask &= ~TEMP_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Vbus_Voltage_Current:
-            lower_32 = (msg.buf[3] << 24) | (msg.buf[2] << 16) | (msg.buf[1] << 8) | msg.buf[0];
-            upper_32 = (msg.buf[7] << 24) | (msg.buf[6] << 16) | (msg.buf[5] << 8) | msg.buf[4];
             this->VBUS_VOLTAGE = * (float *) &lower_32;
             this->VBUS_CURRENT = * (float *) &upper_32;
             this->last_vbus_update = millis();

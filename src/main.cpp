@@ -114,8 +114,8 @@ void check_temp(){
     } else set_arm_clock(cpu_freq);  // 600 MHz (default)
 }
 
-bool send_once = false;
-bool calibrating = false;
+bool service_servers_setup = false;
+
 uint32_t spin_time = 0;
 
 // Setup service servers
@@ -242,12 +242,6 @@ void setup() {
         odrive->subscribe(&node_handle);
     }
 
-    for (ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response>* srv: services) {
-        if (srv == nullptr) continue;
-        // Check if the server has already been advertised
-        node_handle.advertiseService(*srv);
-    }
-
 }
 
 void loop() {
@@ -319,6 +313,16 @@ void loop() {
             log_msg = "Unknown spin result: " + String(spin_result);
             node_handle.logerror(log_msg.c_str());
             break;
+    }
+
+    if (!service_servers_setup){
+        for (ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response>* srv: services) {
+            if (srv == nullptr) continue;
+            // Check if the service's publisher is already in the node handle's PUBLISHER list
+
+            node_handle.advertiseService(*srv);
+        }
+        service_servers_setup = true;
     }
 
     digitalWriteFast(LED_BUILTIN, HIGH); // Turn off the LED
