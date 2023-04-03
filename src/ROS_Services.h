@@ -45,10 +45,11 @@ void estop_cb(const std_srvs::Empty::Request &req, std_srvs::Empty::Response &re
 ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response> estop("mciu/emergency_stop",
                                                                              &estop_cb);
 
+
 ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response>* services[] = {
         &home_suspension,
         &home_steering,
-        &estop
+        &estop,
 };
 
 #endif //TEENSYCANTRANSCEIVER_ROS_SERVICES_H

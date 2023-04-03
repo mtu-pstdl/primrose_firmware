@@ -92,7 +92,6 @@ void set_mciu_level_max(int8_t level) {
 void can_recieve(const CAN_message_t &msg) {
     // Check node ID (Upper 6 bits of CAN ID)
     uint8_t node_id = msg.id >> 5;
-//    Serial.printf("CAN event %d\n", node_id);
     for (ODrivePro* odrive : odrives) {
         if (odrive == nullptr) continue;
         if (odrive->get_can_id() == node_id) {
@@ -114,34 +113,19 @@ void check_temp(){
     } else set_arm_clock(cpu_freq);  // 600 MHz (default)
 }
 
-bool service_servers_setup = false;
-
 uint32_t spin_time = 0;
-
-// Setup service servers
-
-// Setup service servers for commanding calibration sequences (void)
 
 void setup() {
 
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH);
 
-    delay(1000);
-
-#ifdef HIGH_SPEED_USB
-//    node_handle.getHardware()->setBaud(500000); // 500kbps
-#else
     node_handle.getHardware()->setBaud(4000000); // 4Mbps
-#endif
     node_handle.setSpinTimeout(100); // 50ms
     node_handle.initNode();
     node_handle.requestSyncTime();
 
     String log_msg = "Starting MCIU with build version: " + String(__DATE__) + " " + String(__TIME__);
-    node_handle.loginfo(log_msg.c_str());
-
-    log_msg = "Initialising CAN bus at 500kbps";
     node_handle.loginfo(log_msg.c_str());
 
     // Set up the CAN bus
@@ -150,15 +134,8 @@ void setup() {
 //    can1.setMaxMB(64);  // 64 message buffers
     can1.onReceive(can_recieve);
 
-
     can1.enableFIFO();
     can1.enableFIFOInterrupt();
-
-    log_msg = "CAN bus initialised";
-    node_handle.loginfo(log_msg.c_str());
-
-    log_msg = "Initialising ODrivePro objects";
-    node_handle.loginfo(log_msg.c_str());
 
     for (int i = 0; i < 6; i++) {
         odrives[i] = new ODrivePro(i + 1, &can1, &node_handle);
@@ -171,9 +148,6 @@ void setup() {
 
     system_diagnostics.status_length = 11;
     system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[11];
-
-    log_msg = "Initialising ODrivePro ROS objects";
-    node_handle.loginfo(log_msg.c_str());
 
     odrive_ros[0] = new ODrive_ROS(odrives[0], &system_diagnostics.status[0],
                                    odrive_encoder_msgs[0], "Front_Left");
@@ -188,24 +162,15 @@ void setup() {
     odrive_ros[5] = new ODrive_ROS(odrives[5], &system_diagnostics.status[4],
                                    odrive_encoder_msgs[5], "Conveyor");
 
-    log_msg = "Initialising ActuatorUnit objects";
-    node_handle.loginfo(log_msg.c_str());
-
     actuators[0] = new ActuatorUnit(&actuator_bus, 0x80);
     actuators[1] = new ActuatorUnit(&actuator_bus, 0x81);
     actuators[2] = new ActuatorUnit(&actuator_bus, 0x82);
     actuators[3] = new ActuatorUnit(&actuator_bus, 0x83);
 
-    log_msg = "Initialising ActuatorUnit ROS objects";
-    node_handle.loginfo(log_msg.c_str());
-
     actuators_ros[0] = new ActuatorsROS(actuators[0], &node_handle, &system_diagnostics.status[6], "Front_Left");
     actuators_ros[1] = new ActuatorsROS(actuators[1], &node_handle, &system_diagnostics.status[7], "Front_Right");
     actuators_ros[2] = new ActuatorsROS(actuators[2], &node_handle, &system_diagnostics.status[8], "Rear_Left");
     actuators_ros[3] = new ActuatorsROS(actuators[3], &node_handle, &system_diagnostics.status[9], "Rear_Right");
-
-    log_msg = "Setting up system diagnostics";
-    node_handle.loginfo(log_msg.c_str());
 
     // Allocate memory for the system diagnostics strings
     for (auto & system_info_string : system_info_strings) system_info_string = new char[20];
@@ -222,12 +187,13 @@ void setup() {
     system_info->values[5].key = "Actuator Buffer Size";
     system_info->values[6].key = "Actuator response time";
     system_info->values[7].key = "Build Date";
-    for (int i = 0; i < SYSTEM_INFO_COUNT; i++) system_info->values[i].value = system_info_strings[i];
     sprintf(system_info_strings[7], "%s, %s", __DATE__, __TIME__);
     system_info->level = diagnostic_msgs::DiagnosticStatus::OK;
     system_info->name = "System";
     system_info->message = system_status_msg;
     system_info->hardware_id = "MCIU";
+
+    for (int i = 0; i < SYSTEM_INFO_COUNT; i++) system_info->values[i].value = system_info_strings[i];
     // For each ODrive add its diagnostic message
 
     node_handle.advertise(sys_diag_pub);
@@ -240,6 +206,12 @@ void setup() {
 
     for (ODrive_ROS* odrive: odrive_ros) {
         odrive->subscribe(&node_handle);
+    }
+
+    for (ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response>* srv: services) {
+        if (srv == nullptr) continue;
+        // Check if the service's publisher is already in the node handle's PUBLISHER list
+        node_handle.advertiseService(*srv);
     }
 
 }
@@ -264,10 +236,6 @@ void loop() {
         if (odrive == nullptr) continue;
         odrive->refresh_data();
     }
-
-//    if (spin_time != 0 && micros() - spin_time > 1000000) {
-//        odrives[0]->set_setpoint(0);
-//    }
 
     for (ActuatorsROS *actuator: actuators_ros) {
         if (actuator == nullptr) continue;
@@ -313,16 +281,6 @@ void loop() {
             log_msg = "Unknown spin result: " + String(spin_result);
             node_handle.logerror(log_msg.c_str());
             break;
-    }
-
-    if (!service_servers_setup){
-        for (ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response>* srv: services) {
-            if (srv == nullptr) continue;
-            // Check if the service's publisher is already in the node handle's PUBLISHER list
-
-            node_handle.advertiseService(*srv);
-        }
-        service_servers_setup = true;
     }
 
     digitalWriteFast(LED_BUILTIN, HIGH); // Turn off the LED
