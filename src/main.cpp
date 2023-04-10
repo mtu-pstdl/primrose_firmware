@@ -22,8 +22,6 @@
 #define CPU_FREQ_BASE 300000000
 //#define CPU_FREQ_BASE 24000000 // 300 MHz
 #define CPU_FREQ_MIN 24000000 // 24 MHz
-#define UN_BOOST_TIME 100000 // 10us
-//#define ENABLE_BOOST
 #define WARN_TEMP 65.0 // Degrees C
 #define THROTTLE_TEMP 75.0 // Degrees C
 uint32_t cpu_freq = CPU_FREQ_BASE;
@@ -319,17 +317,7 @@ void loop() {
         set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::WARN);
         sprintf(system_status_messages[system_message_count++], "Slow Loop");
         // Set the CPU to the overclocked speed
-#ifdef ENABLE_BOOST
-        if (tempmonGetTemp() < WARN_TEMP) {
-            cpu_freq = CPU_FREQ_BOOST;
-            cpu_boost_time = micros();
-        }
-    } else if (micros() - cpu_boost_time > UN_BOOST_TIME) {
-        cpu_freq = CPU_FREQ_BASE;
     }
-#else
-    }
-#endif
 
     if (system_message_count == 0) {
         sprintf(system_status_msg, "All Ok");
