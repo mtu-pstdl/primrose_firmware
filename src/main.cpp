@@ -165,10 +165,14 @@ void setup() {
     actuators[2] = new ActuatorUnit(&actuator_bus, 0x82);
     actuators[3] = new ActuatorUnit(&actuator_bus, 0x83);
 
-    actuators_ros[0] = new ActuatorsROS(actuators[0], &node_handle, &system_diagnostics.status[6], "Front_Left");
-    actuators_ros[1] = new ActuatorsROS(actuators[1], &node_handle, &system_diagnostics.status[7], "Front_Right");
-    actuators_ros[2] = new ActuatorsROS(actuators[2], &node_handle, &system_diagnostics.status[8], "Rear_Left");
-    actuators_ros[3] = new ActuatorsROS(actuators[3], &node_handle, &system_diagnostics.status[9], "Rear_Right");
+    actuators_ros[0] = new ActuatorsROS(actuators[0], actuator_encoder_msgs[0],
+                                        &system_diagnostics.status[6], "Front_Left");
+    actuators_ros[1] = new ActuatorsROS(actuators[1], actuator_encoder_msgs[1],
+                                        &system_diagnostics.status[7], "Front_Right");
+    actuators_ros[2] = new ActuatorsROS(actuators[2], actuator_encoder_msgs[2],
+                                        &system_diagnostics.status[8], "Rear_Left");
+    actuators_ros[3] = new ActuatorsROS(actuators[3], actuator_encoder_msgs[3],
+                                        &system_diagnostics.status[9], "Rear_Right");
 
     // Allocate memory for the system diagnostics strings
     for (auto & system_info_string : system_info_strings) system_info_string = new char[20];

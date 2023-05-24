@@ -7,7 +7,7 @@
 
 #include <Arduino.h>
 #include <ros.h>
-#include <std_msgs/Float32MultiArray.h>
+#include <std_msgs/Int32MultiArray.h>
 
 /**
  * All publishers need to be declared at compile time, so they can't be dynamically created within
@@ -15,35 +15,35 @@
  * their pointers are passed to the ODrive_ROS and Actuator_ROS classes.
  */
 
-std_msgs::Float32MultiArray odrive1_encoder_msg;
-ros::Publisher odrive1_encoder_topic("mciu/Front_Left/encoder", &odrive1_encoder_msg);
+std_msgs::Int32MultiArray odrive1_encoder_msg;
+ros::Publisher odrive1_encoder_topic("mciu/Front_Left/output", &odrive1_encoder_msg);
 
-std_msgs::Float32MultiArray odrive2_encoder_msg;
-ros::Publisher odrive2_encoder_topic("mciu/Front_Right/encoder", &odrive2_encoder_msg);
+std_msgs::Int32MultiArray odrive2_encoder_msg;
+ros::Publisher odrive2_encoder_topic("mciu/Front_Right/output", &odrive2_encoder_msg);
 
-std_msgs::Float32MultiArray odrive3_encoder_msg;
-ros::Publisher odrive3_encoder_topic("mciu/Rear_Left/encoder", &odrive3_encoder_msg);
+std_msgs::Int32MultiArray odrive3_encoder_msg;
+ros::Publisher odrive3_encoder_topic("mciu/Rear_Left/output", &odrive3_encoder_msg);
 
-std_msgs::Float32MultiArray odrive4_encoder_msg;
-ros::Publisher odrive4_encoder_topic("mciu/Rear_Right/encoder", &odrive4_encoder_msg);
+std_msgs::Int32MultiArray odrive4_encoder_msg;
+ros::Publisher odrive4_encoder_topic("mciu/Rear_Right/output", &odrive4_encoder_msg);
 
-std_msgs::Float32MultiArray odrive5_encoder_msg;
-ros::Publisher odrive5_encoder_topic("mciu/Trencher/encoder", &odrive5_encoder_msg);
+std_msgs::Int32MultiArray odrive5_encoder_msg;
+ros::Publisher odrive5_encoder_topic("mciu/Trencher/output", &odrive5_encoder_msg);
 
-std_msgs::Float32MultiArray odrive6_encoder_msg;
-ros::Publisher odrive6_encoder_topic("mciu/Conveyor/encoder", &odrive6_encoder_msg);
+std_msgs::Int32MultiArray odrive6_encoder_msg;
+ros::Publisher odrive6_encoder_topic("mciu/Conveyor/output", &odrive6_encoder_msg);
 
-std_msgs::Float32MultiArray actuator1_encoder_msg;
-ros::Publisher actuator1_encoder_topic("mciu/actuator1/encoder", &actuator1_encoder_msg);
+std_msgs::Int32MultiArray actuator1_encoder_msg;
+ros::Publisher actuator1_encoder_topic("mciu/actuator1/output", &actuator1_encoder_msg);
 
-std_msgs::Float32MultiArray actuator2_encoder_msg;
-ros::Publisher actuator2_encoder_topic("mciu/actuator2/encoder", &actuator2_encoder_msg);
+std_msgs::Int32MultiArray actuator2_encoder_msg;
+ros::Publisher actuator2_encoder_topic("mciu/actuator2/output", &actuator2_encoder_msg);
 
-std_msgs::Float32MultiArray actuator3_encoder_msg;
-ros::Publisher actuator3_encoder_topic("mciu/actuator3/encoder", &actuator3_encoder_msg);
+std_msgs::Int32MultiArray actuator3_encoder_msg;
+ros::Publisher actuator3_encoder_topic("mciu/actuator3/output", &actuator3_encoder_msg);
 
-std_msgs::Float32MultiArray actuator4_encoder_msg;
-ros::Publisher actuator4_encoder_topic("mciu/actuator4/encoder", &actuator4_encoder_msg);
+std_msgs::Int32MultiArray actuator4_encoder_msg;
+ros::Publisher actuator4_encoder_topic("mciu/actuator4/output", &actuator4_encoder_msg);
 
 ros::Publisher* odrive_encoder_topics[6] = {
         &odrive1_encoder_topic,
@@ -54,7 +54,7 @@ ros::Publisher* odrive_encoder_topics[6] = {
         &odrive6_encoder_topic
 };
 
-std_msgs::Float32MultiArray* odrive_encoder_msgs[6] = {
+std_msgs::Int32MultiArray* odrive_encoder_msgs[6] = {
         &odrive1_encoder_msg,
         &odrive2_encoder_msg,
         &odrive3_encoder_msg,
@@ -70,7 +70,7 @@ ros::Publisher* actuator_encoder_topics[4] = {
         &actuator4_encoder_topic
 };
 
-std_msgs::Float32MultiArray* actuator_encoder_msgs[4] = {
+std_msgs::Int32MultiArray* actuator_encoder_msgs[4] = {
         &actuator1_encoder_msg,
         &actuator2_encoder_msg,
         &actuator3_encoder_msg,

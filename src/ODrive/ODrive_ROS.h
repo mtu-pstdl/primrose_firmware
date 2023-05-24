@@ -20,6 +20,9 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/KeyValue.h"
 
+#define POS_UNIT_SCALE 1000
+#define VEL_UNIT_SCALE 1000
+
 class ODrive_ROS {
 
     ODrivePro *odrive = nullptr;
@@ -27,10 +30,10 @@ class ODrive_ROS {
 
 private:
 
-    ros::Subscriber<std_msgs::Float32MultiArray, ODrive_ROS> setpoint_sub;
+    ros::Subscriber<std_msgs::Int32MultiArray, ODrive_ROS> setpoint_sub;
 
     // Publishes the values of POS_ESTIMATE, VEL_ESTIMATE, IQ_SETPOINT, IQ_MEASURED
-    std_msgs::Float32MultiArray* encoder_topic;
+    std_msgs::Int32MultiArray* output_topic;
 
     // Publishes the values of AXIS_STATE, AXIS_ERROR, ACTIVE_ERRORS, DISARM_REASON
     diagnostic_msgs::DiagnosticStatus* state_topic;
@@ -101,36 +104,39 @@ public:
 
     ODrive_ROS(ODrivePro* odrive,
                diagnostic_msgs::DiagnosticStatus* status,
-               std_msgs::Float32MultiArray* encoder_topic,
+               std_msgs::Int32MultiArray* encoder_topic,
                String disp_name) :
             setpoint_sub("template1", &ODrive_ROS::setpoint_callback, this) {
         this->odrive = odrive;
-        this->encoder_topic = encoder_topic;
-        this->encoder_topic->data_length = 5;
-        this->encoder_topic->data = new float_t[5];
-        this->encoder_topic->data[0] = 0;  // POS_ESTIMATE
-        this->encoder_topic->data[1] = 0;  // VEL_ESTIMATE
-        this->encoder_topic->data[2] = 0;  // RAMP_RATE
-        this->encoder_topic->data[3] = 0;  // CONTROL_MODE
-        this->encoder_topic->data[4] = 0;
+        this->output_topic = encoder_topic;
+        this->output_topic->data_length = 5;
+        this->output_topic->data = new int32_t[5];
+        this->output_topic->data[0] = 0;  // POS_ESTIMATE
+        this->output_topic->data[1] = 0;  // VEL_ESTIMATE
+        this->output_topic->data[2] = 0;  // RAMP_RATE
+        this->output_topic->data[3] = 0;  // CONTROL_MODE
+        this->output_topic->data[4] = 0;
         this->state_topic = status;
         this->name = disp_name.c_str();
         this->configure_diagnostics_topic();
         this->setpoint_sub.topic_ = setpoint_topic_name;
-        sprintf(setpoint_topic_name, "/mciu/%s/setpoint", disp_name.c_str());
-
+        sprintf(setpoint_topic_name, "/mciu/%s/input", disp_name.c_str());
     }
 
 
     ODrivePro* get_odrive();
 
-    void setpoint_callback(const std_msgs::Float32MultiArray &msg);
+    void setpoint_callback(const std_msgs::Int32MultiArray &msg);
 
     void control_mode_callback(const std_msgs::Int32MultiArray &msg);
 
     void subscribe(ros::NodeHandle* node_handle);
 
     void update_all();
+
+    static int32_t to_fixed_point(float value, float scale);
+
+    float from_fixed_point(int32_t value, float scale);
 };
 
 

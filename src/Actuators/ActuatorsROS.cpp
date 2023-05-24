@@ -4,15 +4,7 @@
 
 #include "ActuatorsROS.h"
 
-void ActuatorsROS::advertise_subscribe(ros::NodeHandle *nh) {
-    node_handle = nh;
-//    nh->advertise(encoder_pub_);
-//    nh->advertise(state_pub_);
-//    nh->subscribe(setpoint_sub);
-//    nh->subscribe(control_mode_sub);
-}
-
-void ActuatorsROS::setpoint_callback(const std_msgs::Float32MultiArray &msg) {
+void ActuatorsROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
     this->actuator->set_target_position(msg.data[0], msg.data[1]);
 }
 
@@ -22,17 +14,18 @@ void ActuatorsROS::begin_homing() {
 }
 
 void ActuatorsROS::update_status_message(){
-    if (!this->actuator->connected){
+    if (this->actuator->connected){
         sprintf(this->status_string, "%24s", this->actuator->get_status_string());
         this->diagnostic_topic->level = 1;
     } else {
         sprintf(this->status_string, "%24s", "Not Connected");
+        this->diagnostic_topic->level = 2;
     }
 }
 
 void ActuatorsROS::update_diagnostics_topic(){
 
-    if (!this->actuator->connected) {
+    if (this->actuator->connected) {
         sprintf(strings[0], "%24s", this->actuator->get_motor_fault_string(0));
         sprintf(strings[1], "%24s", this->actuator->get_motor_fault_string(1));
         sprintf(strings[2], "%ld Ticks", this->actuator->get_position(0));
@@ -50,10 +43,14 @@ void ActuatorsROS::update_diagnostics_topic(){
 
 void ActuatorsROS::update() {
     this->actuator->update();
+    this->output_topic->data[0] = this->actuator->get_position(0);
+    this->output_topic->data[1] = this->actuator->get_velocity(0);
+    this->output_topic->data[3] = this->actuator->get_position(1);
+    this->output_topic->data[4] = this->actuator->get_velocity(1);
     update_diagnostics_topic();
 }
 
 void ActuatorsROS::publish() {
-//    encoder_pub_.publish(&encoder_topic);
+//    encoder_pub_.publish(&output_topic);
 //    state_pub_.publish(&state_topic);
 }

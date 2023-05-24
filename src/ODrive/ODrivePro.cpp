@@ -71,7 +71,7 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
     this->last_message = millis();
     switch (static_cast<odrive::command_ids>(msg_type)){
         case odrive::Heartbeat: // Lower 4 bytes are AXIS_ERROR and the upper 4 bytes are AXIS_STATE
-            this->AXIS_ERROR       = upper_32; // TODO: Check if this needs to have its endianness swapped
+            this->AXIS_ERROR       = upper_32;
             // Bitmask the lowest byte of the lower 32 bits to get the axis state
             this->AXIS_STATE       = static_cast<odrive::axis_states> (lower_32 & 0xFF);
             this->PROCEDURE_RESULT = static_cast<odrive::procedure_results>((lower_32 >> 8) & 0xFF);
@@ -85,7 +85,7 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
             this->in_flight_bitmask &= ~ERROR_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Encoder_Estimates:
-            this->POS_ESTIMATE = 0;
+            this->POS_ESTIMATE = * (float *) &upper_32;
             this->VEL_ESTIMATE = * (float *) &lower_32;
             this->last_encoder_update = millis();
             this->in_flight_bitmask &= ~ENCODER_FLIGHT_BIT; // Clear the bit

@@ -7,6 +7,7 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/time.h"
 
 
+
 /**
  * This method sets up the ROS publishers and subscribers
  */
@@ -19,7 +20,7 @@ void ODrive_ROS::subscribe(ros::NodeHandle *nh) {
  * This function is called when a message is received on the setpoint topic
  * @param msg The length of the message is 3 values: [0] = Position, [1] = Velocity, [2] = Torque
  */
-void ODrive_ROS::setpoint_callback(const std_msgs::Float32MultiArray &msg) {
+void ODrive_ROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
     if(msg.data_length == 3){
 //        this->setpoint = msg.data[0];
 
@@ -120,13 +121,21 @@ void ODrive_ROS::update_diagnostics() {
     }
 }
 
+int32_t ODrive_ROS::to_fixed_point(float value, float scale) {
+    return (int32_t)(value * scale);
+}
+
+float ODrive_ROS::from_fixed_point(int32_t value, float scale) {
+    return (float)value / scale;
+}
+
 void ODrive_ROS::update_all() {
     // Publish the condition topic
-    this->encoder_topic->data[0] = this->odrive->get_pos_estimate();
-    this->encoder_topic->data[1] = this->odrive->get_vel_estimate();
-    this->encoder_topic->data[2] = 0;
-    this->encoder_topic->data[3] = this->odrive->get_control_mode();
-    this->encoder_topic->data[4] = this->odrive->get_setpoint();
+    this->output_topic->data[0] = this->to_fixed_point(this->odrive->get_pos_estimate(), POS_UNIT_SCALE);
+    this->output_topic->data[1] = this->to_fixed_point(this->odrive->get_vel_estimate(), VEL_UNIT_SCALE);
+    this->output_topic->data[2] = this->to_fixed_point(this->odrive->get_setpoint(), POS_UNIT_SCALE);
+    this->output_topic->data[3] = this->odrive->get_control_mode();
+    this->output_topic->data[4] = this->odrive->get_axis_state();
     update_diagnostics();
 }
 
