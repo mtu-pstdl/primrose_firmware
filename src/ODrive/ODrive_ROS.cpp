@@ -12,7 +12,6 @@
  * This method sets up the ROS publishers and subscribers
  */
 void ODrive_ROS::subscribe(ros::NodeHandle *nh) {
-
     nh->subscribe(this->setpoint_sub);
 }
 

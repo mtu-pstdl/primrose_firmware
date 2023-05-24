@@ -120,7 +120,7 @@ public:
         this->name = disp_name.c_str();
         this->configure_diagnostics_topic();
         this->setpoint_sub.topic_ = setpoint_topic_name;
-        sprintf(setpoint_topic_name, "/mciu/%s/input", disp_name.c_str());
+        sprintf(setpoint_topic_name, "/mciu/%s/odrive/input", disp_name.c_str());
     }
 
 

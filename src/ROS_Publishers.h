@@ -16,34 +16,34 @@
  */
 
 std_msgs::Int32MultiArray odrive1_encoder_msg;
-ros::Publisher odrive1_encoder_topic("mciu/Front_Left/output", &odrive1_encoder_msg);
+ros::Publisher odrive1_encoder_topic("mciu/Front_Left/odrive/output", &odrive1_encoder_msg);
 
 std_msgs::Int32MultiArray odrive2_encoder_msg;
-ros::Publisher odrive2_encoder_topic("mciu/Front_Right/output", &odrive2_encoder_msg);
+ros::Publisher odrive2_encoder_topic("mciu/Front_Right/odrive/output", &odrive2_encoder_msg);
 
 std_msgs::Int32MultiArray odrive3_encoder_msg;
-ros::Publisher odrive3_encoder_topic("mciu/Rear_Left/output", &odrive3_encoder_msg);
+ros::Publisher odrive3_encoder_topic("mciu/Rear_Left/odrive/output", &odrive3_encoder_msg);
 
 std_msgs::Int32MultiArray odrive4_encoder_msg;
-ros::Publisher odrive4_encoder_topic("mciu/Rear_Right/output", &odrive4_encoder_msg);
+ros::Publisher odrive4_encoder_topic("mciu/Rear_Right/odrive/output", &odrive4_encoder_msg);
 
 std_msgs::Int32MultiArray odrive5_encoder_msg;
-ros::Publisher odrive5_encoder_topic("mciu/Trencher/output", &odrive5_encoder_msg);
+ros::Publisher odrive5_encoder_topic("mciu/Trencher/odrive/output", &odrive5_encoder_msg);
 
 std_msgs::Int32MultiArray odrive6_encoder_msg;
-ros::Publisher odrive6_encoder_topic("mciu/Conveyor/output", &odrive6_encoder_msg);
+ros::Publisher odrive6_encoder_topic("mciu/Conveyor/odrive/output", &odrive6_encoder_msg);
 
 std_msgs::Int32MultiArray actuator1_encoder_msg;
-ros::Publisher actuator1_encoder_topic("mciu/actuator1/output", &actuator1_encoder_msg);
+ros::Publisher actuator1_encoder_topic("mciu/Front_Left/actuators/output", &actuator1_encoder_msg);
 
 std_msgs::Int32MultiArray actuator2_encoder_msg;
-ros::Publisher actuator2_encoder_topic("mciu/actuator2/output", &actuator2_encoder_msg);
+ros::Publisher actuator2_encoder_topic("mciu/Front_Right/actuators/output", &actuator2_encoder_msg);
 
 std_msgs::Int32MultiArray actuator3_encoder_msg;
-ros::Publisher actuator3_encoder_topic("mciu/actuator3/output", &actuator3_encoder_msg);
+ros::Publisher actuator3_encoder_topic("mciu/Rear_Left/actuators/output", &actuator3_encoder_msg);
 
 std_msgs::Int32MultiArray actuator4_encoder_msg;
-ros::Publisher actuator4_encoder_topic("mciu/actuator4/output", &actuator4_encoder_msg);
+ros::Publisher actuator4_encoder_topic("mciu/Rear_Right/actuators/output", &actuator4_encoder_msg);
 
 ros::Publisher* odrive_encoder_topics[6] = {
         &odrive1_encoder_topic,

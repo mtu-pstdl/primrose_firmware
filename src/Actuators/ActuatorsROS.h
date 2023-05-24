@@ -83,13 +83,13 @@ public:
 
         this->diagnostic_topic->hardware_id = this->name.c_str();
         this->setpoint_sub.topic_ = this->topic_name;
-        sprintf(this->topic_name, "/mciu/%s/input", disp_name.c_str());
+        sprintf(this->topic_name, "/mciu/%s/actuators/input", disp_name.c_str());
     }
 
     /**
      * This method sets up the ROS publishers and subscribers
      */
-    void advertise_subscribe(ros::NodeHandle *nh);
+    void subscribe(ros::NodeHandle* node_handle);
 
     /**
      * This function is called when a message is received on the setpoint topic

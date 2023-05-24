@@ -206,15 +206,24 @@ void setup() {
         node_handle.advertise(*pub);
     }
 
+    for (ros::Publisher* pub: actuator_encoder_topics) {
+        if (pub == nullptr) continue;
+        node_handle.advertise(*pub);
+    }
+
     for (ODrive_ROS* odrive: odrive_ros) {
         odrive->subscribe(&node_handle);
     }
 
-    for (ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response>* srv: services) {
-        if (srv == nullptr) continue;
-        // Check if the service's publisher is already in the node handle's PUBLISHER list
-        node_handle.advertiseService(*srv);
+    for (ActuatorsROS* actuator: actuators_ros) {
+        actuator->subscribe(&node_handle);
     }
+
+//    for (ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response>* srv: services) {
+//        if (srv == nullptr) continue;
+//        // Check if the service's publisher is already in the node handle's PUBLISHER list
+//        node_handle.advertiseService(*srv);
+//    }
 
 }
 
@@ -258,6 +267,10 @@ void loop() {
 
     for (int i = 0; i < 6; i++){
         odrive_encoder_topics[i]->publish(odrive_encoder_msgs[i]);
+    }
+
+    for (int i = 0; i < 4; i++){
+        actuator_encoder_topics[i]->publish(actuator_encoder_msgs[i]);
     }
 
     String log_msg = "";
