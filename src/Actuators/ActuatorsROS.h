@@ -30,7 +30,7 @@ private:
 
     char* strings[9];
     char* status_string = new char[25];
-    char* topic_name = new char[25];
+    char* pub_name = new char[50];
 
     void allocate_strings() {
         for (auto & string : strings) {
@@ -48,8 +48,7 @@ private:
 public:
 
     ActuatorsROS(ActuatorUnit* actuator, std_msgs::Int32MultiArray* output_topic,
-                 diagnostic_msgs::DiagnosticStatus* status,
-                 String disp_name) :
+                 diagnostic_msgs::DiagnosticStatus* status, String disp_name) :
                  setpoint_sub("template_for_later", &ActuatorsROS::setpoint_callback, this){
         this->actuator = actuator;
         // Add key-value pairs to the condition topic
@@ -62,6 +61,7 @@ public:
         this->output_topic->data = new int32_t[5];
 
         this->diagnostic_topic->name = "ActuatorUnit";
+        this->diagnostic_topic->hardware_id = this->name.c_str();
         this->diagnostic_topic->message = status_string;
         this->diagnostic_topic->level = 0;
         this->diagnostic_topic->values_length = 9;
@@ -80,10 +80,8 @@ public:
         for (int i = 0; i < 9; i++) {
             this->diagnostic_topic->values[i].value = strings[i];
         }
-
-        this->diagnostic_topic->hardware_id = this->name.c_str();
-        this->setpoint_sub.topic_ = this->topic_name;
-        sprintf(this->topic_name, "/mciu/%s/actuators/input", disp_name.c_str());
+        this->setpoint_sub.topic_ = this->pub_name;
+        sprintf(pub_name, "/mciu/%s/actuators/input", disp_name.c_str());
     }
 
     /**

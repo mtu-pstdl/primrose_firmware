@@ -51,8 +51,6 @@ void ActuatorsROS::update() {
 }
 
 void ActuatorsROS::publish() {
-//    encoder_pub_.publish(&output_topic);
-//    state_pub_.publish(&state_topic);
 }
 
 void ActuatorsROS::subscribe(ros::NodeHandle *node_handle) {
