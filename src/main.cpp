@@ -45,7 +45,6 @@ ActuatorUnit* actuators[4];
 ActuatorsROS* actuators_ros[4];
 Actuators actuator_bus;
 
-
 #define SYSTEM_INFO_COUNT 8
 char* system_info_strings[SYSTEM_INFO_COUNT];
 

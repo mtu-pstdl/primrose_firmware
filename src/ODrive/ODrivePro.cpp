@@ -206,6 +206,9 @@ uint8_t ODrivePro::send_command(odrive::command_ids command_id, T1 lower_data, T
     return result; // Return the result of the write (1 for success, -1 for failure)
 }
 
+void ODrivePro::clear_errors() {
+    this->send_command(odrive::command_ids::Clear_Errors);
+}
 
 float_t ODrivePro::get_fet_temp() const {
     return this->FET_TEMP;

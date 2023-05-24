@@ -213,6 +213,8 @@ public:
     float_t unit_conversion(float_t value, bool direction) const;
 
     uint32_t get_inflight_bitmask() const;
+
+    void clear_errors();
 };
 
 

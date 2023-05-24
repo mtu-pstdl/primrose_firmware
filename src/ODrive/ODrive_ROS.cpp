@@ -17,16 +17,25 @@ void ODrive_ROS::subscribe(ros::NodeHandle *nh) {
 
 /**
  * This function is called when a message is received on the setpoint topic
- * @param msg The length of the message is 3 values: [0] = Position, [1] = Velocity, [2] = Torque
  */
 void ODrive_ROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
-    if(msg.data_length == 3){
-//        this->setpoint = msg.data[0];
+    switch (msg.data[0]) {
+        case 0x00: // Data length: 2
+            this->odrive->set_control_mode(static_cast<odrive::control_modes>(msg.data[1]));
+            break;
+        case 0x01: // Data length: 2
+            this->odrive->set_setpoint(this->from_fixed_point(msg.data[1], POS_UNIT_SCALE));
+            break;
+        case 0x04: // Data length: 1
+            this->odrive->reboot();
+            break;
+        case 0x05: // Data length: 1
+            this->odrive->clear_errors();
+            break;
+
 
     }
-}
-
-void ODrive_ROS::control_mode_callback(const std_msgs::Int32MultiArray &msg){
+    this->odrive->set_setpoint(from_fixed_point(msg.data[1], POS_UNIT_SCALE));
 
 }
 

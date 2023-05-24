@@ -20,8 +20,8 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/KeyValue.h"
 
-#define POS_UNIT_SCALE 1000
-#define VEL_UNIT_SCALE 1000
+#define POS_UNIT_SCALE 100
+#define VEL_UNIT_SCALE 10000
 
 class ODrive_ROS {
 
@@ -136,7 +136,7 @@ public:
 
     static int32_t to_fixed_point(float value, float scale);
 
-    float from_fixed_point(int32_t value, float scale);
+    static float from_fixed_point(int32_t value, float scale);
 };
 
 
