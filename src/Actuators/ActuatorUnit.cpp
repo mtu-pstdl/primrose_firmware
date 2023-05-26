@@ -236,7 +236,7 @@ void ActuatorUnit::message_failure_callback(void *actuator, Actuators::message *
 //    status_string->concat("------------Actuator Unit Status Report " + String(this->id) + "-------\n\r");
 //    status_string->concat("Main Battery Voltage: " + String(this->main_battery_voltage) + "\n\r");
 //    status_string->concat("Logic Battery Voltage: " + String(this->logic_battery_voltage) + "\n\r");
-//    status_string->concat("Status: " + String(this->status) + "\n\r");
+//    status_string->concat("Status: " + String(this->diagnostics_topic) + "\n\r");
 //    status_string->concat("Motor 1 Status: " + String(this->motors[0].control_mode) + "\n\r");
 //    status_string->concat("Motor 2 Status: " + String(this->motors[1].control_mode) + "\n\r");
 //    status_string->concat("Motor 1 Current: " + String(this->motors[0].current_current) + "\n\r");

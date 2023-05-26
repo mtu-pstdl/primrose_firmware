@@ -54,7 +54,7 @@ public:
         boolean  homed               = false; // Whether or not the motor has been homed
         bool     fault               = false; // Whether or not the motor has a fault
         bool     warn                = false; // Whether or not the motor has a warning
-        char*    status_string       = nullptr; // A string describing the status of the motor
+        char*    status_string       = nullptr; // A string describing the diagnostics_topic of the motor
     };
 
     static void detailed_encoder_count_callback(void* actuator, Actuators::message* msg);

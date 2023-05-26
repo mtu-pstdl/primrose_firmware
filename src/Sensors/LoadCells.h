@@ -1,0 +1,147 @@
+//
+// Created by Jay on 5/26/2023.
+//
+
+#ifndef TEENSYCANTRANSCEIVER_LOADCELLS_H
+#define TEENSYCANTRANSCEIVER_LOADCELLS_H
+
+#include <Arduino.h>
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/UInt32MultiArray.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/KeyValue.h"
+#include "ROSNode.h"
+#include "../../.pio/libdeps/teensy40/HX711/src/HX711.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32MultiArray.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/subscriber.h"
+#include <EEPROM.h>
+
+#define EEPROM_CALIBRATION_ADDRESS_START 0x00
+
+class LoadCells : public ROSNode {
+
+    int load_cell_number;
+
+    char* subscriber_name = new char[25];
+    char** name_strings;
+    char** value_strings;
+
+    HX711** load_cells;
+
+    String name;
+
+    diagnostic_msgs::DiagnosticStatus* diagnostic_topic;
+    std_msgs::Int32MultiArray* output_topic;
+    ros::Subscriber<std_msgs::Int32MultiArray, LoadCells> setpoint_sub;
+
+    bool* connected;
+
+    void setpoint_callback(const std_msgs::Int32MultiArray& msg) {
+        // Should be overridden
+    }
+
+    static int32_t get_offset(int load_cell_number) {
+        int32_t offset = 0;
+        EEPROM.get(EEPROM_CALIBRATION_ADDRESS_START + load_cell_number * sizeof(int32_t), offset);
+    }
+
+    uint8_t online_load_cells() {
+        uint8_t online = 0;
+        for (int i = 0; i < this->load_cell_number; i++) {
+            if (this->connected[i]) {
+                online++;
+            }
+        }
+        return online;
+    }
+
+public:
+
+    LoadCells(int total_load_cells, int* clock_pins, int* data_pins, float* calibration_factors,
+              diagnostic_msgs::DiagnosticStatus* status, std_msgs::Int32MultiArray* output_topic,
+                String disp_name) :
+            setpoint_sub("template_for_later", &LoadCells::setpoint_callback, this) {
+
+        this->load_cells = new HX711*[total_load_cells];
+        this->name = disp_name;
+
+        this->diagnostic_topic = status;
+        this->output_topic = output_topic;
+        this->output_topic->data_length = total_load_cells + 1;
+        this->output_topic->data = new int32_t[total_load_cells + 1];
+        this->output_topic->data[0] = 0;
+
+        this->name_strings = new char*[total_load_cells + 1];
+        this->value_strings = new char*[total_load_cells + 1];
+        this->connected = new bool[total_load_cells];
+
+        this->diagnostic_topic->level = 0;
+        this->diagnostic_topic->name = this->name.c_str();
+        this->diagnostic_topic->hardware_id = "Load cells";
+        this->diagnostic_topic->values_length = total_load_cells + 1;
+        this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[total_load_cells + 1];
+        this->diagnostic_topic->values[0].key = "Total weight";
+
+        for (int i = 0; i < total_load_cells + 1; i++) {
+            this->name_strings[i] = new char[25];
+            this->value_strings[i] = new char[25];
+        }
+
+        // Assign each string to the correct key
+        for (int i = 0; i < total_load_cells; i++) {
+            sprintf(this->name_strings[i + 1], "Load cell %.2d", i + 1);
+            sprintf(this->value_strings[i + 1], "Connecting...");
+            this->diagnostic_topic->values[i + 1].key = this->name_strings[i + 1];
+            this->diagnostic_topic->values[i + 1].value = this->value_strings[i + 1];
+        }
+
+        for (int i = 0; i < total_load_cells; i++) {
+            this->load_cells[i] = new HX711();
+            this->load_cells[i]->begin(data_pins[i], clock_pins[i]);
+            if (this->load_cells[i]->wait_ready_timeout(250)){
+                sprintf(this->value_strings[i + 1], "Disconnected");
+                this->connected[i] = false;
+                continue;
+            } else {
+                sprintf(this->value_strings[i + 1], "Connected");
+                this->connected[i] = true;
+            }
+
+            this->load_cells[i]->set_scale(calibration_factors[i]);
+            // Get the offset from EEPROM
+            this->load_cells[i]->set_offset(get_offset(i));
+        }
+
+        this->setpoint_sub.topic_ = subscriber_name;
+        sprintf(subscriber_name, "/mciu/LoadCells/%s/control", this->name.c_str());
+
+        // check if any of the load cells are disconnected
+        for (int i = 0; i < total_load_cells; i++) {
+            if (!this->connected[i]) {
+                this->diagnostic_topic->level = 1;
+                this->diagnostic_topic->message = "Missing Load Cells";
+                break;
+            }
+        }
+        // Check if all load cells are disconnected
+        for (int i = 0; i < total_load_cells; i++) {
+            if (this->connected[i]) {
+                break;
+            }
+            if (i == total_load_cells - 1) {
+                this->diagnostic_topic->level = 2;
+                this->diagnostic_topic->message = "No Load Cells";
+            }
+        }
+
+    }
+
+    void update() override;
+
+    void publish() override;
+
+    void subscribe(ros::NodeHandle *node_handle) override;
+
+};
+
+
+#endif //TEENSYCANTRANSCEIVER_LOADCELLS_H

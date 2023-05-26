@@ -68,7 +68,7 @@ private:
         }
     }
     /**
-     * Updates the main status string and the condition numbers
+     * Updates the main diagnostics_topic string and the condition numbers
      */
     void update_diagnostics();
 

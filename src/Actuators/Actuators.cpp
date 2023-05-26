@@ -193,7 +193,7 @@ uint32_t Actuators::round_trip_time() const {
 
 String* Actuators::get_status_string() {
     auto* status_string = new String();
-    status_string->concat("\r\n-------------Actuator bus status------------\r\n");
+    status_string->concat("\r\n-------------Actuator bus diagnostics_topic------------\r\n");
     status_string->concat("Average round trip time: " + String(this->average_time_per_message) + "ms\r\n");
     status_string->concat("Last round trip time: " + String(this->last_message_round_trip) + "ms\r\n");
     status_string->concat("Messages in queue: " + String(this->get_queue_size()) + "\r\n");

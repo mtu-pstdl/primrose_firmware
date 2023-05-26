@@ -16,6 +16,7 @@
 
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticArray.h"
+#include "Sensors/LoadCells.h"
 
 #define CPU_FREQ_BOOST 816000000 //
 //#define CPU_FREQ_BASE 600000000 // 300 MHz
@@ -45,7 +46,9 @@ ActuatorUnit* actuators[4];
 ActuatorsROS* actuators_ros[4];
 Actuators actuator_bus;
 
-ROSNode* ros_nodes[10];
+LoadCells* load_cells[1];
+
+ROSNode* ros_nodes[11];
 
 #define SYSTEM_INFO_COUNT 9
 char* system_info_strings[SYSTEM_INFO_COUNT];
@@ -145,8 +148,8 @@ void setup() {
 //        odrive->set_conversion(172892, 0.92);
     }
 
-    system_diagnostics.status_length = 11;
-    system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[11];
+    system_diagnostics.status_length = 12;
+    system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[12];
 
     odrive_ros[0] = new ODrive_ROS(odrives[0], &system_diagnostics.status[0],
                                    odrive_encoder_msgs[0], "Front_Left");
@@ -175,16 +178,26 @@ void setup() {
     actuators_ros[3] = new ActuatorsROS(actuators[3], actuator_encoder_msgs[3],
                                         &system_diagnostics.status[9], "Rear_Right");
 
+    auto* load_cell_clk_pins =     new int[4] {A0, A1, A2, A3};
+    auto* load_cell_data_pins =    new int[4] {A4, A5, A6, A7};
+    auto* load_cell_calibrations = new float[4] {1.0, 1.0, 1.0, 1.0};
+    load_cells[0] = new LoadCells(4, load_cell_clk_pins, load_cell_data_pins,
+                                  load_cell_calibrations,
+                                  &system_diagnostics.status[10], load_cell_msgs[0],
+                                  "Hopper");
+
+
     // Add all ros nodes to the ros node array
     int ros_node_count = 0;
     for (auto & odrive_ro : odrive_ros) ros_nodes[ros_node_count++] = odrive_ro;
     for (auto & actuator_ro : actuators_ros) ros_nodes[ros_node_count++] = actuator_ro;
+    ros_nodes[ros_node_count++] = load_cells[0];
 
     // Allocate memory for the system diagnostics strings
     for (auto & system_info_string : system_info_strings) system_info_string = new char[20];
     for (auto & system_status_message : system_status_messages) system_status_message = new char[20];
 
-    system_info = &system_diagnostics.status[10];
+    system_info = &system_diagnostics.status[11];
     system_info->values_length = SYSTEM_INFO_COUNT;
     system_info->values = new diagnostic_msgs::KeyValue[SYSTEM_INFO_COUNT];
     system_info->values[0].key = "Temperature";
@@ -214,6 +227,11 @@ void setup() {
     }
 
     for (ros::Publisher* pub: actuator_encoder_topics) {
+        if (pub == nullptr) continue;
+        node_handle.advertise(*pub);
+    }
+
+    for (ros::Publisher* pub: load_cell_topics) {
         if (pub == nullptr) continue;
         node_handle.advertise(*pub);
     }
