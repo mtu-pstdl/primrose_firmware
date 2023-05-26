@@ -19,11 +19,14 @@
 
 class LoadCells : public ROSNode {
 
-    int load_cell_number;
+    int total_load_cells;
 
     char* subscriber_name = new char[25];
     char** name_strings;
     char** value_strings;
+
+    int32_t* data;
+    int32_t total_weight;
 
     HX711** load_cells;
 
@@ -46,7 +49,7 @@ class LoadCells : public ROSNode {
 
     uint8_t online_load_cells() {
         uint8_t online = 0;
-        for (int i = 0; i < this->load_cell_number; i++) {
+        for (int i = 0; i < this->total_load_cells; i++) {
             if (this->connected[i]) {
                 online++;
             }
@@ -62,6 +65,7 @@ public:
             setpoint_sub("template_for_later", &LoadCells::setpoint_callback, this) {
 
         this->load_cells = new HX711*[total_load_cells];
+        this->total_load_cells = total_load_cells;
         this->name = disp_name;
 
         this->diagnostic_topic = status;
@@ -73,6 +77,7 @@ public:
         this->name_strings = new char*[total_load_cells + 1];
         this->value_strings = new char*[total_load_cells + 1];
         this->connected = new bool[total_load_cells];
+        this->data = new int32_t[total_load_cells];
 
         this->diagnostic_topic->level = 0;
         this->diagnostic_topic->name = this->name.c_str();
@@ -84,15 +89,19 @@ public:
         for (int i = 0; i < total_load_cells + 1; i++) {
             this->name_strings[i] = new char[25];
             this->value_strings[i] = new char[25];
+            this->diagnostic_topic->values[i].key = this->name_strings[i];
+            this->diagnostic_topic->values[i].value = this->value_strings[i];
         }
+
 
         // Assign each string to the correct key
         for (int i = 0; i < total_load_cells; i++) {
             sprintf(this->name_strings[i + 1], "Load cell %.2d", i + 1);
             sprintf(this->value_strings[i + 1], "Connecting...");
-            this->diagnostic_topic->values[i + 1].key = this->name_strings[i + 1];
-            this->diagnostic_topic->values[i + 1].value = this->value_strings[i + 1];
         }
+
+        sprintf(this->name_strings[0], "Total weight");
+        sprintf(this->value_strings[0], "Loading...");
 
         for (int i = 0; i < total_load_cells; i++) {
             this->load_cells[i] = new HX711();
@@ -113,6 +122,9 @@ public:
 
         this->setpoint_sub.topic_ = subscriber_name;
         sprintf(subscriber_name, "/mciu/LoadCells/%s/control", this->name.c_str());
+
+        this->diagnostic_topic->level = 0;
+        this->diagnostic_topic->message = "All Ok";
 
         // check if any of the load cells are disconnected
         for (int i = 0; i < total_load_cells; i++) {

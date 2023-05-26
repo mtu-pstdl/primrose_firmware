@@ -7,37 +7,47 @@
 
 void LoadCells::publish() {
 
+    for (int i = 0; i < total_load_cells; i++) {
+        output_topic->data[i + 1] = data[i];
+    }
+
+    if (online_load_cells() == 0){
+        sprintf(value_strings[0], "Unavailable");
+    } else sprintf(value_strings[0], "%ld", this->total_weight);
+
+    for (int i = 0; i < total_load_cells; i++) {
+        if (connected[i]) {
+            sprintf(value_strings[i + 1], "%ld", data[i]);
+        } else {
+            sprintf(value_strings[i + 1], "Unavailable");
+        }
+    }
+
 }
 
 void LoadCells::update() {
     // Read all connected load cells
-    for (int i = 0; i < load_cell_number; i++) {
+    for (int i = 0; i < total_load_cells; i++) {
         if (connected[i]) {
-            output_topic->data[i + 1] = load_cells[i]->read();
-            // Update diagnostic topic
-            sprintf(value_strings[i + 1], "%ld", output_topic->data[i + 1]);
+            this->data[i] = load_cells[i]->read();
         } else {
-            output_topic->data[i + 1] = 0;
-            // Update diagnostic topic
-            sprintf(value_strings[i + 1], "Not Connected");
+            this->data[i] = INT32_MIN;
         }
     }
     // If more than 1 load cell is connected, calculate the total weight by extrapolating the weight on
     // the missing load cells
     if (online_load_cells() > 1) {
-        int32_t total_weight = 0;
-        for (int i = 0; i < load_cell_number; i++) {
+        total_weight = 0;
+        for (int i = 0; i < total_load_cells; i++) {
             if (connected[i]) {
-                total_weight += output_topic->data[i + 1];
+                total_weight += data[i];
             }
         }
         output_topic->data[0] = total_weight;
         // Update diagnostic topic
-        sprintf(value_strings[0], "%ld", output_topic->data[0]);
     } else {
         output_topic->data[0] = 0;
         // Update diagnostic topic
-        sprintf(value_strings[0], "No Valid Data Points");
     }
 
 }

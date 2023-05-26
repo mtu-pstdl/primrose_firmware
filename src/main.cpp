@@ -152,30 +152,30 @@ void setup() {
     system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[12];
 
     odrive_ros[0] = new ODrive_ROS(odrives[0], &system_diagnostics.status[0],
-                                   odrive_encoder_msgs[0], "Front_Left");
+                                   odrive_encoder_topics[0]->message, "Front_Left");
     odrive_ros[1] = new ODrive_ROS(odrives[1], &system_diagnostics.status[1],
-                                   odrive_encoder_msgs[1], "Front_Right");
+                                   odrive_encoder_topics[1]->message, "Front_Right");
     odrive_ros[2] = new ODrive_ROS(odrives[2], &system_diagnostics.status[2],
-                                   odrive_encoder_msgs[2], "Rear_Left");
+                                   odrive_encoder_topics[2]->message, "Rear_Left");
     odrive_ros[3] = new ODrive_ROS(odrives[3], &system_diagnostics.status[3],
-                                   odrive_encoder_msgs[3], "Rear_Right");
+                                   odrive_encoder_topics[3]->message, "Rear_Right");
     odrive_ros[4] = new ODrive_ROS(odrives[4], &system_diagnostics.status[5],
-                                   odrive_encoder_msgs[4], "Trencher");
+                                   odrive_encoder_topics[4]->message, "Trencher");
     odrive_ros[5] = new ODrive_ROS(odrives[5], &system_diagnostics.status[4],
-                                   odrive_encoder_msgs[5], "Conveyor");
+                                   odrive_encoder_topics[5]->message, "Conveyor");
 
     actuators[0] = new ActuatorUnit(&actuator_bus, 0x80);
     actuators[1] = new ActuatorUnit(&actuator_bus, 0x81);
     actuators[2] = new ActuatorUnit(&actuator_bus, 0x82);
     actuators[3] = new ActuatorUnit(&actuator_bus, 0x83);
 
-    actuators_ros[0] = new ActuatorsROS(actuators[0], actuator_encoder_msgs[0],
+    actuators_ros[0] = new ActuatorsROS(actuators[0], actuator_encoder_topics[0]->message,
                                         &system_diagnostics.status[6], "Front_Left");
-    actuators_ros[1] = new ActuatorsROS(actuators[1], actuator_encoder_msgs[1],
+    actuators_ros[1] = new ActuatorsROS(actuators[1], actuator_encoder_topics[1]->message,
                                         &system_diagnostics.status[7], "Front_Right");
-    actuators_ros[2] = new ActuatorsROS(actuators[2], actuator_encoder_msgs[2],
+    actuators_ros[2] = new ActuatorsROS(actuators[2], actuator_encoder_topics[2]->message,
                                         &system_diagnostics.status[8], "Rear_Left");
-    actuators_ros[3] = new ActuatorsROS(actuators[3], actuator_encoder_msgs[3],
+    actuators_ros[3] = new ActuatorsROS(actuators[3], actuator_encoder_topics[3]->message,
                                         &system_diagnostics.status[9], "Rear_Right");
 
     auto* load_cell_clk_pins =     new int[4] {A0, A1, A2, A3};
@@ -183,7 +183,7 @@ void setup() {
     auto* load_cell_calibrations = new float[4] {1.0, 1.0, 1.0, 1.0};
     load_cells[0] = new LoadCells(4, load_cell_clk_pins, load_cell_data_pins,
                                   load_cell_calibrations,
-                                  &system_diagnostics.status[10], load_cell_msgs[0],
+                                  &system_diagnostics.status[10], load_cell_topics[0]->message,
                                   "Hopper");
 
 
@@ -221,19 +221,10 @@ void setup() {
     node_handle.advertise(sys_diag_pub);
     sys_diag_pub.publish(&system_diagnostics);
 
-    for(ros::Publisher* pub: odrive_encoder_topics) {
-        if (pub == nullptr) continue;
-        node_handle.advertise(*pub);
-    }
-
-    for (ros::Publisher* pub: actuator_encoder_topics) {
-        if (pub == nullptr) continue;
-        node_handle.advertise(*pub);
-    }
-
-    for (ros::Publisher* pub: load_cell_topics) {
-        if (pub == nullptr) continue;
-        node_handle.advertise(*pub);
+    for(ros_topic* topic: all_topics) {
+        if (topic == nullptr) continue;
+        // Check if the topic's publisher is already in the node handle's PUBLISHER list
+        node_handle.advertise(*topic->publisher);
     }
 
     for (ROSNode* node: ros_nodes) {
@@ -281,12 +272,9 @@ void loop() {
     system_diagnostics.header.stamp = node_handle.now();
     system_diagnostics.header.seq++;
 
-    for (int i = 0; i < 6; i++){
-        odrive_encoder_topics[i]->publish(odrive_encoder_msgs[i]);
-    }
-
-    for (int i = 0; i < 4; i++){
-        actuator_encoder_topics[i]->publish(actuator_encoder_msgs[i]);
+    for (ros_topic *topic: all_topics) {
+        if (topic == nullptr) continue;
+        topic->publisher->publish(topic->message);
     }
 
     String log_msg = "";

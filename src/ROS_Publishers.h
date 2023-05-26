@@ -15,41 +15,101 @@
  * their pointers are passed to the ODrive_ROS and Actuator_ROS classes.
  */
 
+
+struct ros_topic {
+    ros::Publisher* publisher;
+    std_msgs::Int32MultiArray* message;
+};
+
 std_msgs::Int32MultiArray odrive1_encoder_msg;
-ros::Publisher odrive1_encoder_topic("mciu/Front_Left/odrive/output", &odrive1_encoder_msg);
+ros::Publisher odrive1_encoder_pub("mciu/Front_Left/odrive/output", &odrive1_encoder_msg);
+
+ros_topic odrive1_encoder_topic = {
+        .publisher = &odrive1_encoder_pub,
+        .message = &odrive1_encoder_msg
+};
 
 std_msgs::Int32MultiArray odrive2_encoder_msg;
-ros::Publisher odrive2_encoder_topic("mciu/Front_Right/odrive/output", &odrive2_encoder_msg);
+ros::Publisher odrive2_encoder_pub("mciu/Front_Right/odrive/output", &odrive2_encoder_msg);
+
+ros_topic odrive2_encoder_topic = {
+        .publisher = &odrive2_encoder_pub,
+        .message = &odrive2_encoder_msg
+};
 
 std_msgs::Int32MultiArray odrive3_encoder_msg;
-ros::Publisher odrive3_encoder_topic("mciu/Rear_Left/odrive/output", &odrive3_encoder_msg);
+ros::Publisher odrive3_encoder_pub("mciu/Rear_Left/odrive/output", &odrive3_encoder_msg);
+
+ros_topic odrive3_encoder_topic = {
+        .publisher = &odrive3_encoder_pub,
+        .message = &odrive3_encoder_msg
+};
 
 std_msgs::Int32MultiArray odrive4_encoder_msg;
-ros::Publisher odrive4_encoder_topic("mciu/Rear_Right/odrive/output", &odrive4_encoder_msg);
+ros::Publisher odrive4_encoder_pub("mciu/Rear_Right/odrive/output", &odrive4_encoder_msg);
+
+ros_topic odrive4_encoder_topic = {
+        .publisher = &odrive4_encoder_pub,
+        .message = &odrive4_encoder_msg
+};
 
 std_msgs::Int32MultiArray odrive5_encoder_msg;
-ros::Publisher odrive5_encoder_topic("mciu/Trencher/odrive/output", &odrive5_encoder_msg);
+ros::Publisher odrive5_encoder_pub("mciu/Trencher/odrive/output", &odrive5_encoder_msg);
+
+ros_topic odrive5_encoder_topic = {
+        .publisher = &odrive5_encoder_pub,
+        .message = &odrive5_encoder_msg
+};
 
 std_msgs::Int32MultiArray odrive6_encoder_msg;
-ros::Publisher odrive6_encoder_topic("mciu/Conveyor/odrive/output", &odrive6_encoder_msg);
+ros::Publisher odrive6_encoder_pub("mciu/Conveyor/odrive/output", &odrive6_encoder_msg);
+
+ros_topic odrive6_encoder_topic = {
+        .publisher = &odrive6_encoder_pub,
+        .message = &odrive6_encoder_msg
+};
 
 std_msgs::Int32MultiArray actuator1_encoder_msg;
-ros::Publisher actuator1_encoder_topic("mciu/Front_Left/actuators/output", &actuator1_encoder_msg);
+ros::Publisher actuator1_encoder_pub("mciu/Front_Left/actuators/output", &actuator1_encoder_msg);
+
+ros_topic actuator1_encoder_topic = {
+        .publisher = &actuator1_encoder_pub,
+        .message = &actuator1_encoder_msg
+};
 
 std_msgs::Int32MultiArray actuator2_encoder_msg;
-ros::Publisher actuator2_encoder_topic("mciu/Front_Right/actuators/output", &actuator2_encoder_msg);
+ros::Publisher actuator2_encoder_pub("mciu/Front_Right/actuators/output", &actuator2_encoder_msg);
+
+ros_topic actuator2_encoder_topic = {
+        .publisher = &actuator2_encoder_pub,
+        .message = &actuator2_encoder_msg
+};
 
 std_msgs::Int32MultiArray actuator3_encoder_msg;
-ros::Publisher actuator3_encoder_topic("mciu/Rear_Left/actuators/output", &actuator3_encoder_msg);
+ros::Publisher actuator3_encoder_pub("mciu/Rear_Left/actuators/output", &actuator3_encoder_msg);
+
+ros_topic actuator3_encoder_topic = {
+        .publisher = &actuator3_encoder_pub,
+        .message = &actuator3_encoder_msg
+};
 
 std_msgs::Int32MultiArray actuator4_encoder_msg;
-ros::Publisher actuator4_encoder_topic("mciu/Rear_Right/actuators/output", &actuator4_encoder_msg);
+ros::Publisher actuator4_encoder_pub("mciu/Rear_Right/actuators/output", &actuator4_encoder_msg);
+
+ros_topic actuator4_encoder_topic = {
+        .publisher = &actuator4_encoder_pub,
+        .message = &actuator4_encoder_msg
+};
 
 std_msgs::Int32MultiArray load_cell1_msg;
-ros::Publisher load_cell1_topic("/mciu/LoadCells/Hopper/output", &load_cell1_msg);
+ros::Publisher load_cell1_pub("/mciu/LoadCells/Hopper/output", &load_cell1_msg);
 
+ros_topic load_cell1_topic = {
+        .publisher = &load_cell1_pub,
+        .message = &load_cell1_msg
+};
 
-ros::Publisher* odrive_encoder_topics[6] = {
+ros_topic* odrive_encoder_topics[6] = {
         &odrive1_encoder_topic,
         &odrive2_encoder_topic,
         &odrive3_encoder_topic,
@@ -58,35 +118,30 @@ ros::Publisher* odrive_encoder_topics[6] = {
         &odrive6_encoder_topic
 };
 
-std_msgs::Int32MultiArray* odrive_encoder_msgs[6] = {
-        &odrive1_encoder_msg,
-        &odrive2_encoder_msg,
-        &odrive3_encoder_msg,
-        &odrive4_encoder_msg,
-        &odrive5_encoder_msg,
-        &odrive6_encoder_msg
-};
-
-ros::Publisher* actuator_encoder_topics[4] = {
+ros_topic* actuator_encoder_topics[4] = {
         &actuator1_encoder_topic,
         &actuator2_encoder_topic,
         &actuator3_encoder_topic,
         &actuator4_encoder_topic
 };
 
-std_msgs::Int32MultiArray* actuator_encoder_msgs[4] = {
-        &actuator1_encoder_msg,
-        &actuator2_encoder_msg,
-        &actuator3_encoder_msg,
-        &actuator4_encoder_msg
-};
-
-ros::Publisher* load_cell_topics[4] = {
+ros_topic* load_cell_topics[4] = {
         &load_cell1_topic
 };
 
-std_msgs::Int32MultiArray* load_cell_msgs[4] = {
-        &load_cell1_msg
+
+ros_topic* all_topics[14] = {
+        &odrive1_encoder_topic,
+        &odrive2_encoder_topic,
+        &odrive3_encoder_topic,
+        &odrive4_encoder_topic,
+        &odrive5_encoder_topic,
+        &odrive6_encoder_topic,
+        &actuator1_encoder_topic,
+        &actuator2_encoder_topic,
+        &actuator3_encoder_topic,
+        &actuator4_encoder_topic,
+        &load_cell1_topic
 };
 
 #endif //TEENSYCANTRANSCEIVER_ROS_PUBLISHERS_H
