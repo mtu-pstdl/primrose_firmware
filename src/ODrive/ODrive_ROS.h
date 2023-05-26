@@ -7,6 +7,7 @@
 
 
 #include "odrive_constants.h"
+#include "ROSNode.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/node_handle.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/subscriber.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/publisher.h"
@@ -23,7 +24,7 @@
 #define POS_UNIT_SCALE 100
 #define VEL_UNIT_SCALE 10000
 
-class ODrive_ROS {
+class ODrive_ROS : public ROSNode {
 
     ODrivePro *odrive = nullptr;
     String name = ""; // The name of the ODrive
@@ -130,9 +131,9 @@ public:
 
     void control_mode_callback(const std_msgs::Int32MultiArray &msg);
 
-    void subscribe(ros::NodeHandle* node_handle);
+    void subscribe(ros::NodeHandle* node_handle) override;
 
-    void update_all();
+    void update() override;
 
     static int32_t to_fixed_point(float value, float scale);
 

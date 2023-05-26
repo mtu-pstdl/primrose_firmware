@@ -137,7 +137,7 @@ float ODrive_ROS::from_fixed_point(int32_t value, float scale) {
     return (float)value / scale;
 }
 
-void ODrive_ROS::update_all() {
+void ODrive_ROS::update() {
     // Publish the condition topic
     this->output_topic->data[0] = this->to_fixed_point(this->odrive->get_pos_estimate(), POS_UNIT_SCALE);
     this->output_topic->data[1] = this->to_fixed_point(this->odrive->get_vel_estimate(), VEL_UNIT_SCALE);

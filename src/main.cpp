@@ -45,7 +45,9 @@ ActuatorUnit* actuators[4];
 ActuatorsROS* actuators_ros[4];
 Actuators actuator_bus;
 
-#define SYSTEM_INFO_COUNT 8
+ROSNode* ros_nodes[10];
+
+#define SYSTEM_INFO_COUNT 9
 char* system_info_strings[SYSTEM_INFO_COUNT];
 
 char* system_status_messages[10];
@@ -173,6 +175,11 @@ void setup() {
     actuators_ros[3] = new ActuatorsROS(actuators[3], actuator_encoder_msgs[3],
                                         &system_diagnostics.status[9], "Rear_Right");
 
+    // Add all ros nodes to the ros node array
+    int ros_node_count = 0;
+    for (auto & odrive_ro : odrive_ros) ros_nodes[ros_node_count++] = odrive_ro;
+    for (auto & actuator_ro : actuators_ros) ros_nodes[ros_node_count++] = actuator_ro;
+
     // Allocate memory for the system diagnostics strings
     for (auto & system_info_string : system_info_strings) system_info_string = new char[20];
     for (auto & system_status_message : system_status_messages) system_status_message = new char[20];
@@ -186,9 +193,10 @@ void setup() {
     system_info->values[3].key = "Remaining Memory";
     system_info->values[4].key = "CAN TX Overflow";
     system_info->values[5].key = "Actuator Buffer Size";
-    system_info->values[6].key = "Actuator response time";
-    system_info->values[7].key = "Build Date";
-    sprintf(system_info_strings[7], "%s, %s", __DATE__, __TIME__);
+    system_info->values[6].key = "Actuator Response Time";
+    system_info->values[7].key = "MCIU Uptime";
+    system_info->values[8].key = "Firmware Build Date";
+    sprintf(system_info_strings[8], "%s, %s", __DATE__, __TIME__);
     system_info->level = diagnostic_msgs::DiagnosticStatus::OK;
     system_info->name = "System";
     system_info->message = system_status_msg;
@@ -210,12 +218,9 @@ void setup() {
         node_handle.advertise(*pub);
     }
 
-    for (ODrive_ROS* odrive: odrive_ros) {
-        odrive->subscribe(&node_handle);
-    }
-
-    for (ActuatorsROS* actuator: actuators_ros) {
-        actuator->subscribe(&node_handle);
+    for (ROSNode* node: ros_nodes) {
+        if (node == nullptr) continue;
+        node->subscribe(&node_handle);
     }
 
 //    for (ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response>* srv: services) {
@@ -247,17 +252,11 @@ void loop() {
         odrive->refresh_data();
     }
 
-    for (ActuatorsROS *actuator: actuators_ros) {
-        if (actuator == nullptr) continue;
-        actuator->update();
-    }
-
     if (node_handle.connected()) {
-        for (ODrive_ROS *odrive: odrive_ros) {
-            if (odrive == nullptr) {
-                continue;
-            }
-            odrive->update_all();
+        for (ROSNode *node: ros_nodes) {
+            if (node == nullptr) continue;
+            node->update();
+            node->publish();
         }
     }
 
@@ -327,6 +326,9 @@ void loop() {
             100.0 * remaining_memory / 512000.0, ram_usage_rate());
     sprintf(system_info_strings[4], "%lu", can1.getTXQueueCount());
     sprintf(system_info_strings[6], "%lums", actuator_bus.round_trip_time());
+    // Update the uptime
+    sprintf(system_info_strings[7], "%.2luh %.2lum %.2lus",
+            millis() / 3600000, (millis() / 60000) % 60, (millis() / 1000) % 60);
 
     uint32_t loop_time = micros() - loop_start;
     if (loop_time > 50000) {

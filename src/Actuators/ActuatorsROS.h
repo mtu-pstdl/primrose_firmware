@@ -14,10 +14,11 @@
 
 #include "ActuatorUnit.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/KeyValue.h"
+#include "ROSNode.h"
 
 #define TOPIC_BASE "/mciu/Actuators"
 
-class ActuatorsROS {
+class ActuatorsROS : public ROSNode {
 
 private:
 
@@ -95,9 +96,9 @@ public:
      */
     void setpoint_callback(const std_msgs::Int32MultiArray &msg);
 
-    void update();
+    void update() override;
 
-    void publish();
+    void publish() override;
 
     void begin_homing();
 };
