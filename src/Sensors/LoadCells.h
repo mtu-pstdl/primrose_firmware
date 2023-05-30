@@ -26,7 +26,7 @@ class LoadCells : public ROSNode {
     char** value_strings;
 
     int32_t* data;
-    int32_t total_weight;
+    int32_t total_weight = 0;
 
     HX711** load_cells;
 
@@ -38,9 +38,9 @@ class LoadCells : public ROSNode {
 
     bool* connected;
 
-    void setpoint_callback(const std_msgs::Int32MultiArray& msg) {
-        // Should be overridden
-    }
+    void message_callback(const std_msgs::Int32MultiArray& msg);
+
+    void tare();
 
     static int32_t get_offset(int load_cell_number) {
         int32_t offset = 0;
@@ -62,7 +62,7 @@ public:
     LoadCells(int total_load_cells, int* clock_pins, int* data_pins, float* calibration_factors,
               diagnostic_msgs::DiagnosticStatus* status, std_msgs::Int32MultiArray* output_topic,
                 String disp_name) :
-            setpoint_sub("template_for_later", &LoadCells::setpoint_callback, this) {
+            setpoint_sub("template_for_later", &LoadCells::message_callback, this) {
 
         this->load_cells = new HX711*[total_load_cells];
         this->total_load_cells = total_load_cells;
@@ -81,7 +81,7 @@ public:
 
         this->diagnostic_topic->level = 0;
         this->diagnostic_topic->name = this->name.c_str();
-        this->diagnostic_topic->hardware_id = "Load cells";
+        this->diagnostic_topic->hardware_id = "Load_Cells";
         this->diagnostic_topic->values_length = total_load_cells + 1;
         this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[total_load_cells + 1];
         this->diagnostic_topic->values[0].key = "Total weight";
