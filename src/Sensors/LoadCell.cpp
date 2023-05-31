@@ -15,11 +15,11 @@ void LoadCells::publish() {
         sprintf(value_strings[0], "Unavailable");
     } else sprintf(value_strings[0], "%ld", this->total_weight);
 
-    for (int i = 0; i < total_load_cells; i++) {
-        if (connected[i]) {
-            sprintf(value_strings[i + 1], "%ld", data[i]);
+    for (int i = 2; i < total_load_cells + 2; i++) {
+        if (connected[i-2]) {
+            sprintf(value_strings[i], "%ld kg", data[i - 2]);
         } else {
-            sprintf(value_strings[i + 1], "Unavailable");
+            sprintf(value_strings[i], "Unavailable");
         }
     }
 
@@ -57,9 +57,16 @@ void LoadCells::subscribe(ros::NodeHandle *node_handle) {
 }
 
 void LoadCells::tare() {
+
     for (int i = 0; i < total_load_cells; i++) {
         if (connected[i]) {
             load_cells[i]->tare();
+        } else { // Attempt to connect to the load cell
+            if (this->load_cells[i]->wait_ready_timeout(250)){
+                this->connected[i] = false;
+            } else {
+                this->connected[i] = true;
+            }
         }
     }
     // Get the offset of each load cell and store it in EEPROM so that it can be retrieved on startup
@@ -67,6 +74,21 @@ void LoadCells::tare() {
         int32_t offset = load_cells[i]->get_offset();
         EEPROM.put(EEPROM_CALIBRATION_ADDRESS_START + i * sizeof(int32_t), offset);
     }
+
+    // Update diagnostic topic to reflect the new offsets
+    for (int i = total_load_cells + 2; i < (total_load_cells * 2) + 2; i++) {
+        sprintf(value_strings[i], "%ld kg", get_offset(i - total_load_cells - 2));
+    }
+
+    // Calculate the total offset
+    int32_t total_offset = 0;
+    for (int i = 0; i < total_load_cells; i++) {
+        total_offset += get_offset(i);
+    }
+    sprintf(value_strings[1], "%ld kg", total_offset);
+
+    // Update the diagnostic topic to indicate that the load cells are tared
+    this->update_diagnostics_topic();
 }
 
 void LoadCells::message_callback(const std_msgs::Int32MultiArray &msg) {

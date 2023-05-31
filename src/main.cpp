@@ -46,9 +46,9 @@ ActuatorUnit* actuators[4];
 ActuatorsROS* actuators_ros[4];
 Actuators actuator_bus;
 
-LoadCells* load_cells[1];
+LoadCells* load_cells[2];
 
-ROSNode* ros_nodes[11];
+ROSNode* ros_nodes[12];
 
 #define SYSTEM_INFO_COUNT 9
 char* system_info_strings[SYSTEM_INFO_COUNT];
@@ -148,8 +148,8 @@ void setup() {
 //        odrive->set_conversion(172892, 0.92);
     }
 
-    system_diagnostics.status_length = 12;
-    system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[12];
+    system_diagnostics.status_length = 13;
+    system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[13];
 
     odrive_ros[0] = new ODrive_ROS(odrives[0], &system_diagnostics.status[0],
                                    odrive_encoder_topics[0]->message, "Front_Left");
@@ -185,6 +185,13 @@ void setup() {
                                   load_cell_calibrations,
                                   &system_diagnostics.status[10], load_cell_topics[0]->message,
                                   "Hopper");
+    auto* load_cell_clk_pins_2 =     new int[4] {A8, A9, A10, A11};
+    auto* load_cell_data_pins_2 =    new int[4] {38, 39, 40, 41};
+    auto* load_cell_calibrations_2 = new float[4] {1.0, 1.0, 1.0, 1.0};
+    load_cells[1] = new LoadCells(4, load_cell_clk_pins_2, load_cell_data_pins_2,
+                                  load_cell_calibrations_2,
+                                  &system_diagnostics.status[11], load_cell_topics[1]->message,
+                                  "Suspension");
 
 
     // Add all ros nodes to the ros node array
@@ -197,7 +204,7 @@ void setup() {
     for (auto & system_info_string : system_info_strings) system_info_string = new char[20];
     for (auto & system_status_message : system_status_messages) system_status_message = new char[20];
 
-    system_info = &system_diagnostics.status[11];
+    system_info = &system_diagnostics.status[12];
     system_info->values_length = SYSTEM_INFO_COUNT;
     system_info->values = new diagnostic_msgs::KeyValue[SYSTEM_INFO_COUNT];
     system_info->values[0].key = "Temperature";

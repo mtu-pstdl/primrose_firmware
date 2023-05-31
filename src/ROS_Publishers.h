@@ -102,11 +102,19 @@ ros_topic actuator4_encoder_topic = {
 };
 
 std_msgs::Int32MultiArray load_cell1_msg;
-ros::Publisher load_cell1_pub("/mciu/LoadCells/Hopper/output", &load_cell1_msg);
+ros::Publisher load_cell1_pub("/mciu/LoadCells/hopper/output", &load_cell1_msg);
 
 ros_topic load_cell1_topic = {
         .publisher = &load_cell1_pub,
         .message = &load_cell1_msg
+};
+
+std_msgs::Int32MultiArray load_cell2_msg;
+ros::Publisher load_cell2_pub("/mciu/LoadCells/suspension/output", &load_cell2_msg);
+
+ros_topic load_cell2_topic = {
+        .publisher = &load_cell2_pub,
+        .message = &load_cell2_msg
 };
 
 ros_topic* odrive_encoder_topics[6] = {
@@ -126,7 +134,8 @@ ros_topic* actuator_encoder_topics[4] = {
 };
 
 ros_topic* load_cell_topics[4] = {
-        &load_cell1_topic
+        &load_cell1_topic,
+        &load_cell2_topic
 };
 
 
@@ -141,7 +150,8 @@ ros_topic* all_topics[14] = {
         &actuator2_encoder_topic,
         &actuator3_encoder_topic,
         &actuator4_encoder_topic,
-        &load_cell1_topic
+        &load_cell1_topic,
+        &load_cell2_topic,
 };
 
 #endif //TEENSYCANTRANSCEIVER_ROS_PUBLISHERS_H
