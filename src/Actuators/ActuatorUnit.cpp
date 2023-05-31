@@ -58,7 +58,14 @@ void ActuatorUnit::queue_telemetry_messages() {
     }
 }
 
-void ActuatorUnit::set_target_position(int32_t position_m1, int32_t position_m2) {
+void ActuatorUnit::set_target_position(int32_t position, uint8_t motor) {
+    if (motor == 0) {
+        this->motors[0].target_position = position;
+        this->motors[0].control_mode = control_modes::position;
+    } else {
+        this->motors[1].target_position = position;
+        this->motors[1].control_mode = control_modes::position;
+    }
 
 }
 
@@ -75,7 +82,7 @@ void ActuatorUnit::update() {
             auto &motor = motors[i];
             switch (motor.control_mode) {
                 case control_modes::position:
-                case control_modes::speed:
+                case control_modes::velocity:
                 case control_modes::stopped:
                     break;
                 case control_modes::homing:
@@ -115,8 +122,8 @@ void ActuatorUnit::set_control_mode(control_modes mode, uint8_t motor) {
                 motors[motor].control_mode = control_modes::position;
             }
             break;
-        case control_modes::speed:
-            motors[motor].control_mode = control_modes::speed;
+        case control_modes::velocity:
+            motors[motor].control_mode = control_modes::velocity;
             break;
         case control_modes::stopped:
             motors[motor].control_mode = control_modes::stopped;
@@ -313,7 +320,7 @@ char* ActuatorUnit::get_motor_fault_string(uint8_t motor) {
                 sprintf(motors[motor].status_string, "%s%s_STOPPED ", motors[motor].status_string, motors[motor].name);
                 break;
             case position:
-            case speed:
+            case velocity:
                 sprintf(motors[motor].status_string, "%s%s_ACTIVE", motors[motor].status_string, motors[motor].name);
                 break;
             case homing:

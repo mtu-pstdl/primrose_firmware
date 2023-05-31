@@ -239,12 +239,6 @@ void setup() {
         node->subscribe(&node_handle);
     }
 
-//    for (ros::ServiceServer<std_srvs::Empty::Request, std_srvs::Empty::Response>* srv: services) {
-//        if (srv == nullptr) continue;
-//        // Check if the service's publisher is already in the node handle's PUBLISHER list
-//        node_handle.advertiseService(*srv);
-//    }
-
 }
 
 void loop() {
@@ -347,7 +341,7 @@ void loop() {
     if (loop_time > 50000) {
         set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::WARN);
         sprintf(system_status_messages[system_message_count++], "Slow Loop");
-        // Set the CPU to the overclocked speed
+        // Set the CPU to the overclocked velocity
     }
 
     if (system_message_count == 0) {

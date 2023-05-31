@@ -4,8 +4,25 @@
 
 #include "ActuatorsROS.h"
 
-void ActuatorsROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
-    this->actuator->set_target_position(msg.data[0], msg.data[1]);
+void ActuatorsROS::control_callback(const std_msgs::Int32MultiArray &msg) {
+    // First element is the command and the second is the target actuator
+    switch (msg.data[0]) {
+        case 0:
+            this->actuator->set_control_mode(ActuatorUnit::control_modes::stopped, msg.data[1]);
+            break;
+        case 1:
+            this->actuator->set_control_mode(ActuatorUnit::control_modes::velocity, msg.data[1]);
+            break;
+        case 2:
+            this->actuator->set_control_mode(ActuatorUnit::control_modes::position, msg.data[1]);
+            break;
+        case 3:
+            this->actuator->set_control_mode(ActuatorUnit::control_modes::homing, msg.data[1]);
+            break;
+        case 4:
+            this->actuator->set_target_position(msg.data[1], msg.data[2]);
+            break;
+    }
 }
 
 void ActuatorsROS::begin_homing() {

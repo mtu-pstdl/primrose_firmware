@@ -36,7 +36,7 @@ public:
     enum control_modes {
         stopped,
         position,
-        speed,
+        velocity,
         homing
     };
 
@@ -46,7 +46,7 @@ public:
         uint32_t current_position    = 0; // The current position of the motor in tenths of a degree
         uint32_t max_position        = 0; // The maximum position of the motor in tenths of a degree
         boolean  position_negative   = false; // The current direction of the motor
-        uint32_t current_speed       = 0; // The current speed of the motor in tenths of a degree per second
+        uint32_t current_speed       = 0; // The current velocity of the motor in tenths of a degree per second
         boolean  direction_negative  = false; // The current direction of the motor
         uint16_t current_current     = 0; // The current current draw of the motor in tenths of an amp
         uint16_t warning_current     = 50; // The current current draw of the motor in tenths of an amp
@@ -140,7 +140,7 @@ public:
 
     void set_control_mode(control_modes mode, uint8_t motor);
 
-    void set_target_position(int32_t position_m1, int32_t position_m2);
+    void set_target_position(int32_t position, uint8_t motor);
 
     void emergency_stop();
 

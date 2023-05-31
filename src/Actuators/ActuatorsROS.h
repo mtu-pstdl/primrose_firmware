@@ -50,7 +50,7 @@ public:
 
     ActuatorsROS(ActuatorUnit* actuator, std_msgs::Int32MultiArray* output_topic,
                  diagnostic_msgs::DiagnosticStatus* status, String disp_name) :
-                 setpoint_sub("template_for_later", &ActuatorsROS::setpoint_callback, this){
+                 setpoint_sub("template_for_later", &ActuatorsROS::control_callback, this){
         this->actuator = actuator;
         // Add key-value pairs to the condition topic
         sprintf(status_string, "Initializing");
@@ -94,7 +94,7 @@ public:
      * This function is called when a message is received on the setpoint topic
      * @param msg The length of the message is 2
      */
-    void setpoint_callback(const std_msgs::Int32MultiArray &msg);
+    void control_callback(const std_msgs::Int32MultiArray &msg);
 
     void update() override;
 

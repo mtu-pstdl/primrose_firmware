@@ -129,8 +129,6 @@ public:
 
     void setpoint_callback(const std_msgs::Int32MultiArray &msg);
 
-    void control_mode_callback(const std_msgs::Int32MultiArray &msg);
-
     void subscribe(ros::NodeHandle* node_handle) override;
 
     void update() override;

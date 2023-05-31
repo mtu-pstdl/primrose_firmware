@@ -39,6 +39,7 @@ void ODrivePro::set_setpoint(float_t value) {
             break;
         case odrive::POSITION_CONTROL:
             this->position_setpoint = value;
+            this->send_command(odrive::command_ids::Set_Input_Pos, value, 0);
             break;
         case odrive::UNKNOWN_CONTROL_MODE:
             break;
