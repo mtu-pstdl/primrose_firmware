@@ -52,8 +52,8 @@ public:
         uint16_t warning_current     = 50; // The current current draw of the motor in tenths of an amp
         control_modes control_mode   = stopped; // The current control mode of the motor
         boolean  homed               = false; // Whether or not the motor has been homed
-        bool     fault               = false; // Whether or not the motor has a fault
-        bool     warn                = false; // Whether or not the motor has a warning
+        boolean  fault               = false; // Whether or not the motor has a fault
+        boolean  warn                = false; // Whether or not the motor has a warning
         char*    status_string       = nullptr; // A string describing the diagnostics_topic of the motor
     };
 

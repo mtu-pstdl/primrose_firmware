@@ -53,7 +53,7 @@ void LoadCells::update() {
 }
 
 void LoadCells::subscribe(ros::NodeHandle *node_handle) {
-    node_handle->subscribe(setpoint_sub);
+    node_handle->subscribe(control_sub);
 }
 
 void LoadCells::tare() {
@@ -71,8 +71,7 @@ void LoadCells::tare() {
     }
     // Get the offset of each load cell and store it in EEPROM so that it can be retrieved on startup
     for (int i = 0; i < total_load_cells; i++) {
-        int32_t offset = load_cells[i]->get_offset();
-        EEPROM.put(EEPROM_CALIBRATION_ADDRESS_START + i * sizeof(int32_t), offset);
+        set_offset(i, load_cells[i]->get_offset());
     }
 
     // Update diagnostic topic to reflect the new offsets

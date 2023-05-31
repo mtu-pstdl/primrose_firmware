@@ -184,21 +184,21 @@ void setup() {
     load_cells[0] = new LoadCells(4, load_cell_clk_pins, load_cell_data_pins,
                                   load_cell_calibrations,
                                   &system_diagnostics.status[10], load_cell_topics[0]->message,
-                                  "Hopper");
+                                  "Hopper", 0x00);
     auto* load_cell_clk_pins_2 =     new int[4] {A8, A9, A10, A11};
     auto* load_cell_data_pins_2 =    new int[4] {38, 39, 40, 41};
     auto* load_cell_calibrations_2 = new float[4] {1.0, 1.0, 1.0, 1.0};
     load_cells[1] = new LoadCells(4, load_cell_clk_pins_2, load_cell_data_pins_2,
                                   load_cell_calibrations_2,
                                   &system_diagnostics.status[11], load_cell_topics[1]->message,
-                                  "Suspension");
+                                  "Suspension", load_cells[0]->get_used_eeprom());
 
 
     // Add all ros nodes to the ros node array
     int ros_node_count = 0;
     for (auto & odrive_ro : odrive_ros) ros_nodes[ros_node_count++] = odrive_ro;
     for (auto & actuator_ro : actuators_ros) ros_nodes[ros_node_count++] = actuator_ro;
-    ros_nodes[ros_node_count++] = load_cells[0];
+    for (auto & load_cell : load_cells) ros_nodes[ros_node_count++] = load_cell;
 
     // Allocate memory for the system diagnostics strings
     for (auto & system_info_string : system_info_strings) system_info_string = new char[20];

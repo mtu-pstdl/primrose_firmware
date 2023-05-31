@@ -15,15 +15,19 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/subscriber.h"
 #include <EEPROM.h>
 
+#include <utility>
+
 #define EEPROM_CALIBRATION_ADDRESS_START 0x00
 
 class LoadCells : public ROSNode {
 
     int total_load_cells;
 
-    char* subscriber_name = new char[25];
+    char* subscriber_name;
     char** name_strings;
     char** value_strings;
+
+    uint32_t eeprom_address;
 
     int32_t* data;
     int32_t total_weight = 0;
@@ -35,7 +39,7 @@ class LoadCells : public ROSNode {
 
     diagnostic_msgs::DiagnosticStatus* diagnostic_topic;
     std_msgs::Int32MultiArray* output_topic;
-    ros::Subscriber<std_msgs::Int32MultiArray, LoadCells> setpoint_sub;
+    ros::Subscriber<std_msgs::Int32MultiArray, LoadCells> control_sub;
 
     bool* connected;
 
@@ -43,9 +47,13 @@ class LoadCells : public ROSNode {
 
     void tare();
 
-    static int32_t get_offset(int load_cell_number) {
+    int32_t get_offset(int load_cell_number) const {
         int32_t offset = 0;
-        EEPROM.get(EEPROM_CALIBRATION_ADDRESS_START + load_cell_number * sizeof(int32_t), offset);
+        EEPROM.get(this->eeprom_address + (load_cell_number * sizeof(int32_t)), offset);
+    }
+
+    void set_offset(int load_cell_number, int32_t offset) const {
+        EEPROM.put(this->eeprom_address + (load_cell_number * sizeof(int32_t)), offset);
     }
 
     uint8_t online_load_cells() {
@@ -83,14 +91,23 @@ class LoadCells : public ROSNode {
 
 public:
 
+    uint32_t get_used_eeprom() const {
+        return this->eeprom_address + (this->total_load_cells * sizeof(int32_t)) + 1;
+    }
+
     LoadCells(int total_load_cells, int* clock_pins, int* data_pins, float* calibration_factors,
               diagnostic_msgs::DiagnosticStatus* status, std_msgs::Int32MultiArray* output_topic,
-                String disp_name) :
-            setpoint_sub("template_for_later", &LoadCells::message_callback, this) {
+                String disp_name, uint32_t eeprom_address) :
+            control_sub("template_for_later", &LoadCells::message_callback, this) {
 
         this->load_cells = new HX711*[total_load_cells];
         this->total_load_cells = total_load_cells;
         this->name = disp_name;
+        this->eeprom_address = eeprom_address;
+
+        this->subscriber_name = new char[50];
+        this->control_sub.topic_ = subscriber_name;
+        sprintf(subscriber_name, "/mciu/%s/loadcells/control", disp_name.c_str());
 
         this->diagnostic_topic = status;
         this->output_topic = output_topic;
@@ -111,8 +128,8 @@ public:
         this->diagnostic_topic->values[0].key = "Total weight";
 
         for (int i = 0; i < (total_load_cells + 1) * 2; i++) {
-            this->name_strings[i] = new char[25];
-            this->value_strings[i] = new char[25];
+            this->name_strings[i] = new char[30];
+            this->value_strings[i] = new char[30];
             this->diagnostic_topic->values[i].key = this->name_strings[i];
             this->diagnostic_topic->values[i].value = this->value_strings[i];
         }
@@ -159,9 +176,6 @@ public:
             total_offset += get_offset(i);
         }
         sprintf(value_strings[1], "%ld kg", total_offset);
-
-        this->setpoint_sub.topic_ = subscriber_name;
-        sprintf(subscriber_name, "/mciu/LoadCells/%s/control", this->name.c_str());
 
         this->update_diagnostics_topic();
     }
