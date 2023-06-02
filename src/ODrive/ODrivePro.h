@@ -118,7 +118,7 @@ private:
     float_t velocity_setpoint = 0; // The velocity of the ODrive
     float_t torque_setpoint   = 0; // The torque of the ODrive
 
-    odrive::control_modes control_mode = odrive::VELOCITY_CONTROL; // The control mode of the ODrive
+    odrive::control_modes control_mode = odrive::UNKNOWN_CONTROL_MODE; // The control mode of the ODrive
 
     bool has_rev_conversion = false; // Whether or not the ODrive has a conversion from ticks to revolutions
     float_t ticks_per_rev = 0;  // The number of ticks per revolution of output shaft
