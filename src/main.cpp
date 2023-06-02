@@ -134,6 +134,7 @@ void setup() {
     can1.begin();
     can1.setBaudRate(500000); // 500kbps
     can1.onReceive(can_recieve);
+    can1.setMaxMB(128);
 
     can1.enableFIFO();
     can1.enableFIFOInterrupt();

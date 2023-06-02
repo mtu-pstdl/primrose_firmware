@@ -158,14 +158,14 @@ void ODrivePro::refresh_data() {
         if (this->send_command(odrive::command_ids::Get_Bus_Voltage_Current))
             this->in_flight_bitmask |= VBUS_FLIGHT_BIT;  // Set the in flight bit to 1
     }
-    if (this->last_heartbeat + HEARTBEAT_UPDATE_RATE < millis()) {
-        this->send_command(odrive::command_ids::Heartbeat);
-        this->last_heartbeat = millis();
-    }
     if (this->last_torque_update + TORQUE_UPDATE_RATE < millis() &&
         !(this->in_flight_bitmask & TORQUE_FLIGHT_BIT)){
         if (this->send_command(odrive::command_ids::Get_Torques))
             this->in_flight_bitmask |= TORQUE_FLIGHT_BIT;  // Set the in flight bit to 1
+    }
+    if (this->last_heartbeat + HEARTBEAT_UPDATE_RATE < millis()) {
+        this->send_command(odrive::command_ids::Heartbeat);
+        this->last_heartbeat = millis();
     }
 }
 

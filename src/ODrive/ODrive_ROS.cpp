@@ -113,12 +113,12 @@ void ODrive_ROS::update_diagnostics() {
 //        sprintf(strings[6], "%f C", this->odrive->get_fet_temp());
 //        sprintf(strings[6], "%50s", this->odrive->get_fet_temp_frame_string());
         // Print the fet temp in hex
-        sprintf(strings[6], "%.2f %s", this->odrive->get_pos_estimate(), this->odrive->pos_unit_string);
-        sprintf(strings[7], "%.2f C", this->odrive->get_fet_temp());
-        sprintf(strings[8], "%.2f C", this->odrive->get_motor_temp());
-        sprintf(strings[9], "%.2f V", this->odrive->get_vbus_voltage());
-        sprintf(strings[10], "%.2f A", this->odrive->get_vbus_current());
-        sprintf(strings[11], "%.2f A", this->odrive->get_Iq_measured());
+        sprintf(strings[6], "%07.2f %s", this->odrive->get_pos_estimate(), this->odrive->pos_unit_string);
+        sprintf(strings[7], "%05.2f C", this->odrive->get_fet_temp());
+        sprintf(strings[8], "%05.2f C", this->odrive->get_motor_temp());
+        sprintf(strings[9], "%05.2f V", this->odrive->get_vbus_voltage());
+        sprintf(strings[10], "%05.2f A", this->odrive->get_vbus_current());
+        sprintf(strings[11], "%05.2f A", this->odrive->get_Iq_measured());
 //        sprintf(strings[11], "%.2f A", this->odrive->get_Iq_setpoint());
         // Show the binary representation of the inflight bitmask
         for (int i = 0; i < 8; i++) {
