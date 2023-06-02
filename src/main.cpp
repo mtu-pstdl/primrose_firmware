@@ -50,7 +50,7 @@ LoadCells* load_cells[2];
 
 ROSNode* ros_nodes[12];
 
-#define SYSTEM_INFO_COUNT 9
+#define SYSTEM_INFO_COUNT 10
 char* system_info_strings[SYSTEM_INFO_COUNT];
 
 char* system_status_messages[10];
@@ -133,7 +133,6 @@ void setup() {
     // Set up the CAN bus
     can1.begin();
     can1.setBaudRate(500000); // 500kbps
-//    can1.setMaxMB(64);  // 64 message buffers
     can1.onReceive(can_recieve);
 
     can1.enableFIFO();
@@ -145,7 +144,6 @@ void setup() {
 
     for (ODrivePro* odrive : odrives) {
         if (odrive == nullptr) continue;
-//        odrive->set_conversion(172892, 0.92);
     }
 
     system_diagnostics.status_length = 13;
@@ -209,14 +207,15 @@ void setup() {
     system_info->values = new diagnostic_msgs::KeyValue[SYSTEM_INFO_COUNT];
     system_info->values[0].key = "Temperature";
     system_info->values[1].key = "System Freq";
-    system_info->values[2].key = "Loop Time";
-    system_info->values[3].key = "Remaining Memory";
-    system_info->values[4].key = "CAN TX Overflow";
-    system_info->values[5].key = "Actuator Buffer Size";
-    system_info->values[6].key = "Actuator Response Time";
-    system_info->values[7].key = "MCIU Uptime";
-    system_info->values[8].key = "Firmware Build Date";
-    sprintf(system_info_strings[8], "%s, %s", __DATE__, __TIME__);
+    system_info->values[2].key = "System Load";
+    system_info->values[3].key = "Loop Time";
+    system_info->values[4].key = "Remaining Memory";
+    system_info->values[5].key = "CAN TX Overflow";
+    system_info->values[6].key = "Actuator Buffer Size";
+    system_info->values[7].key = "Actuator Response Time";
+    system_info->values[8].key = "MCIU Uptime";
+    system_info->values[9].key = "Firmware Build Date";
+    sprintf(system_info_strings[9], "%s, %s", __DATE__, __TIME__);
     system_info->level = diagnostic_msgs::DiagnosticStatus::OK;
     system_info->name = "System";
     system_info->message = system_status_msg;
@@ -305,10 +304,11 @@ void loop() {
 
     digitalWriteFast(LED_BUILTIN, HIGH); // Turn off the LED
     // Allow the actuator bus to preform serial communication for the remaining time in the loop
-    sprintf(system_info_strings[5], "%d", actuator_bus.get_queue_size());
+    sprintf(system_info_strings[6], "%d", actuator_bus.get_queue_size());
     while (actuator_bus.spin(micros() - loop_start > 50000)) {
         yield();  // Yield to other tasks
     }
+    uint32_t execution_time = micros() - loop_start;
 
     uint32_t remaining_memory = freeram();
 
@@ -328,13 +328,14 @@ void loop() {
 
     sprintf(system_info_strings[1], "%.2f Mhz (%.2f%%)", F_CPU_ACTUAL / 1000000.0,
             100.0 * F_CPU_ACTUAL / F_CPU);
-    sprintf(system_info_strings[2], "%luus (%.2fHz)", micros() - loop_start, 1000000.0 / (micros() - loop_start));
-    sprintf(system_info_strings[3], "%.2fKiB (%.2f%%), %d", remaining_memory / 1024.0,
+    sprintf(system_info_strings[2], "%.5luus (%05.2f%%)", execution_time,
+            (execution_time / 50000.0) * 100.0);
+    sprintf(system_info_strings[4], "%.2fKiB (%.2f%%), %d", remaining_memory / 1024.0,
             100.0 * remaining_memory / 512000.0, ram_usage_rate());
-    sprintf(system_info_strings[4], "%lu", can1.getTXQueueCount());
-    sprintf(system_info_strings[6], "%lums", actuator_bus.round_trip_time());
+    sprintf(system_info_strings[5], "%lu", can1.getTXQueueCount());
+    sprintf(system_info_strings[7], "%lums", actuator_bus.round_trip_time());
     // Update the uptime
-    sprintf(system_info_strings[7], "%.2luh %.2lum %.2lus",
+    sprintf(system_info_strings[8], "%.2luh %.2lum %.2lus",
             millis() / 3600000, (millis() / 60000) % 60, (millis() / 1000) % 60);
 
     uint32_t loop_time = micros() - loop_start;
@@ -342,7 +343,12 @@ void loop() {
         set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::WARN);
         sprintf(system_status_messages[system_message_count++], "Slow Loop");
         // Set the CPU to the overclocked velocity
+    } else {
+        // Wait for the remaining time in the loop to maintain a 20Hz loop
+        delayMicroseconds(50000 - loop_time);
     }
+
+    sprintf(system_info_strings[3], "%0.5luus (%05.2fHz)", micros() - loop_start, 1000000.0 / (micros() - loop_start));
 
     if (system_message_count == 0) {
         sprintf(system_status_msg, "All Ok");

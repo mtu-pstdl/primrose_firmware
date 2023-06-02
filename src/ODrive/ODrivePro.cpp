@@ -103,11 +103,17 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
             this->last_temp_update = millis();
             this->in_flight_bitmask &= ~TEMP_FLIGHT_BIT; // Clear the bit
             break;
-        case odrive::Get_Vbus_Voltage_Current:
+        case odrive::Get_Bus_Voltage_Current:
             this->VBUS_VOLTAGE = * (float *) &lower_32;
             this->VBUS_CURRENT = * (float *) &upper_32;
             this->last_vbus_update = millis();
             this->in_flight_bitmask &= ~VBUS_FLIGHT_BIT; // Clear the bit
+            break;
+        case odrive::Get_Torques:
+            this->TORQUE_TARGET   = * (float *) &lower_32;
+            this->TORQUE_ESTIMATE = * (float *) &upper_32;
+            this->last_torque_update = millis();
+            this->in_flight_bitmask &= ~TORQUE_FLIGHT_BIT; // Clear the bit
             break;
         default:
             break;
@@ -149,12 +155,17 @@ void ODrivePro::refresh_data() {
     }
     if (this->last_vbus_update + VBUS_UPDATE_RATE < millis() &&
         !(this->in_flight_bitmask & VBUS_FLIGHT_BIT)){
-        if (this->send_command(odrive::command_ids::Get_Vbus_Voltage_Current))
+        if (this->send_command(odrive::command_ids::Get_Bus_Voltage_Current))
             this->in_flight_bitmask |= VBUS_FLIGHT_BIT;  // Set the in flight bit to 1
     }
     if (this->last_heartbeat + HEARTBEAT_UPDATE_RATE < millis()) {
         this->send_command(odrive::command_ids::Heartbeat);
         this->last_heartbeat = millis();
+    }
+    if (this->last_torque_update + TORQUE_UPDATE_RATE < millis() &&
+        !(this->in_flight_bitmask & TORQUE_FLIGHT_BIT)){
+        if (this->send_command(odrive::command_ids::Get_Torques))
+            this->in_flight_bitmask |= TORQUE_FLIGHT_BIT;  // Set the in flight bit to 1
     }
 }
 
@@ -243,6 +254,14 @@ float_t ODrivePro::unit_conversion(float_t value, bool direction) const {
     } else {
         return value;
     }
+}
+
+float_t ODrivePro::get_torque_target() const {
+    return this->TORQUE_TARGET;
+}
+
+float_t ODrivePro::get_torque_estimate() const {
+    return this->TORQUE_ESTIMATE;
 }
 
 float_t ODrivePro::get_pos_estimate() const {

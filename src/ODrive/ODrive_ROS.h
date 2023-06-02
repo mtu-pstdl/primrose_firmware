@@ -31,6 +31,15 @@ class ODrive_ROS : public ROSNode {
 
 private:
 
+    enum ROS_COMMANDS {
+        STOP = 0,          // 0 Arguments
+        REBOOT = 1,        // 0 Arguments
+        CLEAR_ERRORS = 2,  // 0 Argument
+        SET_MODE = 3,      // 1 Argument
+        SET_POINT = 4,     // 1 Argument
+        SET_VEL_LIMIT = 5, // 1 Arguments
+    };
+
     ros::Subscriber<std_msgs::Int32MultiArray, ODrive_ROS> setpoint_sub;
 
     // Publishes the values of POS_ESTIMATE, VEL_ESTIMATE, IQ_SETPOINT, IQ_MEASURED
@@ -40,7 +49,7 @@ private:
     diagnostic_msgs::DiagnosticStatus* state_topic;
 
 #define NUM_CONDITIONS 13
-    char* strings[NUM_CONDITIONS];
+    char* strings[NUM_CONDITIONS]{};
     char* status_string = new char[25];
     char* setpoint_topic_name = new char[25];
 
@@ -49,13 +58,13 @@ private:
             state_topic->values[1].key = "AXIS_ERROR";        // Or CONTROL_MODE
             state_topic->values[2].key = "ACTIVE_ERRORS";     // Or SETPOINT
             state_topic->values[3].key = "DISARM_REASON";     // Or LAST_UPDATE
-            state_topic->values[4].key = "PROCEDURE_RESULT";  // Or POS_ESTIMATE
+            state_topic->values[4].key = "PROCEDURE_RESULT";  // Or TORQUE_ESTIMATE
             state_topic->values[5].key = "CONTROL_MODE";      // Or VEL_ESTIMATE
         } else {
             state_topic->values[1].key = "CONTROL_MODE";      // Or AXIS_ERROR
             state_topic->values[2].key = "LAST_UPDATE";       // Or DISARM_REASON
             state_topic->values[3].key = "SETPOINT";          // Or ACTIVE_ERRORS
-            state_topic->values[4].key = "POS_ESTIMATE";      // Or PROCEDURE_RESULT
+            state_topic->values[4].key = "TORQUE_ESTIMATE";   // Or PROCEDURE_RESULT
             state_topic->values[5].key = "VEL_ESTIMATE";      // Or CONTROL_MODE
         }
     }
@@ -76,17 +85,17 @@ private:
     void configure_diagnostics_topic(){
         this->state_topic->values_length = NUM_CONDITIONS;
         this->state_topic->values = new diagnostic_msgs::KeyValue[NUM_CONDITIONS];
-        state_topic->values[0].key = "AXIS_STATE";
-        state_topic->values[1].key = "AXIS_ERROR";        // Or CONTROL_MODE
-        state_topic->values[2].key = "ACTIVE_ERRORS";     // Or SETPOINT
-        state_topic->values[3].key = "DISARM_REASON";     // Or LAST_UPDATE
-        state_topic->values[4].key = "PROCEDURE_RESULT";  // Or POS_ESTIMATE
-        state_topic->values[5].key = "CONTROL_MODE";      // Or VEL_ESTIMATE
-        state_topic->values[6].key = "FET_TEMP";
-        state_topic->values[7].key = "MOTOR_TEMP";
-        state_topic->values[8].key = "VBUS_VOLTAGE";
-        state_topic->values[9].key = "VBUS_CURRENT";
-        state_topic->values[10].key = "IQ_SETPOINT";
+        state_topic->values[0].key  = "AXIS_STATE";
+        state_topic->values[1].key  = "AXIS_ERROR";        // Or CONTROL_MODE
+        state_topic->values[2].key  = "ACTIVE_ERRORS";     // Or SETPOINT
+        state_topic->values[3].key  = "DISARM_REASON";     // Or LAST_UPDATE
+        state_topic->values[4].key  = "PROCEDURE_RESULT";  // Or TORQUE_ESTIMATE
+        state_topic->values[5].key  = "CONTROL_MODE";      // Or VEL_ESTIMATE
+        state_topic->values[6].key  = "POS_ESTIMATE";
+        state_topic->values[7].key  = "FET_TEMP";
+        state_topic->values[8].key  = "MOTOR_TEMP";
+        state_topic->values[9].key  = "VBUS_VOLTAGE";
+        state_topic->values[10].key = "VBUS_CURRENT";
         state_topic->values[11].key = "IQ_MEASURED";
         state_topic->values[12].key = "IN-FLIGHT";
         state_topic->name = "ODrive";

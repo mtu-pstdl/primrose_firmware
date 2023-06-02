@@ -19,24 +19,25 @@ void ODrive_ROS::subscribe(ros::NodeHandle *nh) {
  * This function is called when a message is received on the setpoint topic
  */
 void ODrive_ROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
-    switch (msg.data[0]) {
-        case 0x00: // Data length: 2
-            this->odrive->set_control_mode(static_cast<odrive::control_modes>(msg.data[1]));
+    switch (static_cast<ODrive_ROS::ROS_COMMANDS>(msg.data[0])) {
+        case STOP:
+            this->odrive->emergency_stop();
             break;
-        case 0x01: // Data length: 2
-            this->odrive->set_setpoint(this->from_fixed_point(msg.data[1], POS_UNIT_SCALE));
-            break;
-        case 0x04: // Data length: 1
+        case REBOOT:
             this->odrive->reboot();
             break;
-        case 0x05: // Data length: 1
+        case CLEAR_ERRORS:
             this->odrive->clear_errors();
             break;
-
-
+        case SET_MODE:
+            this->odrive->set_control_mode(static_cast<odrive::control_modes>(msg.data[1]));
+            break;
+        case SET_POINT:
+            this->odrive->set_setpoint(ODrive_ROS::from_fixed_point(msg.data[1], POS_UNIT_SCALE));
+            break;
+        case SET_VEL_LIMIT:
+            break;
     }
-    this->odrive->set_setpoint(from_fixed_point(msg.data[1], POS_UNIT_SCALE));
-
 }
 
 void ODrive_ROS::update_diagnostics_label(){
@@ -106,20 +107,21 @@ void ODrive_ROS::update_diagnostics() {
             sprintf(strings[1], "%24s", this->odrive->get_control_mode_string());
             sprintf(strings[2], "%lums", this->odrive->get_last_update()); // "Last Update:
             sprintf(strings[3], "%24s", this->odrive->get_setpoint_string());
-            sprintf(strings[4], "%.2f %s", this->odrive->get_pos_estimate(), this->odrive->pos_unit_string);
+            sprintf(strings[4], "%.2f lb/f", this->odrive->get_torque_estimate());
             sprintf(strings[5], "%.2f %s", this->odrive->get_vel_estimate(), this->odrive->vel_unit_string);
         }
 //        sprintf(strings[6], "%f C", this->odrive->get_fet_temp());
 //        sprintf(strings[6], "%50s", this->odrive->get_fet_temp_frame_string());
         // Print the fet temp in hex
-        sprintf(strings[6], "%.2f C", this->odrive->get_fet_temp());
-        sprintf(strings[7], "%.2f C", this->odrive->get_motor_temp());
-        sprintf(strings[8], "%.2f V", this->odrive->get_vbus_voltage());
-        sprintf(strings[9], "%.2f A", this->odrive->get_vbus_current());
-        sprintf(strings[10], "%.2f A", this->odrive->get_Iq_measured());
-        sprintf(strings[11], "%.2f A", this->odrive->get_Iq_setpoint());
+        sprintf(strings[6], "%.2f %s", this->odrive->get_pos_estimate(), this->odrive->pos_unit_string);
+        sprintf(strings[7], "%.2f C", this->odrive->get_fet_temp());
+        sprintf(strings[8], "%.2f C", this->odrive->get_motor_temp());
+        sprintf(strings[9], "%.2f V", this->odrive->get_vbus_voltage());
+        sprintf(strings[10], "%.2f A", this->odrive->get_vbus_current());
+        sprintf(strings[11], "%.2f A", this->odrive->get_Iq_measured());
+//        sprintf(strings[11], "%.2f A", this->odrive->get_Iq_setpoint());
         // Show the binary representation of the inflight bitmask
-        for (int i = 0; i < 7; i++) {
+        for (int i = 0; i < 8; i++) {
             if (this->odrive->get_inflight_bitmask() & (1 << i)) {
                 strings[12][i] = '1';
             } else {
@@ -133,7 +135,7 @@ int32_t ODrive_ROS::to_fixed_point(float value, float scale) {
     return (int32_t)(value * scale);
 }
 
-float ODrive_ROS::from_fixed_point(int32_t value, float scale) {
+float_t ODrive_ROS::from_fixed_point(int32_t value, float scale) {
     return (float)value / scale;
 }
 

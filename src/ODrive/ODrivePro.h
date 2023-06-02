@@ -104,6 +104,13 @@ private:
     float_t    VBUS_VOLTAGE = 0; // Vbus voltage in volts
     float_t    VBUS_CURRENT = 0; // Vbus current in amps
 
+#define TORQUE_UPDATE_RATE 110 // The rate at which the torque state is updated in ms
+#define TORQUE_FLIGHT_BIT 0x0040 // The bit in the in_flight_bitmask that corresponds to the torque state
+    uint32_t   last_torque_update = 0; // The last torque state
+
+    float_t    TORQUE_TARGET = 0; // Torque setpoint in Nm
+    float_t    TORQUE_ESTIMATE = 0; // Torque measured in Nm
+
 #define HEARTBEAT_UPDATE_RATE 110 // The rate at which the heartbeat state is updated in ms
 #define HEARTBEAT_FLIGHT_BIT 0x0040 // The bit in the in_flight_bitmask that corresponds to the heartbeat state
 
@@ -151,6 +158,8 @@ public:
 
     void set_setpoint(float_t value);
 
+    void set_limits(float_t vel_limit);
+
     void refresh_data(); // Refreshes data from the ODrive
 
     void emergency_stop(); // Sends an emergency_stop command to the ODrive
@@ -169,6 +178,10 @@ public:
     float_t get_vbus_voltage() const;
 
     float_t get_vbus_current() const;
+
+    float_t get_torque_target() const;
+
+    float_t get_torque_estimate() const;
 
     float_t get_pos_estimate() const;
 

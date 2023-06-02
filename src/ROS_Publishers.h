@@ -118,14 +118,6 @@ ros_topic load_cell2_topic = {
         .message = &load_cell2_msg
 };
 
-sensor_msgs::Imu imu_msg;
-ros::Publisher imu_pub("/mciu/IMU/data", &imu_msg);
-
-ros_topic imu_topic = {
-        .publisher = &imu_pub,
-        .message = &imu_msg
-};
-
 ros_topic* odrive_encoder_topics[6] = {
         &odrive1_encoder_topic,
         &odrive2_encoder_topic,
@@ -160,8 +152,7 @@ ros_topic* all_topics[14] = {
         &actuator3_encoder_topic,
         &actuator4_encoder_topic,
         &load_cell1_topic,
-        &load_cell2_topic,
-        &imu_topic
+        &load_cell2_topic
 };
 
 #endif //TEENSYCANTRANSCEIVER_ROS_PUBLISHERS_H
