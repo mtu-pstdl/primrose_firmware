@@ -17,7 +17,7 @@
 
 #include <utility>
 
-#define EEPROM_CALIBRATION_ADDRESS_START 0x00
+#define EEPROM_CALIBRATION_ADDRESS_START 0xFF
 
 class LoadCells : public ROSNode {
 
