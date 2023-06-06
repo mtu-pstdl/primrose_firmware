@@ -25,6 +25,7 @@ public:
         read_motor_currents = 49,
         read_temperature = 82,
         read_status = 90,
+        read_buffer_length = 47,
         drive_m1_duty_cycle = 32,
         drive_m2_duty_cycle = 33,
         set_position_m1 = 65,
@@ -37,7 +38,7 @@ public:
         uint8_t id                  = 0;
         serial_commands command     = read_encoder_count_m1;
         uint8_t data_length         = 0;
-        uint8_t data[16]            = {0};
+        uint8_t data[24]            = {0};
         uint8_t crc[2]              = {0};
         bool expect_response        = false;  // If true the object will send data back
         bool sent_received          = false;    // True if the message has been sent and a response has been received
@@ -55,6 +56,8 @@ private:
 
 
     message* message_queue[20] = {nullptr};
+    uint8_t response_buffer[128] = {0};
+    uint8_t transmit_buffer[128] = {0};
     uint8_t message_queue_enqueue_position = 0;
     uint8_t message_queue_dequeue_position = 19;
     boolean waiting_for_response = false;
@@ -82,8 +85,16 @@ public:
     uint32_t message_count = 0;
     uint32_t spin_total_time = 0;
 
+    uint32_t total_messages_sent = 0;
+    uint32_t total_messages_received = 0;
+
+    uint16_t crc;
+    uint16_t calc_crc;
+
     Actuators(){
-        Serial1.begin(115200);
+        Serial2.begin(100000);
+//        Serial2.addMemoryForWrite(write_buffer, 64);
+//        Serial2.setTimeout(1000);
         for (auto & i : message_queue){
             i = nullptr;
         }

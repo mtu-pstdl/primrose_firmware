@@ -162,19 +162,19 @@ void setup() {
     odrive_ros[5] = new ODrive_ROS(odrives[5], &system_diagnostics.status[4],
                                    odrive_encoder_topics[5]->message, "Conveyor");
 
-    actuators[0] = new ActuatorUnit(&actuator_bus, 0x80);
-    actuators[1] = new ActuatorUnit(&actuator_bus, 0x81);
-    actuators[2] = new ActuatorUnit(&actuator_bus, 0x82);
-    actuators[3] = new ActuatorUnit(&actuator_bus, 0x83);
+    actuators[0] = new ActuatorUnit(&actuator_bus, 128);
+//    actuators[1] = new ActuatorUnit(&actuator_bus, 0x81);
+//    actuators[2] = new ActuatorUnit(&actuator_bus, 0x82);
+//    actuators[3] = new ActuatorUnit(&actuator_bus, 0x83);
 
     actuators_ros[0] = new ActuatorsROS(actuators[0], actuator_encoder_topics[0]->message,
                                         &system_diagnostics.status[6], "Front_Left");
-    actuators_ros[1] = new ActuatorsROS(actuators[1], actuator_encoder_topics[1]->message,
-                                        &system_diagnostics.status[7], "Front_Right");
-    actuators_ros[2] = new ActuatorsROS(actuators[2], actuator_encoder_topics[2]->message,
-                                        &system_diagnostics.status[8], "Rear_Left");
-    actuators_ros[3] = new ActuatorsROS(actuators[3], actuator_encoder_topics[3]->message,
-                                        &system_diagnostics.status[9], "Rear_Right");
+//    actuators_ros[1] = new ActuatorsROS(actuators[1], actuator_encoder_topics[1]->message,
+//                                        &system_diagnostics.status[7], "Front_Right");
+//    actuators_ros[2] = new ActuatorsROS(actuators[2], actuator_encoder_topics[2]->message,
+//                                        &system_diagnostics.status[8], "Rear_Left");
+//    actuators_ros[3] = new ActuatorsROS(actuators[3], actuator_encoder_topics[3]->message,
+//                                        &system_diagnostics.status[9], "Rear_Right");
 
     auto* load_cell_clk_pins =     new int[4] {A0, A1, A2, A3};
     auto* load_cell_data_pins =    new int[4] {A4, A5, A6, A7};
@@ -199,7 +199,7 @@ void setup() {
     for (auto & load_cell : load_cells) ros_nodes[ros_node_count++] = load_cell;
 
     // Allocate memory for the system diagnostics strings
-    for (auto & system_info_string : system_info_strings) system_info_string = new char[20];
+    for (auto & system_info_string : system_info_strings) system_info_string = new char[40];
     for (auto & system_status_message : system_status_messages) system_status_message = new char[20];
 
     system_info = &system_diagnostics.status[12];
@@ -304,7 +304,9 @@ void loop() {
 
     digitalWriteFast(LED_BUILTIN, HIGH); // Turn off the LED
     // Allow the actuator bus to preform serial communication for the remaining time in the loop
-    sprintf(system_info_strings[6], "%d", actuator_bus.get_queue_size());
+    sprintf(system_info_strings[6], "%d, F:%lu, CRC:%04d CCRC:%04d", actuator_bus.get_queue_size(),
+        actuator_bus.total_messages_sent - actuator_bus.total_messages_received,
+        actuator_bus.crc, actuator_bus.calc_crc);
     while (actuator_bus.spin(micros() - loop_start > 50000)) {
         yield();  // Yield to other tasks
     }

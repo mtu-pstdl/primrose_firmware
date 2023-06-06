@@ -7,6 +7,9 @@
 
 #include <Arduino.h>
 #include "Actuators.h"
+#define ACTUATOR_SPEED 1000000
+#define ACTUATOR_ACCEL 1000000
+#define ACTUATOR_DECEL 1000000
 
 class ActuatorUnit {
 
@@ -42,13 +45,11 @@ public:
 
     struct motor_info{
         char*    name                = nullptr; // The name of the motor
-        uint32_t target_position     = 0; // The target position of the motor in tenths of a degree
-        uint32_t current_position    = 0; // The current position of the motor in tenths of a degree
-        uint32_t max_position        = 0; // The maximum position of the motor in tenths of a degree
-        boolean  position_negative   = false; // The current direction of the motor
-        uint32_t current_speed       = 0; // The current velocity of the motor in tenths of a degree per second
-        boolean  direction_negative  = false; // The current direction of the motor
-        uint16_t current_current     = 0; // The current current draw of the motor in tenths of an amp
+        int32_t target_position     = -1; // The target position of the motor ticks
+        int32_t current_position    = -1; // The current position of the motor in ticks
+        int32_t max_position        = 0; // The maximum position of the motor in ticks
+        int32_t current_speed       = -1; // The current velocity of the motor in ticks per second
+        uint16_t current_current     = 7; // The current current draw of the motor in tenths of an amp
         uint16_t warning_current     = 50; // The current current draw of the motor in tenths of an amp
         control_modes control_mode   = stopped; // The current control mode of the motor
         boolean  homed               = false; // Whether or not the motor has been homed
@@ -69,6 +70,8 @@ public:
 
     static void logic_battery_voltage_callback(void* actuator, Actuators::message* msg);
 
+    static void controller_temp_callback(void *actuator, Actuators::message *msg);
+
     static void controller_status_callback(void* actuator, Actuators::message* msg);
 
     static void message_failure_callback(void* actuator, Actuators::message* msg);
@@ -88,8 +91,8 @@ private:
         this->motors[1].name = new char[5];
         sprintf(this->motors[0].name, "M1");
         sprintf(this->motors[1].name, "M2");
-        this->motors[0].status_string = new char[100];
-        this->motors[1].status_string = new char[100];
+        this->motors[0].status_string = new char[256];
+        this->motors[1].status_string = new char[256];
     }
 
     motor_info motors[2]{
@@ -106,15 +109,17 @@ private:
     telemetry_message* reocurring_messages;
 
     // Shared variables between motor 1 and motor 2
-    uint16_t controller_temperature = 0;
-    uint16_t main_battery_voltage = 0;
-    uint16_t logic_battery_voltage = 0;
+    uint16_t controller_temperature = 9999;
+    uint16_t main_battery_voltage = 9999;
+    uint16_t logic_battery_voltage = 9999;
     uint16_t status = 0;
 
     telemetry_message* build_message(Actuators::serial_commands command, uint32_t send_interval, uint8_t data_length,
                                      void (*callback)(void *, Actuators::message*));
 
     void build_telemetry_messages();
+
+    void send_target_position(uint8_t motor);
 
 public:
 
@@ -124,7 +129,7 @@ public:
         this->id = id;
 
         // Setup all the required messages for gathering information from the object
-        this->reocurring_messages = new telemetry_message[10];
+        this->reocurring_messages = new telemetry_message[7];
         this->build_telemetry_messages();
         this->allocate_strings();
     }

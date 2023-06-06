@@ -30,12 +30,12 @@ private:
     String name;
 
     char* strings[9];
-    char* status_string = new char[25];
+    char* status_string = new char[50];
     char* pub_name = new char[50];
 
     void allocate_strings() {
         for (auto & string : strings) {
-            string = new char[25];
+            string = new char[50];
         }
     }
 
