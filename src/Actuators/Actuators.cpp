@@ -125,6 +125,8 @@ boolean Actuators::spin(boolean lastSpin) {
         if (next_message != nullptr){
             // Clear the transmit buffer
             memset(this->transmit_buffer, 0, sizeof(this->transmit_buffer));
+            // Clear the serial buffer
+            Serial1.clear();
             // Send the message
             this->transmit_buffer[0] = next_message->id;
             this->transmit_buffer[1] = next_message->command;

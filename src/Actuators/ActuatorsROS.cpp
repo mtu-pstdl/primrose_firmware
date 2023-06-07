@@ -43,8 +43,8 @@ void ActuatorsROS::update_status_message(){
 void ActuatorsROS::update_diagnostics_topic(){
 
     if (this->actuator->connected) {
-        sprintf(strings[0], "%24s", this->actuator->get_motor_fault_string(0));
-        sprintf(strings[1], "%24s", this->actuator->get_motor_fault_string(1));
+//        sprintf(strings[0], "%24s", this->actuator->get_motor_fault_string(0));
+//        sprintf(strings[1], "%24s", this->actuator->get_motor_fault_string(1));
         sprintf(strings[2], "%04ld Ticks", this->actuator->get_position(0));
         sprintf(strings[3], "%04ld Ticks", this->actuator->get_position(1));
         sprintf(strings[4], "%04ld Ticks/s", this->actuator->get_velocity(0));
