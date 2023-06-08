@@ -41,7 +41,7 @@ public:
         uint8_t data[24]            = {0};
         uint8_t crc[2]              = {0};
         bool expect_response        = false;  // If true the object will send data back
-        bool sent_received          = false;    // True if the message has been sent and a response has been received
+        bool failed_crc             = false;  // If true the message failed the crc check
         // The callback function to call when the message is received
         void* object                = nullptr;
         void (*callback)(void* actuator, message* msg) = nullptr;
@@ -87,6 +87,7 @@ public:
 
     uint32_t total_messages_sent = 0;
     uint32_t total_messages_received = 0;
+    uint32_t total_messages_processed = 0;
 
     uint16_t crc;
     uint16_t calc_crc;

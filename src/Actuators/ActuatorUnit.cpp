@@ -51,6 +51,7 @@ ActuatorUnit::build_message(Actuators::serial_commands command, uint32_t send_in
     telem->msg->object = this;
     telem->msg->callback = callback;
     telem->msg->failure_callback = &ActuatorUnit::message_failure_callback;
+    telem->msg->free_after_callback = false;
     telem->send_interval = send_interval;
     telem->last_send_time = 0;
     return telem;
@@ -222,14 +223,14 @@ void ActuatorUnit::detailed_encoder_count_callback(void *actuator, Actuators::me
         default:
             break;
     }
-    actuator_unit->message_failure_count = 0;
+    actuator_unit->message_dropped_count = 0;
     actuator_unit->connected = true;
 }
 
 void ActuatorUnit::encoder_count_callback(void *actuator, Actuators::message *msg) {
     // Cast the void pointer to an ActuatorUnit pointer
     auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    actuator_unit->message_failure_count = 0;
+    actuator_unit->message_dropped_count = 0;
     actuator_unit->connected = true;
     if (msg->command == Actuators::serial_commands::read_encoder_count_m1){
         uint32_t raw_position = (msg->data[3] << 24) | (msg->data[2] << 16) | (msg->data[1] << 8) | msg->data[0];
@@ -250,7 +251,7 @@ void ActuatorUnit::encoder_count_callback(void *actuator, Actuators::message *ms
 
 void ActuatorUnit::encoder_speed_callback(void *actuator, Actuators::message *msg) {
     auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    actuator_unit->message_failure_count = 0;
+    actuator_unit->message_dropped_count = 0;
     actuator_unit->connected = true;
     if (msg->command == Actuators::serial_commands::read_encoder_speed_m1){
         uint32_t raw_speed = (msg->data[3] << 24) | (msg->data[2] << 16) | (msg->data[1] << 8) | msg->data[0];
@@ -267,7 +268,7 @@ void ActuatorUnit::encoder_speed_callback(void *actuator, Actuators::message *ms
 
 void ActuatorUnit::motor_currents_callback(void *actuator, Actuators::message *msg) {
     auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    actuator_unit->message_failure_count = 0;
+    actuator_unit->message_dropped_count = 0;
     actuator_unit->connected = true;
     actuator_unit->motors[0].current_current =
             (msg->data[0] << 8) | msg->data[1];
@@ -277,56 +278,48 @@ void ActuatorUnit::motor_currents_callback(void *actuator, Actuators::message *m
 
 void ActuatorUnit::main_battery_voltage_callback(void *actuator, Actuators::message *msg) {
     auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    actuator_unit->message_failure_count = 0;
+    actuator_unit->message_dropped_count = 0;
     actuator_unit->connected = true;
     actuator_unit->main_battery_voltage = (msg->data[0] << 8) | msg->data[1];
 }
 
 void ActuatorUnit::logic_battery_voltage_callback(void *actuator, Actuators::message *msg) {
     auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    actuator_unit->message_failure_count = 0;
+    actuator_unit->message_dropped_count = 0;
     actuator_unit->connected = true;
     actuator_unit->logic_battery_voltage = (msg->data[0] << 8) | msg->data[1];
 }
 
 void ActuatorUnit::controller_temp_callback(void *actuator, Actuators::message *msg) {
     auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    actuator_unit->message_failure_count = 0;
+    actuator_unit->message_dropped_count = 0;
     actuator_unit->connected = true;
     actuator_unit->controller_temperature = (msg->data[1] << 8) | msg->data[0];
 }
 
 void ActuatorUnit::controller_status_callback(void *actuator, Actuators::message *msg) {
     auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    actuator_unit->message_failure_count = 0;
+    actuator_unit->message_dropped_count = 0;
     actuator_unit->connected = true;
     actuator_unit->status = (msg->data[1] << 8) | msg->data[0];
 }
 
 void ActuatorUnit::message_failure_callback(void *actuator, Actuators::message *msg) {
     auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    actuator_unit->message_failure_count++;
-    if (actuator_unit->message_failure_count > actuator_unit->message_failure_threshold) {
+    // Check if the message failed because of CRC failure
+    // (This indicates the controller is connected but the connection is noisy and a separate failure)
+    if (msg->failed_crc){
+        actuator_unit->message_dropped_count = 0;
+        actuator_unit->message_failure_count++;
+        actuator_unit->connected = true;
+        return;
+    }
+
+    actuator_unit->message_dropped_count++;
+    if (actuator_unit->message_dropped_count > actuator_unit->message_failure_threshold) {
         actuator_unit->connected = false;
     }
 }
-
-// Debug serial
-
-//String* ActuatorUnit::get_status_string() {
-//    auto* status_string = new String();
-//    status_string->concat("------------Actuator Unit Status Report " + String(this->id) + "-------\n\r");
-//    status_string->concat("Main Battery Voltage: " + String(this->main_battery_voltage) + "\n\r");
-//    status_string->concat("Logic Battery Voltage: " + String(this->logic_battery_voltage) + "\n\r");
-//    status_string->concat("Status: " + String(this->diagnostics_topic) + "\n\r");
-//    status_string->concat("Motor 1 Status: " + String(this->motors[0].control_mode) + "\n\r");
-//    status_string->concat("Motor 2 Status: " + String(this->motors[1].control_mode) + "\n\r");
-//    status_string->concat("Motor 1 Current: " + String(this->motors[0].current_current) + "\n\r");
-//    status_string->concat("Motor 2 Current: " + String(this->motors[1].current_current) + "\n\r");
-//    status_string->concat("Message Failure Count: " + String(this->message_failure_count) + "\n\r");
-//    return status_string;
-//}
-
 
 int32_t ActuatorUnit::get_position(uint8_t motor) {
     return this->motors[motor].current_position;
@@ -414,26 +407,28 @@ char* ActuatorUnit::get_status_string() {
         }
     } else {
         sprintf(this->status_string, "");
+        if (this->message_failure_count > 0)
+            sprintf(this->status_string, "%sMESSAGE_FAILURE ", this->status_string);
         if (status & controller_status_bitmask::e_stop)
-            sprintf(this->status_string, "%s%s", this->status_string, "DRIVER_E_STOP ");
+            sprintf(this->status_string, "%sDVR_E_STOP ", this->status_string);
         if (status & controller_status_bitmask::high_temperature_fault)
-            sprintf(this->status_string, "%s%s", this->status_string, "HIGH_TEMPERATURE_FAULT ");
+            sprintf(this->status_string, "%sHI_TEMP_FAULT ", this->status_string);
         if (status & controller_status_bitmask::main_battery_high_fault)
-            sprintf(this->status_string, "%s%s", this->status_string, "MAIN_BATTERY_HIGH_FAULT ");
+            sprintf(this->status_string, "%sMN_BAT_HI_FAULT ", this->status_string);
         if (status & controller_status_bitmask::logic_battery_high_fault)
-            sprintf(this->status_string, "%s%s", this->status_string, "LOGIC_BATTERY_HIGH_FAULT ");
+            sprintf(this->status_string, "%sLG_BAT_HI_FAULT ", this->status_string);
         if (status & controller_status_bitmask::logic_battery_low_fault)
-            sprintf(this->status_string, "%s%s", this->status_string, "LOGIC_BATTERY_LOW_FAULT ");
+            sprintf(this->status_string, "%sLG_BAT_LW_FAULT ", this->status_string);
     }
     if (motors[0].fault) {
-        sprintf(this->status_string, "%sM1_FAULT ", this->status_string);
+        sprintf(this->status_string, "%sM1_FLT ", this->status_string);
     } else if (motors[0].warn) {
-        sprintf(this->status_string, "%sM1_WARN ", this->status_string);
+        sprintf(this->status_string, "%sM1_WRN ", this->status_string);
     }
     if (motors[1].fault) {
-        sprintf(this->status_string, "%sM2_FAULT ", this->status_string);
+        sprintf(this->status_string, "%sM2_FLT ", this->status_string);
     } else if (motors[1].warn) {
-        sprintf(this->status_string, "%sM2_WARN ", this->status_string);
+        sprintf(this->status_string, "%sM2_WRN ", this->status_string);
     }
     return this->status_string;
 }

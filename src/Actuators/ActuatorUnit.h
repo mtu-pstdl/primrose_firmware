@@ -49,8 +49,8 @@ public:
         int32_t current_position    = -1; // The current position of the motor in ticks
         int32_t max_position        = 0; // The maximum position of the motor in ticks
         int32_t current_speed       = -1; // The current velocity of the motor in ticks per second
-        uint16_t current_current     = 7; // The current current draw of the motor in tenths of an amp
-        uint16_t warning_current     = 50; // The current current draw of the motor in tenths of an amp
+        uint16_t current_current     = 7; // The current current draw of the motor in ma
+        uint16_t warning_current     = 50; // The current current draw of the motor in ma
         control_modes control_mode   = stopped; // The current control mode of the motor
         boolean  homed               = false; // Whether or not the motor has been homed
         boolean  fault               = false; // Whether or not the motor has a fault
@@ -80,6 +80,7 @@ private:
 
     Actuators* command_bus;
 
+    uint16_t message_dropped_count = 0;
     uint16_t message_failure_count = 0;
     const uint16_t message_failure_threshold = 5;
 

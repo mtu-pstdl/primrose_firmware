@@ -47,6 +47,7 @@ void Actuators::process_no_data_serial(message* msg){
 
 void Actuators::process_data_serial(message *msg) {
     if (Serial2.available() >= msg->data_length + sizeof(msg->crc)){
+        this->total_messages_received++;
         Serial2.readBytes(this->response_buffer, msg->data_length + sizeof(msg->crc));
         uint8_t crc_buffer[128] = {0};
         // Copy the sent address and the command id into the first two bytes of the crc buffer
@@ -59,7 +60,7 @@ void Actuators::process_data_serial(message *msg) {
         // Get the CRC from the response
         memcpy(&crc, this->response_buffer + msg->data_length, sizeof(crc));
         memcpy(msg->data, this->response_buffer, msg->data_length); // Copy the data into the message
-        if (crc != calc_crc) {
+        if (crc == calc_crc) {
             // The response is valid
             this->waiting_for_response = false;
             if (msg->object != nullptr && msg->callback != nullptr) {
@@ -68,12 +69,18 @@ void Actuators::process_data_serial(message *msg) {
                 auto callback = msg->callback; // Cast the callback to a function pointer
                 callback(object, msg);
                 if (msg->free_after_callback) delete msg;
-                this->total_messages_received++;
+                this->total_messages_processed++;
             }
         } else {
-            // If the response is not successful or the CRC is invalid, skip this message
+            // If the response fails the CRC, then call the failure callback
             this->waiting_for_response = false;
+            msg->failed_crc = true;
             // Free the message
+            if (msg->failure_callback != nullptr) {
+                auto object = msg->object;
+                auto callback = msg->failure_callback; // Cast the callback to a function pointer
+                callback(object, msg);
+            }
             if (msg->callback) if (msg->free_after_callback) delete msg;
         }
     }
