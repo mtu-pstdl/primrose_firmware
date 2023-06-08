@@ -59,8 +59,8 @@ void Actuators::process_data_serial(message *msg) {
         // Calculate the CRC
         calc_crc = this->crc16(crc_buffer, msg->data_length + 2);
         // Get the CRC from the response
-        memcpy(&crc, this->response_buffer + msg->data_length, sizeof(crc));
-        if (crc == calc_crc || true) {
+        crc = (uint16_t) (this->response_buffer[msg->data_length] << 8 | this->response_buffer[msg->data_length + 1]);
+        if (crc == calc_crc) {
             // The response is valid
             this->waiting_for_response = false;
             if (msg->object != nullptr && msg->callback != nullptr) {
@@ -142,6 +142,7 @@ boolean Actuators::spin(boolean lastSpin) {
             // Append the CRC to the message
             memcpy(this->transmit_buffer + next_message->data_length + 2, &transmit_crc, sizeof(crc));
             Serial2.write(this->transmit_buffer, next_message->data_length + sizeof(crc) + 2);
+            Serial2.flush();  // Wait for the message to be sent
             this->total_messages_sent++;
             this->waiting_for_response = true;
             this->last_message_sent_time = millis();

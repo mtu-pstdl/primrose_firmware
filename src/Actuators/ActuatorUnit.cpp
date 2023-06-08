@@ -9,7 +9,7 @@
 void ActuatorUnit::build_telemetry_messages() {
     reocurring_messages[0] = *build_message(
             Actuators::serial_commands::read_encoder_count_m1,
-            100, 5, &ActuatorUnit::encoder_count_callback);
+            100, 5, &ActuatorUnit::encoder_m1_count_callback);
     reocurring_messages[1] = *build_message(
             Actuators::serial_commands::read_encoder_count_m2,
             100, 5, &ActuatorUnit::encoder_count_callback);
@@ -21,19 +21,19 @@ void ActuatorUnit::build_telemetry_messages() {
             100, 5, &ActuatorUnit::encoder_speed_callback);
     reocurring_messages[4] = *build_message(
             Actuators::serial_commands::read_main_battery_voltage,
-            1000, 2, &ActuatorUnit::main_battery_voltage_callback);
+            100, 2, &ActuatorUnit::main_battery_voltage_callback);
     reocurring_messages[5] = *build_message(
             Actuators::serial_commands::read_logic_battery_voltage,
             1000, 2, &ActuatorUnit::logic_battery_voltage_callback);
     reocurring_messages[6] = *build_message(
             Actuators::serial_commands::read_motor_currents,
-            1000, 4, &ActuatorUnit::motor_currents_callback);
+            100, 4, &ActuatorUnit::motor_currents_callback);
     reocurring_messages[7] = *build_message(
             Actuators::serial_commands::read_temperature,
             1000, 2, &ActuatorUnit::controller_temp_callback);
-//    reocurring_messages[8] = *build_message(
-//            Actuators::serial_commands::read_status,
-//            100, 2, &ActuatorUnit::controller_status_callback);
+    reocurring_messages[8] = *build_message(
+            Actuators::serial_commands::read_status,
+            1000, 2, &ActuatorUnit::controller_status_callback);
 
 }
 
@@ -59,7 +59,7 @@ ActuatorUnit::build_message(Actuators::serial_commands command, uint32_t send_in
 
 
 void ActuatorUnit::queue_telemetry_messages() {
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 9; i++) {
         if (millis() - reocurring_messages[i].last_send_time > reocurring_messages[i].send_interval) {
             if (!command_bus->space_available()) return;
             command_bus->queue_message(reocurring_messages[i].msg);
@@ -232,21 +232,29 @@ void ActuatorUnit::encoder_count_callback(void *actuator, Actuators::message *ms
     auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
     actuator_unit->message_dropped_count = 0;
     actuator_unit->connected = true;
+    uint32_t raw_position = (msg->data[3] << 24) | (msg->data[2] << 16) | (msg->data[1] << 8) | msg->data[0];
+    bool negative = msg->data[4] & 0b00000010;
     if (msg->command == Actuators::serial_commands::read_encoder_count_m1){
-        uint32_t raw_position = (msg->data[3] << 24) | (msg->data[2] << 16) | (msg->data[1] << 8) | msg->data[0];
         // Trim the position value to a 32 bit signed integer
-        bool negative = msg->data[4] & 0b00000010;
         if (negative) {
             actuator_unit->motors[0].current_position = - (int32_t) raw_position;
         } else actuator_unit->motors[0].current_position = (int32_t) raw_position;
     } else if (msg->command == Actuators::serial_commands::read_encoder_count_m2){
-        uint32_t raw_position = (msg->data[3] << 24) | (msg->data[2] << 16) | (msg->data[1] << 8) | msg->data[0];
-        // Trim the position value to a 32 bit signed integer
-        bool negative = msg->data[4] & 0b00000010;
         if (negative) {
             actuator_unit->motors[1].current_position = - (int32_t) raw_position;
         } else actuator_unit->motors[1].current_position = (int32_t) raw_position;
     }
+}
+
+void ActuatorUnit::encoder_m1_count_callback(void *actuator, Actuators::message *msg) {
+    auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
+    actuator_unit->message_dropped_count = 0;
+    actuator_unit->connected = true;
+    uint32_t raw_position = (msg->data[3] << 24) | (msg->data[2] << 16) | (msg->data[1] << 8) | msg->data[0];
+    bool negative = msg->data[4] & 0b00000010;
+    if (negative) {
+        actuator_unit->motors[0].current_position = - (int32_t) raw_position;
+    } else actuator_unit->motors[0].current_position = (int32_t) raw_position;
 }
 
 void ActuatorUnit::encoder_speed_callback(void *actuator, Actuators::message *msg) {
@@ -309,10 +317,7 @@ void ActuatorUnit::message_failure_callback(void *actuator, Actuators::message *
     // Check if the message failed because of CRC failure
     // (This indicates the controller is connected but the connection is noisy and a separate failure)
     if (msg->failed_crc){
-        actuator_unit->message_dropped_count = 0;
         actuator_unit->message_failure_count++;
-        actuator_unit->connected = true;
-        return;
     }
 
     actuator_unit->message_dropped_count++;
@@ -351,8 +356,8 @@ uint16_t ActuatorUnit::get_status() const {
 
 char* ActuatorUnit::get_motor_fault_string(uint8_t motor) {
     sprintf(this->motors[motor].status_string, "");
-    if (!motors[motor].homed) sprintf(this->motors[motor].status_string, "%s%s_NOT_HOMED ",
-                                      motors[motor].status_string, motors[motor].name);
+    if (!motors[motor].homed && motors[motor].control_mode != homing)
+        sprintf(this->motors[motor].status_string, "%s%s_NOT_HOMED ", motors[motor].status_string, motors[motor].name);
     if (motors[motor].current_current > motors[motor].warning_current) {
         sprintf(this->status_string, "%s%s_HIGH_CURRENT ", motors[motor].status_string, motors[motor].name);
         motors[motor].warn = true;

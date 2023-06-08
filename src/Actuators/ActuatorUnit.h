@@ -49,10 +49,10 @@ public:
         int32_t current_position    = -1; // The current position of the motor in ticks
         int32_t max_position        = 0; // The maximum position of the motor in ticks
         int32_t current_speed       = -1; // The current velocity of the motor in ticks per second
-        uint16_t current_current     = 7; // The current current draw of the motor in ma
+        int16_t current_current     = 7; // The current current draw of the motor in ma
         uint16_t warning_current     = 50; // The current current draw of the motor in ma
         control_modes control_mode   = stopped; // The current control mode of the motor
-        boolean  homed               = false; // Whether or not the motor has been homed
+        boolean  homed               = true; // Whether or not the motor has been homed
         boolean  fault               = false; // Whether or not the motor has a fault
         boolean  warn                = false; // Whether or not the motor has a warning
         char*    status_string       = nullptr; // A string describing the diagnostics_topic of the motor
@@ -61,6 +61,8 @@ public:
     static void detailed_encoder_count_callback(void* actuator, Actuators::message* msg);
 
     static void encoder_count_callback(void* actuator, Actuators::message* msg);
+
+    static void encoder_m1_count_callback(void* actuator, Actuators::message* msg);
 
     static void encoder_speed_callback(void* actuator, Actuators::message* msg);
 

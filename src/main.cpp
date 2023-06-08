@@ -163,18 +163,18 @@ void setup() {
                                    odrive_encoder_topics[5]->message, "Conveyor");
 
     actuators[0] = new ActuatorUnit(&actuator_bus, 128);
-//    actuators[1] = new ActuatorUnit(&actuator_bus, 0x81);
-//    actuators[2] = new ActuatorUnit(&actuator_bus, 0x82);
-//    actuators[3] = new ActuatorUnit(&actuator_bus, 0x83);
+    actuators[1] = new ActuatorUnit(&actuator_bus, 129);
+    actuators[2] = new ActuatorUnit(&actuator_bus, 130);
+    actuators[3] = new ActuatorUnit(&actuator_bus, 131);
 
     actuators_ros[0] = new ActuatorsROS(actuators[0], actuator_encoder_topics[0]->message,
                                         &system_diagnostics.status[6], "Front_Left");
-//    actuators_ros[1] = new ActuatorsROS(actuators[1], actuator_encoder_topics[1]->message,
-//                                        &system_diagnostics.status[7], "Front_Right");
-//    actuators_ros[2] = new ActuatorsROS(actuators[2], actuator_encoder_topics[2]->message,
-//                                        &system_diagnostics.status[8], "Rear_Left");
-//    actuators_ros[3] = new ActuatorsROS(actuators[3], actuator_encoder_topics[3]->message,
-//                                        &system_diagnostics.status[9], "Rear_Right");
+    actuators_ros[1] = new ActuatorsROS(actuators[1], actuator_encoder_topics[1]->message,
+                                        &system_diagnostics.status[7], "Front_Right");
+    actuators_ros[2] = new ActuatorsROS(actuators[2], actuator_encoder_topics[2]->message,
+                                        &system_diagnostics.status[8], "Rear_Left");
+    actuators_ros[3] = new ActuatorsROS(actuators[3], actuator_encoder_topics[3]->message,
+                                        &system_diagnostics.status[9], "Rear_Right");
 
     auto* load_cell_clk_pins =     new int[4] {A0, A1, A2, A3};
     auto* load_cell_data_pins =    new int[4] {A4, A5, A6, A7};
@@ -304,13 +304,11 @@ void loop() {
 
     digitalWriteFast(LED_BUILTIN, HIGH); // Turn off the LED
     // Allow the actuator bus to preform serial communication for the remaining time in the loop
-    sprintf(system_info_strings[6], "%d, S:%05lu, R:%05lu, P:%05lu CRC:%05hu ERR:%05hu",
+    sprintf(system_info_strings[6], "%d, S:%05lu, R:%05lu, P:%05lu",
             actuator_bus.get_queue_size(),
             actuator_bus.total_messages_sent,
             actuator_bus.total_messages_received,
-            actuator_bus.total_messages_processed,
-            actuator_bus.crc,
-            actuator_bus.calc_crc);
+            actuator_bus.total_messages_processed);
     while (actuator_bus.spin(micros() - loop_start > 50000)) {
         yield();  // Yield to other tasks
     }

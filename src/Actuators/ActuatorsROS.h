@@ -22,7 +22,7 @@ class ActuatorsROS : public ROSNode {
 
 private:
 
-    ros::Subscriber<std_msgs::Int32MultiArray, ActuatorsROS> setpoint_sub;
+    ros::Subscriber<std_msgs::Int32MultiArray, ActuatorsROS> command_sub;
 
     diagnostic_msgs::DiagnosticStatus* diagnostic_topic;
     std_msgs::Int32MultiArray* output_topic;
@@ -50,7 +50,7 @@ public:
 
     ActuatorsROS(ActuatorUnit* actuator, std_msgs::Int32MultiArray* output_topic,
                  diagnostic_msgs::DiagnosticStatus* status, String disp_name) :
-                 setpoint_sub("template_for_later", &ActuatorsROS::control_callback, this){
+            command_sub("template_for_later", &ActuatorsROS::control_callback, this){
         this->actuator = actuator;
         // Add key-value pairs to the condition topic
         sprintf(status_string, "Initializing");
@@ -81,14 +81,14 @@ public:
         for (int i = 0; i < 9; i++) {
             this->diagnostic_topic->values[i].value = strings[i];
         }
-        this->setpoint_sub.topic_ = this->pub_name;
+        this->command_sub.topic_ = this->pub_name;
         sprintf(pub_name, "/mciu/%s/actuators/input", disp_name.c_str());
     }
 
     /**
      * This method sets up the ROS publishers and subscribers
      */
-    void subscribe(ros::NodeHandle* node_handle);
+    void subscribe(ros::NodeHandle* node_handle) override;
 
     /**
      * This function is called when a message is received on the setpoint topic
