@@ -199,7 +199,7 @@ void setup() {
     for (auto & load_cell : load_cells) ros_nodes[ros_node_count++] = load_cell;
 
     // Allocate memory for the system diagnostics strings
-    for (auto & system_info_string : system_info_strings) system_info_string = new char[40];
+    for (auto & system_info_string : system_info_strings) system_info_string = new char[55];
     for (auto & system_status_message : system_status_messages) system_status_message = new char[20];
 
     system_info = &system_diagnostics.status[12];
@@ -304,9 +304,13 @@ void loop() {
 
     digitalWriteFast(LED_BUILTIN, HIGH); // Turn off the LED
     // Allow the actuator bus to preform serial communication for the remaining time in the loop
-    sprintf(system_info_strings[6], "%d, F:%lu, CRC:%04d CCRC:%04d", actuator_bus.get_queue_size(),
-        actuator_bus.total_messages_sent - actuator_bus.total_messages_received,
-        actuator_bus.crc, actuator_bus.calc_crc);
+    sprintf(system_info_strings[6], "%d, S:%05lu, R:%05lu, P:%05lu CRC:%05hu ERR:%05hu",
+            actuator_bus.get_queue_size(),
+            actuator_bus.total_messages_sent,
+            actuator_bus.total_messages_received,
+            actuator_bus.total_messages_processed,
+            actuator_bus.crc,
+            actuator_bus.calc_crc);
     while (actuator_bus.spin(micros() - loop_start > 50000)) {
         yield();  // Yield to other tasks
     }

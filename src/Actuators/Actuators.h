@@ -68,7 +68,7 @@ private:
     uint32_t spin_start_time = 0;
 
 
-    uint16_t crc16(const uint8_t *packet, uint32_t nBytes);
+    static uint16_t crc16(const uint8_t *packet, uint32_t nBytes);
 
     message* get_next_message();
 
@@ -95,7 +95,7 @@ public:
     Actuators(){
         Serial2.begin(100000);
 //        Serial2.addMemoryForWrite(write_buffer, 64);
-//        Serial2.setTimeout(1000);
+        Serial2.setTimeout(1000);
         for (auto & i : message_queue){
             i = nullptr;
         }

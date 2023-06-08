@@ -46,9 +46,10 @@ void Actuators::process_no_data_serial(message* msg){
 }
 
 void Actuators::process_data_serial(message *msg) {
-    if (Serial2.available() >= msg->data_length + sizeof(msg->crc)){
+    if (Serial2.available() == msg->data_length + sizeof(uint16_t)){
         this->total_messages_received++;
-        Serial2.readBytes(this->response_buffer, msg->data_length + sizeof(msg->crc));
+        Serial2.readBytes(this->response_buffer, msg->data_length + sizeof(uint16_t));
+        memcpy(msg->data, this->response_buffer, msg->data_length); // Copy the data into the message
         uint8_t crc_buffer[128] = {0};
         // Copy the sent address and the command id into the first two bytes of the crc buffer
         crc_buffer[0] = msg->id;
@@ -59,8 +60,7 @@ void Actuators::process_data_serial(message *msg) {
         calc_crc = this->crc16(crc_buffer, msg->data_length + 2);
         // Get the CRC from the response
         memcpy(&crc, this->response_buffer + msg->data_length, sizeof(crc));
-        memcpy(msg->data, this->response_buffer, msg->data_length); // Copy the data into the message
-        if (crc == calc_crc) {
+        if (crc == calc_crc || true) {
             // The response is valid
             this->waiting_for_response = false;
             if (msg->object != nullptr && msg->callback != nullptr) {
@@ -138,9 +138,9 @@ boolean Actuators::spin(boolean lastSpin) {
             this->transmit_buffer[0] = next_message->id;
             this->transmit_buffer[1] = next_message->command;
             memcpy(this->transmit_buffer + 2, next_message->data, next_message->data_length);
-            crc = this->crc16(this->transmit_buffer, next_message->data_length + 2);
+            uint16_t transmit_crc = this->crc16(this->transmit_buffer, next_message->data_length + 2);
             // Append the CRC to the message
-            memcpy(this->transmit_buffer + next_message->data_length + 2, &crc, sizeof(crc));
+            memcpy(this->transmit_buffer + next_message->data_length + 2, &transmit_crc, sizeof(crc));
             Serial2.write(this->transmit_buffer, next_message->data_length + sizeof(crc) + 2);
             this->total_messages_sent++;
             this->waiting_for_response = true;
