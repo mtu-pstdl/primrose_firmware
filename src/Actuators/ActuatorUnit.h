@@ -11,6 +11,15 @@
 #define ACTUATOR_ACCEL 1000000
 #define ACTUATOR_DECEL 1000000
 
+#define M1_POS_MASK 0b00000001
+#define M2_POS_MASK 0b00000010
+#define M1_VEL_MASK 0b00000100
+#define M2_VEL_MASK 0b00001000
+#define CURENT_MASK 0b00010000
+#define LG_BAT_MASK 0b00100000
+#define MN_BAT_MASK 0b01000000
+#define STATUS_MASK 0b10000000
+
 class ActuatorUnit {
 
 public:
@@ -45,10 +54,10 @@ public:
 
     struct motor_info{
         char*    name                = nullptr; // The name of the motor
-        int32_t target_position     = -1; // The target position of the motor ticks
-        int32_t current_position    = -1; // The current position of the motor in ticks
+        int32_t target_position     = 0; // The target position of the motor ticks
+        int32_t current_position    = 0; // The current position of the motor in ticks
         int32_t max_position        = 0; // The maximum position of the motor in ticks
-        int32_t current_speed       = -1; // The current velocity of the motor in ticks per second
+        int32_t current_speed       = 0; // The current velocity of the motor in ticks per second
         int16_t current_current     = 7; // The current current draw of the motor in ma
         uint16_t warning_current     = 50; // The current current draw of the motor in ma
         control_modes control_mode   = stopped; // The current control mode of the motor
@@ -112,10 +121,11 @@ private:
     telemetry_message* reocurring_messages;
 
     // Shared variables between motor 1 and motor 2
-    uint16_t controller_temperature = 9999;
-    uint16_t main_battery_voltage = 9999;
-    uint16_t logic_battery_voltage = 9999;
+    uint16_t controller_temperature = 0;
+    uint16_t main_battery_voltage   = 0;
+    uint16_t logic_battery_voltage  = 0;
     uint16_t status = 0;
+    uint8_t  data_flags = 0;  // A bitmask of the data that has been received from the motor
 
     telemetry_message* build_message(Actuators::serial_commands command, uint32_t send_interval, uint8_t data_length,
                                      void (*callback)(void *, Actuators::message*));

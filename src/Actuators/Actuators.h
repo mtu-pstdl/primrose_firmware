@@ -36,10 +36,9 @@ public:
 
     struct message{
         uint8_t id                  = 0;
-        serial_commands command     = read_encoder_count_m1;
+        serial_commands command     = read_buffer_length;
         uint8_t data_length         = 0;
         uint8_t data[24]            = {0};
-        uint8_t crc[2]              = {0};
         bool expect_response        = false;  // If true the object will send data back
         bool failed_crc             = false;  // If true the message failed the crc check
         // The callback function to call when the message is received

@@ -67,8 +67,8 @@ void Actuators::process_data_serial(message *msg) {
                 // Call the callback function
                 auto object = msg->object;
                 auto callback = msg->callback; // Cast the callback to a function pointer
-                callback(object, msg);
-                if (msg->free_after_callback) delete msg;
+                callback(object, msg);  // Call the callback function with the object and the message
+                if (msg->free_after_callback) delete msg; // Free the message if we are supposed to
                 this->total_messages_processed++;
             }
         } else {

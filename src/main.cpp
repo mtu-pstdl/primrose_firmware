@@ -304,11 +304,10 @@ void loop() {
 
     digitalWriteFast(LED_BUILTIN, HIGH); // Turn off the LED
     // Allow the actuator bus to preform serial communication for the remaining time in the loop
-    sprintf(system_info_strings[6], "%d, S:%05lu, R:%05lu, P:%05lu",
+    sprintf(system_info_strings[6], "%02d, F:%05lu, E:%05lu",
             actuator_bus.get_queue_size(),
-            actuator_bus.total_messages_sent,
-            actuator_bus.total_messages_received,
-            actuator_bus.total_messages_processed);
+            actuator_bus.total_messages_sent - actuator_bus.total_messages_received,
+            actuator_bus.total_messages_received - actuator_bus.total_messages_processed);
     while (actuator_bus.spin(micros() - loop_start > 50000)) {
         yield();  // Yield to other tasks
     }
