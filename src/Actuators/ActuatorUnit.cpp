@@ -9,10 +9,10 @@
 void ActuatorUnit::build_telemetry_messages() {
     reocurring_messages[0] = *build_message(
             Actuators::serial_commands::read_encoder_count_m1,
-            100, 5, &ActuatorUnit::encoder_m1_count_callback);
+            50, 5, &ActuatorUnit::encoder_m1_count_callback);
     reocurring_messages[1] = *build_message(
             Actuators::serial_commands::read_encoder_count_m2,
-            100, 5, &ActuatorUnit::encoder_count_callback);
+            50, 5, &ActuatorUnit::encoder_count_callback);
     reocurring_messages[2] = *build_message(
             Actuators::serial_commands::read_encoder_speed_m1,
             100, 5, &ActuatorUnit::encoder_speed_callback);
@@ -21,16 +21,16 @@ void ActuatorUnit::build_telemetry_messages() {
             100, 5, &ActuatorUnit::encoder_speed_callback);
     reocurring_messages[4] = *build_message(
             Actuators::serial_commands::read_main_battery_voltage,
-            100, 2, &ActuatorUnit::main_battery_voltage_callback);
+            350, 2, &ActuatorUnit::main_battery_voltage_callback);
     reocurring_messages[5] = *build_message(
             Actuators::serial_commands::read_logic_battery_voltage,
-            1000, 2, &ActuatorUnit::logic_battery_voltage_callback);
+            900, 2, &ActuatorUnit::logic_battery_voltage_callback);
     reocurring_messages[6] = *build_message(
             Actuators::serial_commands::read_motor_currents,
-            100, 4, &ActuatorUnit::motor_currents_callback);
+            75, 4, &ActuatorUnit::motor_currents_callback);
     reocurring_messages[7] = *build_message(
             Actuators::serial_commands::read_temperature,
-            1000, 2, &ActuatorUnit::controller_temp_callback);
+            750, 2, &ActuatorUnit::controller_temp_callback);
     reocurring_messages[8] = *build_message(
             Actuators::serial_commands::read_status,
             1000, 2, &ActuatorUnit::controller_status_callback);
@@ -186,10 +186,10 @@ void ActuatorUnit::send_target_position(uint8_t motor) {
 
 void ActuatorUnit::check_connection() {
     auto* msg = new Actuators::message;
-    msg->command = Actuators::serial_commands::read_encoder_count_m1;
+    msg->command = Actuators::serial_commands::read_encoder_count_m2;
     msg->data_length = 5;
     msg->failure_callback = ActuatorUnit::message_failure_callback;
-    msg->callback = ActuatorUnit::detailed_encoder_count_callback;
+    msg->callback = ActuatorUnit::encoder_speed_callback;
     msg->object = this;
     msg->free_after_callback = true;
     msg->expect_response = true;
@@ -232,7 +232,7 @@ void ActuatorUnit::encoder_count_callback(void *actuator, Actuators::message *ms
     auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
     actuator_unit->message_dropped_count = 0;
     actuator_unit->connected = true;
-    uint32_t raw_position = (msg->data[3] << 24) | (msg->data[2] << 16) | (msg->data[1] << 8) | msg->data[0];
+    uint32_t raw_position = (msg->data[0] << 24) | (msg->data[1] << 16) | (msg->data[2] << 8) | msg->data[3];
     bool negative = msg->data[4] & 0b00000010;
     if (msg->command == Actuators::serial_commands::read_encoder_count_m1){
         // Trim the position value to a 32 bit signed integer

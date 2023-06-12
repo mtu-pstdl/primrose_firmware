@@ -94,6 +94,8 @@ public:
 
     Actuators(){
         Serial2.begin(100000);
+        // Yellow to brown
+        // Green to purple
 //        Serial2.addMemoryForWrite(write_buffer, 64);
         Serial2.setTimeout(1000);
         for (auto & i : message_queue){
