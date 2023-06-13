@@ -62,8 +62,11 @@ void ActuatorsROS::update_diagnostics_topic(){
             sprintf(strings[7], "M1:   NULL | M2:    NULL");
         } else sprintf(strings[7], "M1:   %05.2fA | M2:    %05.2fA",
                        this->actuator->get_current(0), this->actuator->get_current(1));
-        sprintf(strings[8], "Main: %04.1fV | Logic: %04.1fV",
-                this->actuator->get_main_battery_voltage(), this->actuator->get_logic_battery_voltage());
+        if (this->actuator->get_main_battery_voltage() == INT32_MIN ||
+            this->actuator->get_logic_battery_voltage() == INT32_MIN) {
+            sprintf(strings[8], "Main:   NULL | Logic:   NULL");
+        } else sprintf(strings[8], "Main: %04.1fV | Logic: %04.1fV",
+                       this->actuator->get_main_battery_voltage(), this->actuator->get_logic_battery_voltage());
     }
     this->update_status_message();
 }

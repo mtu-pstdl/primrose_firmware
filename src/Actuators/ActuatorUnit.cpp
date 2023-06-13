@@ -345,10 +345,12 @@ float_t ActuatorUnit::get_temperature() const {
 }
 
 float_t ActuatorUnit::get_main_battery_voltage() const {
+    if (!(this->data_flags & MN_BAT_MASK)) return INT32_MIN;
     return (float_t) this->main_battery_voltage / 10;
 }
 
 float_t ActuatorUnit::get_logic_battery_voltage() const {
+    if (!(this->data_flags & LG_BAT_MASK)) return INT32_MIN;
     return (float_t) this->logic_battery_voltage / 10;
 }
 

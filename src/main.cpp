@@ -65,9 +65,9 @@ extern unsigned long _heap_start;  // start of heap
 extern unsigned long _heap_end;  // end of heap
 extern char *__brkval;  // current top of heap
 
-int rolling_ram_usage[6] = {0, 0, 0, 0, 0, 0};
-int rolling_ram_usage_pos = 0;
+uint32_t last_ram_time = 0;
 int last_ram = 0;
+int last_ram_usage = 0;
 
 int freeram() {
     return (char *)&_heap_end - __brkval;
@@ -76,18 +76,17 @@ int freeram() {
 int ram_usage_rate(){
     int free_ram = freeram();
     int ram_usage = last_ram - free_ram;
-    rolling_ram_usage[rolling_ram_usage_pos] = ram_usage;
-    rolling_ram_usage_pos = (rolling_ram_usage_pos + 1) % 6;
     last_ram = free_ram;
-    for (int i : rolling_ram_usage) {
-        ram_usage += i;
+    if (millis() - last_ram_time > 1000 || ram_usage > 0) {
+        last_ram_time = millis();
+        last_ram_usage = ram_usage;
     }
-    return ram_usage;
+    return last_ram_usage;
 }
 
 void set_mciu_level_max(int8_t level) {
-    if (level > system_diagnostics.status[10].level) {
-        system_diagnostics.status[10].level = level;
+    if (level > system_diagnostics.status[12].level) {
+        system_diagnostics.status[12].level = level;
     }
 }
 
@@ -316,7 +315,7 @@ void loop() {
     uint32_t remaining_memory = freeram();
 
     if (ram_usage_rate() > 100) {
-        set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::ERROR);
+        set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::WARN);
         sprintf(system_status_messages[system_message_count++], "Memory Leak");
     }
 
@@ -333,7 +332,7 @@ void loop() {
             100.0 * F_CPU_ACTUAL / F_CPU);
     sprintf(system_info_strings[2], "%.5luus (%05.2f%%)", execution_time,
             (execution_time / 50000.0) * 100.0);
-    sprintf(system_info_strings[4], "%.2fKiB (%.2f%%), %d", remaining_memory / 1024.0,
+    sprintf(system_info_strings[4], "%.2fKiB (%.2f%%), %dKib/s", remaining_memory / 1024.0,
             100.0 * remaining_memory / 512000.0, ram_usage_rate());
     sprintf(system_info_strings[5], "%lu", can1.getTXQueueCount());
     sprintf(system_info_strings[7], "%lums", actuator_bus.round_trip_time());
