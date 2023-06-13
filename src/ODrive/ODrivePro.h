@@ -156,6 +156,8 @@ public:
 
     void set_control_mode(odrive::control_modes mode, odrive::input_modes input_mode);
 
+    void calibrate();
+
     void set_setpoint(float_t value);
 
     void set_limits(float_t vel_limit);

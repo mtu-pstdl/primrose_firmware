@@ -419,6 +419,11 @@ void ODrivePro::reboot() {
     this->send_command(odrive::Reboot);
 }
 
+void ODrivePro::calibrate() {
+    this->send_command(odrive::)
+
+}
+
 
 
 

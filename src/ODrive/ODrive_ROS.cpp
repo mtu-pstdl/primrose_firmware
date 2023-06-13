@@ -36,6 +36,8 @@ void ODrive_ROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
         case SET_POINT:
             this->odrive->set_setpoint(ODrive_ROS::from_fixed_point(msg.data[1], POS_UNIT_SCALE));
             break;
+        case CONFIG_MOTOR:
+            this->odrive->set
         case SET_VEL_LIMIT:
             break;
     }
