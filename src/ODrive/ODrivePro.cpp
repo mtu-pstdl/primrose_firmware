@@ -21,7 +21,7 @@ void ODrivePro::init() {
 }
 
 void ODrivePro::test(){
-    this->set_control_mode(odrive::control_modes::VELOCITY_CONTROL);
+    this->set_control_mode(odrive::control_modes::VELOCITY_CONTROL, odrive::MIRROR);
     this->set_setpoint(50);
 }
 
@@ -98,20 +98,20 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
             this->in_flight_bitmask &= ~IQ_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Temperature:
-            this->FET_TEMP   = * (float *) &lower_32;
-            this->MOTOR_TEMP = * (float *) &upper_32;
+            this->MOTOR_TEMP = * (float *) &lower_32;
+            this->FET_TEMP   = * (float *) &upper_32;
             this->last_temp_update = millis();
             this->in_flight_bitmask &= ~TEMP_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Bus_Voltage_Current:
-            this->VBUS_VOLTAGE = * (float *) &lower_32;
-            this->VBUS_CURRENT = * (float *) &upper_32;
+            this->VBUS_CURRENT = * (float *) &lower_32;
+            this->VBUS_VOLTAGE = * (float *) &upper_32;
             this->last_vbus_update = millis();
             this->in_flight_bitmask &= ~VBUS_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Torques:
-            this->TORQUE_TARGET   = * (float *) &lower_32;
-            this->TORQUE_ESTIMATE = * (float *) &upper_32;
+            this->TORQUE_TARGET   = * (float *) &upper_32;
+            this->TORQUE_ESTIMATE = * (float *) &lower_32;
             this->last_torque_update = millis();
             this->in_flight_bitmask &= ~TORQUE_FLIGHT_BIT; // Clear the bit
             break;
@@ -391,9 +391,9 @@ uint32_t ODrivePro::get_last_update() const {
     return millis() - this->last_message;
 }
 
-void ODrivePro::set_control_mode(odrive::control_modes mode) {
+void ODrivePro::set_control_mode(odrive::control_modes mode, odrive::input_modes input_mode) {
     this->control_mode = mode;
-    this->send_command(odrive::Set_Controller_Mode, mode, odrive::VEL_RAMP);
+    this->send_command(odrive::Set_Controller_Mode, mode, input_mode);
     this->send_command(odrive::Set_Axis_State, odrive::axis_states::CLOSED_LOOP_CONTROL, mode);
 }
 

@@ -138,7 +138,7 @@ void setup() {
     can1.enableFIFOInterrupt();
 
     for (int i = 0; i < 6; i++) {
-        odrives[i] = new ODrivePro(i + 1, &can1, &node_handle);
+        odrives[i] = new ODrivePro(i, &can1, &node_handle);
     }
 
     for (ODrivePro* odrive : odrives) {
@@ -175,14 +175,14 @@ void setup() {
     actuators_ros[3] = new ActuatorsROS(actuators[3], actuator_encoder_topics[3]->message,
                                         &system_diagnostics.status[9], "Rear_Right");
 
-    auto* load_cell_clk_pins =     new int[4] {A0, A1, A2, A3};
-    auto* load_cell_data_pins =    new int[4] {A4, A5, A6, A7};
+    auto* load_cell_clk_pins =     new int[4] {25, 26, 27, 28};
+    auto* load_cell_data_pins =    new int[4] {29, 30, 31, 32};
     auto* load_cell_calibrations = new float[4] {1.0, 1.0, 1.0, 1.0};
     load_cells[0] = new LoadCells(4, load_cell_clk_pins, load_cell_data_pins,
                                   load_cell_calibrations,
                                   &system_diagnostics.status[10], load_cell_topics[0]->message,
                                   "Hopper", 0x00);
-    auto* load_cell_clk_pins_2 =     new int[4] {A8, A9, A10, A11};
+    auto* load_cell_clk_pins_2 =     new int[4] {34, 35, 36, 37};
     auto* load_cell_data_pins_2 =    new int[4] {38, 39, 40, 41};
     auto* load_cell_calibrations_2 = new float[4] {1.0, 1.0, 1.0, 1.0};
     load_cells[1] = new LoadCells(4, load_cell_clk_pins_2, load_cell_data_pins_2,

@@ -18,8 +18,8 @@ namespace odrive {
 #define BAD_CONFIG                  0x10        // The controller has a bad configuration
 #define DRV_FAULT                   0x20        // The gate driver has likely failed
 #define MISSING_INPUT               0x40        // The controller was missing a required input
-#define DC_BUS_UNDER_VOLTAGE        0x100       // The DC bus voltage is too low
-#define DC_BUS_OVER_VOLTAGE         0x200       // The DC bus voltage is too high
+#define DC_BUS_UNDER_VOLTAGE        0x200       // The DC bus voltage is too low
+#define DC_BUS_OVER_VOLTAGE         0x100       // The DC bus voltage is too high
 #define DC_BUS_OVER_CURRENT         0x400       // The DC bus current is too high
 #define DC_BUS_OVER_REGEN_CURRENT   0x800       // The DC bus regen current is too high
 #define CURRENT_LIMIT_VIOLATION     0x1000      // The current limit has been violated
@@ -27,11 +27,13 @@ namespace odrive {
 #define INVERTER_OVER_TEMP          0x4000      // The inverter temperature is too high
 #define VELOCITY_LIMIT_VIOLATION    0x8000      // The velocity limit has been violated
 #define POSITION_LIMIT_VIOLATION    0x10000     // The position limit has been violated
-#define WATCHDOG_TIMER_EXPIRED      0x20000     // The watchdog timer has expired
-#define ESTOP_REQUESTED             0x40000     // An emergency_stop has been requested
-#define SPINOUT_DETECTED            0x80000     // A spinout has been detected
-#define OTHER_DEVICE_FAILED         0x100000    // Another device has failed
-#define CALIBRATION_ERROR           0x200000    // A calibration error has occurred
+#define WATCHDOG_TIMER_EXPIRED      0x1000000     // The watchdog timer has expired
+#define ESTOP_REQUESTED             0x2000000     // An emergency_stop has been requested
+#define SPINOUT_DETECTED            0x4000000     // A spinout has been detected
+#define OTHER_DEVICE_FAILED         0x8000000    // Another device has failed
+#define THERMISTOR_DISCONNECTED     0x10000000    // A thermistor is disconnected
+#define CALIBRATION_ERROR           0x40000000    // A calibration error has occurred
+
 
     enum command_ids: uint8_t { // These are can bus command ids
         Heartbeat = 0x001, Estop = 0x002,

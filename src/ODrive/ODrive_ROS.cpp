@@ -30,7 +30,8 @@ void ODrive_ROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
             this->odrive->clear_errors();
             break;
         case SET_MODE:
-            this->odrive->set_control_mode(static_cast<odrive::control_modes>(msg.data[1]));
+            this->odrive->set_control_mode(static_cast<odrive::control_modes>(msg.data[1]),
+                                           odrive::PASSTHROUGH);
             break;
         case SET_POINT:
             this->odrive->set_setpoint(ODrive_ROS::from_fixed_point(msg.data[1], POS_UNIT_SCALE));

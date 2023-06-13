@@ -154,7 +154,7 @@ public:
 
     void set_conversion(float_t ticks_value, float_t revs_value);
 
-    void set_control_mode(odrive::control_modes mode);
+    void set_control_mode(odrive::control_modes mode, odrive::input_modes input_mode);
 
     void set_setpoint(float_t value);
 
