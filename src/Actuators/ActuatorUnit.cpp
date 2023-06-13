@@ -196,9 +196,6 @@ void ActuatorUnit::check_connection() {
     command_bus->queue_message(msg);
 }
 
-
-// Welcome to pointer hell
-
 void ActuatorUnit::detailed_encoder_count_callback(void *actuator, Actuators::message *msg) {
     auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
     uint32_t raw_position;
@@ -227,101 +224,6 @@ void ActuatorUnit::detailed_encoder_count_callback(void *actuator, Actuators::me
     actuator_unit->connected = true;
 }
 
-void ActuatorUnit::encoder_count_callback(void *actuator, Actuators::message *msg) {
-    // Cast the void pointer to an ActuatorUnit pointer
-    auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    actuator_unit->message_dropped_count = 0;
-    actuator_unit->connected = true;
-    uint32_t raw_position = (msg->data[0] << 24) | (msg->data[1] << 16) | (msg->data[2] << 8) | msg->data[3];
-    bool negative = msg->data[4] & 0b00000010;
-    if (msg->command == Actuators::serial_commands::read_encoder_count_m1){
-        // Trim the position value to a 32 bit signed integer
-        if (negative) {
-            actuator_unit->motors[0].current_position = - (int32_t) raw_position;
-        } else actuator_unit->motors[0].current_position = (int32_t) raw_position;
-        actuator_unit->data_flags |= M1_POS_MASK;
-    } else if (msg->command == Actuators::serial_commands::read_encoder_count_m2){
-        if (negative) {
-            actuator_unit->motors[1].current_position = - (int32_t) raw_position;
-        } else actuator_unit->motors[1].current_position = (int32_t) raw_position;
-        actuator_unit->data_flags |= M2_POS_MASK;
-    }
-}
-
-void ActuatorUnit::encoder_speed_callback(void *actuator, Actuators::message *msg) {
-    auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    actuator_unit->message_dropped_count = 0;
-    actuator_unit->connected = true;
-    if (msg->command == Actuators::serial_commands::read_encoder_speed_m1){
-        uint32_t raw_speed = (msg->data[0] << 24) | (msg->data[1] << 16) | (msg->data[2] << 8) | msg->data[3];
-        if (msg->data[4]) {
-            actuator_unit->motors[0].current_speed = - (int32_t) raw_speed;
-        } else actuator_unit->motors[0].current_speed = (int32_t) raw_speed;
-        actuator_unit->data_flags |= M1_VEL_MASK;
-    } else if (msg->command == Actuators::serial_commands::read_encoder_speed_m2){
-        uint32_t raw_speed = (msg->data[0] << 24) | (msg->data[1] << 16) | (msg->data[2] << 8) | msg->data[3];
-        if (msg->data[4]) {
-            actuator_unit->motors[1].current_speed = - (int32_t) raw_speed;
-        } else actuator_unit->motors[1].current_speed = (int32_t) raw_speed;
-        actuator_unit->data_flags |= M2_VEL_MASK;
-    }
-}
-
-void ActuatorUnit::motor_currents_callback(void *actuator, Actuators::message *msg) {
-    auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    actuator_unit->message_dropped_count = 0;
-    actuator_unit->connected = true;
-    actuator_unit->motors[0].current_current =
-            (msg->data[0] << 8) | msg->data[1];
-    actuator_unit->motors[1].current_current =
-            (msg->data[2] << 8) | msg->data[3];
-    actuator_unit->data_flags |= CURENT_MASK;
-}
-
-void ActuatorUnit::main_battery_voltage_callback(void *actuator, Actuators::message *msg) {
-    auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    actuator_unit->message_dropped_count = 0;
-    actuator_unit->connected = true;
-    actuator_unit->main_battery_voltage = (msg->data[0] << 8) | msg->data[1];
-    actuator_unit->data_flags |= MN_BAT_MASK;
-}
-
-void ActuatorUnit::logic_battery_voltage_callback(void *actuator, Actuators::message *msg) {
-    auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    actuator_unit->message_dropped_count = 0;
-    actuator_unit->connected = true;
-    actuator_unit->logic_battery_voltage = (msg->data[0] << 8) | msg->data[1];
-    actuator_unit->data_flags |= LG_BAT_MASK;
-}
-
-void ActuatorUnit::controller_temp_callback(void *actuator, Actuators::message *msg) {
-    auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    actuator_unit->message_dropped_count = 0;
-    actuator_unit->connected = true;
-    actuator_unit->controller_temperature = (msg->data[0] << 8) | msg->data[1];
-}
-
-void ActuatorUnit::controller_status_callback(void *actuator, Actuators::message *msg) {
-    auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    actuator_unit->message_dropped_count = 0;
-    actuator_unit->connected = true;
-    actuator_unit->status = (msg->data[0] << 8) | msg->data[1];
-    actuator_unit->data_flags |= STATUS_MASK;
-}
-
-void ActuatorUnit::message_failure_callback(void *actuator, Actuators::message *msg) {
-    auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    // Check if the message failed because of CRC failure
-    // (This indicates the controller is connected but the connection is noisy and a separate failure)
-    if (msg->failed_crc){
-        actuator_unit->message_failure_count++;
-    }
-
-    actuator_unit->message_dropped_count++;
-    if (actuator_unit->message_dropped_count > actuator_unit->message_failure_threshold) {
-        actuator_unit->connected = false;
-    }
-}
 
 int32_t ActuatorUnit::get_position(uint8_t motor) {
     if (!(this->data_flags & M1_POS_MASK) && motor == 0) return INT32_MIN;
