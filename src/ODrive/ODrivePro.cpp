@@ -71,7 +71,8 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
     }
     this->last_message = millis();
     switch (static_cast<odrive::command_ids>(msg_type)){
-        case odrive::Heartbeat: // Lower 4 bytes are AXIS_ERROR and the upper 4 bytes are AXIS_STATE
+        case odrive::Heartbeat: // Lower 4 bytes are AXIS_ERROR and the
+        // upper 4 bytes are AXIS_STATE and PROCEDURE_RESULT
             this->AXIS_ERROR       = upper_32;
             // Bitmask the lowest byte of the lower 32 bits to get the axis state
             this->AXIS_STATE       = static_cast<odrive::axis_states> (lower_32 & 0xFF);
@@ -173,9 +174,9 @@ void ODrivePro::refresh_data() {
 uint8_t ODrivePro::send_command(odrive::command_ids command_id) {
     CAN_message_t msg;
     msg.id = this->can_id << 5 | command_id; // 6 bits for the ID and 5 bits for the command
-    msg.flags.remote = true; // Set the remote flag to true (remote transmission request)
+    msg.flags.remote = true;    // Set the remote flag to true (remote transmission request)
     msg.flags.extended = false; // Set the extended flag to false (standard CAN)
-    msg.len = 0;
+    msg.len = 0;                // No data to send as this is a remote transmission request
     uint8_t result = this->can_bus->write(msg);
     return result; // Return the result of the write (1 for success, -1 for failure)
 }
@@ -200,7 +201,7 @@ template <typename T1 , typename T2>
 uint8_t ODrivePro::send_command(odrive::command_ids command_id, T1 lower_data, T2 upper_data) {
     CAN_message_t msg;
     msg.id = this->can_id << 5 | command_id; // 6 bits for the ID and 5 bits for the command
-    msg.flags.remote = false; // Set the remote flag to false (data transmission)
+    msg.flags.remote = false;   // Set the remote flag to false (remote transmission request)
     msg.flags.extended = false; // Set the extended flag to false (standard CAN)
     msg.len = 8;
     // Some pointer magic to convince the compiler this is a 32 bit value

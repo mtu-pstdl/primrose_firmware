@@ -37,15 +37,15 @@ private:
     char* setpoint_string; // The setpoint string
 
     void allocate_strings() {
-        axis_error_string = new char[25];
+        axis_error_string = new char[50];
         sprintf(axis_error_string, "Not initialized");
-        axis_state_string = new char[25];
+        axis_state_string = new char[50];
         sprintf(axis_state_string, "Not initialized");
-        procedure_result_string = new char[25];
+        procedure_result_string = new char[50];
         sprintf(procedure_result_string, "Not initialized");
-        active_errors_string = new char[25];
+        active_errors_string = new char[50];
         sprintf(active_errors_string, "Not initialized");
-        disarm_reason_string = new char[25];
+        disarm_reason_string = new char[50];
         sprintf(disarm_reason_string, "Not initialized");
         control_mode_string = new char[25];
         sprintf(control_mode_string, "Not initialized");
