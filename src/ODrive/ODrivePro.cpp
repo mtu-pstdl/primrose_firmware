@@ -121,12 +121,46 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
     }
 }
 
+void ODrivePro::calibration_sequence() {
+    switch (this->calibration_step) {
+        case 0:
+            this->send_command(odrive::command_ids::Set_Axis_State,
+                               odrive::MOTOR_CALIBRATION);
+            this->calibration_step++;
+            break;
+        case 1:
+            if (this->AXIS_STATE == odrive::axis_states::IDLE) {
+                this->send_command(odrive::command_ids::Set_Axis_State,
+                                   odrive::ENCODER_HALL_PHASE_CALIBRATION);
+                this->calibration_step++;
+            }
+            break;
+        case 2:
+            if (this->AXIS_STATE == odrive::axis_states::IDLE) {
+                this->send_command(odrive::command_ids::Set_Axis_State,
+                                   odrive::ENCODER_OFFSET_CALIBRATION);
+                this->calibration_step++;
+            }
+            break;
+        case 3:
+            if (this->AXIS_STATE == odrive::axis_states::IDLE) {
+                this->calibrating = false;
+                this->calibration_step = 0;
+            }
+            break;
+    }
+}
+
 /**
  * This method is called to make sure all the data from the ODrive is up to date
  * If not if will send the corresponding data request to the ODrive
  * This method also sends the Heartbeat message to the ODrive to prevent it from E-Stopping
  */
 void ODrivePro::refresh_data() {
+
+    if (this->calibrating) {  // There are 4 steps to calibration
+        this->calibration_sequence();
+    }
 
     // For each refresh bit that is not set, send the corresponding command to the ODrive
     if (this->last_axis_state + AXIS_STATE_UPDATE_RATE < millis() &&

@@ -26,6 +26,10 @@ public:
     char* pos_unit_string; // The unit string
 
 private:
+
+    bool    calibrating = false; // Whether or not the ODrive is calibrating
+    uint8_t calibration_step = 0; // The current calibration step
+
     FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64>* can_bus = nullptr; // The CAN bus pointer
 
     char* axis_error_string; // The axis error string
@@ -52,9 +56,9 @@ private:
         setpoint_string = new char[25];
         sprintf(setpoint_string, "Not initialized");
         vel_unit_string = new char[5];
-        sprintf(vel_unit_string, "Ticks");
+        sprintf(vel_unit_string, "RPS");
         pos_unit_string = new char[5];
-        sprintf(pos_unit_string, "Ticks");
+        sprintf(pos_unit_string, "Revs");
     }
 
     uint32_t last_message = 0; // The last time a message was received from the ODrive
@@ -134,6 +138,8 @@ private:
     uint8_t send_command(odrive::command_ids command_id, T1 lower_data, T2 upper_data);
 
     void* estop_callback = nullptr; // The emergency_stop callback function
+
+    void calibration_sequence(); // The calibration sequence for the ODrive
 
 public:
 
