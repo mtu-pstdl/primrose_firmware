@@ -112,9 +112,9 @@ void ActuatorUnit::update() {
                         msg->free_after_callback = true;
                         msg->expect_response = false;
                         command_bus->queue_message(msg);
+                        motor.homed = true;
+                        this->set_control_mode(control_modes::stopped, i);
                     }
-                    motor.homed = true;
-                    this->set_control_mode(motor.control_mode, i);
                     break;
             }
         }

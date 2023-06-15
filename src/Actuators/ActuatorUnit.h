@@ -46,10 +46,10 @@ public:
     };
 
     enum control_modes {
-        stopped,
-        position,
-        velocity,
-        homing
+        stopped  = 0,
+        position = 1,
+        velocity = 2,
+        homing   = 3
     };
 
     struct motor_info{

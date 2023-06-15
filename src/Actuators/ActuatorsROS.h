@@ -58,8 +58,8 @@ public:
         this->name = disp_name;
 
         this->output_topic = output_topic;
-        this->output_topic->data_length = 5;
-        this->output_topic->data = new int32_t[5];
+        this->output_topic->data_length = 12;
+        this->output_topic->data = new int32_t[12];
 
         this->diagnostic_topic->name = "ActuatorUnit";
         this->diagnostic_topic->hardware_id = this->name.c_str();

@@ -121,7 +121,7 @@ void setup() {
     pinMode(LED_BUILTIN, OUTPUT);
     digitalWrite(LED_BUILTIN, HIGH);
 
-    node_handle.getHardware()->setBaud(4000000); // 4Mbps
+    node_handle.getHardware()->setBaud(4000000); // ~4Mbps
     node_handle.setSpinTimeout(100); // 50ms
     node_handle.initNode();
     node_handle.requestSyncTime();
