@@ -32,12 +32,13 @@ class ODrive_ROS : public ROSNode {
 private:
 
     enum ROS_COMMANDS {
-        STOP = 0,          // 0 Arguments
-        REBOOT = 1,        // 0 Arguments
-        CLEAR_ERRORS = 2,  // 0 Argument
-        SET_MODE = 3,      // 1 Argument
-        SET_POINT = 4,     // 1 Argument
-        SET_VEL_LIMIT = 5, // 1 Arguments
+        E_STOP = 0,            // 0 Arguments
+        REBOOT = 1,            // 0 Arguments
+        CLEAR_ERRORS = 2,      // 0 Argument
+        SET_CLOSED_LOOP = 3,   // 2 Argument  (control_mode, input_mode)
+        SET_POINT = 4,         // 1 Argument  (setpoint)
+        CALIBRATE = 5,         // 0 Arguments
+        SET_VEL_LIMIT = 6,     // 1 Argument
     };
 
     ros::Subscriber<std_msgs::Int32MultiArray, ODrive_ROS> setpoint_sub;

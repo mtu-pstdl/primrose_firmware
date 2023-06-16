@@ -20,7 +20,7 @@ void ODrive_ROS::subscribe(ros::NodeHandle *nh) {
  */
 void ODrive_ROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
     switch (static_cast<ODrive_ROS::ROS_COMMANDS>(msg.data[0])) {
-        case STOP:
+        case E_STOP:
             this->odrive->emergency_stop();
             break;
         case REBOOT:
@@ -29,15 +29,17 @@ void ODrive_ROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
         case CLEAR_ERRORS:
             this->odrive->clear_errors();
             break;
-        case SET_MODE:
-            this->odrive->set_control_mode(static_cast<odrive::control_modes>(msg.data[1]),
-                                           odrive::PASSTHROUGH);
+        case SET_CLOSED_LOOP:
+            this->odrive->set_control_mode(
+                    static_cast<odrive::control_modes>(msg.data[1]),
+                    static_cast<odrive::input_modes>(msg.data[2]));
             break;
+//        case SET_MODE:
         case SET_POINT:
             this->odrive->set_setpoint(ODrive_ROS::from_fixed_point(msg.data[1], POS_UNIT_SCALE));
             break;
-        case CONFIG_MOTOR:
-            this->odrive->set
+        case CALIBRATE:
+            this->odrive->calibrate();
         case SET_VEL_LIMIT:
             break;
     }

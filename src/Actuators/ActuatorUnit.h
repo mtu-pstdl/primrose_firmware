@@ -240,6 +240,8 @@ public:
 
     void set_target_position(int32_t position, uint8_t motor);
 
+    int32_t get_target_position(uint8_t motor);
+
     void emergency_stop();
 
     uint16_t get_status() const;

@@ -95,16 +95,15 @@ void Actuators::check_for_response(){
     }
     if (this->waiting_for_response && ((millis() - this->last_message_sent_time) > 10)){
         // If we have waited more than 10ms second for a response, then we abort this message and remove it
-        // from the queue
-        this->waiting_for_response = false;
+        // from the queue and call the failure callback
+        this->waiting_for_response = false; // We are no longer waiting for a response
         auto object = msg->object;
         if (msg->failure_callback != nullptr) {
             auto callback = msg->failure_callback; // Cast the callback to a function pointer
             callback(object, msg);
             if (msg->free_after_callback) delete msg;
         }
-        this->message_queue[this->message_queue_dequeue_position] = nullptr;
-        // Clear the response buffer
+        this->message_queue[this->message_queue_dequeue_position] = nullptr; // Remove the pointer from the queue
     }
     if (!this->waiting_for_response){
         this->last_message_round_trip = millis() - this->last_message_sent_time;

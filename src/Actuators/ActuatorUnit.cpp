@@ -344,6 +344,11 @@ char* ActuatorUnit::get_status_string() {
     return this->status_string;
 }
 
+int32_t ActuatorUnit::get_target_position(uint8_t motor) {
+//    if (!(this->data_flags & TGT_POS_MASK)) return INT32_MIN;
+    return this->motors[motor].target_position;
+}
+
 
 
 
