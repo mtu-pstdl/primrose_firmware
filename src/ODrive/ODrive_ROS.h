@@ -120,13 +120,14 @@ public:
             setpoint_sub("template1", &ODrive_ROS::setpoint_callback, this) {
         this->odrive = odrive;
         this->output_topic = encoder_topic;
-        this->output_topic->data_length = 5;
-        this->output_topic->data = new int32_t[5];
+        this->output_topic->data_length = 6;
+        this->output_topic->data = new int32_t[6];
         this->output_topic->data[0] = 0;  // POS_ESTIMATE
         this->output_topic->data[1] = 0;  // VEL_ESTIMATE
         this->output_topic->data[2] = 0;  // RAMP_RATE
         this->output_topic->data[3] = 0;  // CONTROL_MODE
-        this->output_topic->data[4] = 0;
+        this->output_topic->data[4] = 0;  // AXIS_STATE
+        this->output_topic->data[5] = 0;  // AXIS_ERROR
         this->state_topic = status;
         this->name = disp_name.c_str();
         this->configure_diagnostics_topic();

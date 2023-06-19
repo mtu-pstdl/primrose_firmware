@@ -148,6 +148,7 @@ void ODrive_ROS::update() {
     this->output_topic->data[2] = this->to_fixed_point(this->odrive->get_setpoint(), POS_UNIT_SCALE);
     this->output_topic->data[3] = this->odrive->get_control_mode();
     this->output_topic->data[4] = this->odrive->get_axis_state();
+    this->output_topic->data[5] = static_cast<int32_t>(this->odrive->get_axis_error());
     update_diagnostics();
 }
 

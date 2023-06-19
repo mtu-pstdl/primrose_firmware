@@ -18,6 +18,14 @@
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticArray.h"
 #include "Sensors/LoadCells.h"
 
+// Motor configurations
+feedforward_struct trencher_feedforward = {
+        true,
+        2,
+        new float_t[2]{0.0, 100},
+        new float_t[2]{0.0, 0.5}
+};
+
 #define CPU_FREQ_BOOST 816000000 //
 //#define CPU_FREQ_BASE 600000000 // 300 MHz
 #define CPU_FREQ_BASE 300000000
@@ -124,7 +132,7 @@ void setup() {
     node_handle.getHardware()->setBaud(4000000); // ~4Mbps
     node_handle.setSpinTimeout(100); // 50ms
     node_handle.initNode();
-    node_handle.requestSyncTime();
+    node_handle.requestSyncTime();  // Sync time with ROS master
 
     String log_msg = "Starting MCIU with build version: " + String(__DATE__) + " " + String(__TIME__);
     node_handle.loginfo(log_msg.c_str());

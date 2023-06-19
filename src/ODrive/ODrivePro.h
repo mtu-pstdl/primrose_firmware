@@ -30,6 +30,9 @@ private:
     bool    calibrating = false; // Whether or not the ODrive is calibrating
     uint8_t calibration_step = 0; // The current calibration step
 
+    bool has_feedforward = false; // Whether or not the ODrive has feedforward
+    feedforward_struct* feedforward = nullptr; // The feedforward value
+
     FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64>* can_bus = nullptr; // The CAN bus pointer
 
     char* axis_error_string; // The axis error string
@@ -148,9 +151,9 @@ public:
     ODrivePro(uint8_t can_id, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64>* can_bus,
               void* estop_callback);
 
-    void init();
+    void set_feedforward(feedforward_struct* feedforward);
 
-    void test(); // Calibrates the ODrive
+    void init();
 
     void reboot(); // Reboots the ODrive
 
@@ -166,7 +169,7 @@ public:
 
     void set_setpoint(float_t value);
 
-    void set_limits(float_t vel_limit);
+//    void set_limits(float_t vel_limit);
 
     void refresh_data(); // Refreshes data from the ODrive
 
@@ -236,6 +239,8 @@ public:
     uint32_t get_inflight_bitmask() const;
 
     void clear_errors();
+
+    float_t calculate_feedforward(float_t setpoint);
 };
 
 

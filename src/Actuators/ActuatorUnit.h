@@ -59,7 +59,7 @@ public:
         int32_t max_position        = 0; // The maximum position of the motor in ticks
         int32_t current_speed       = 0; // The current velocity of the motor in ticks per second
         int16_t current_current     = 7; // The current current draw of the motor in ma
-        uint16_t warning_current     = 50; // The current current draw of the motor in ma
+        int16_t warning_current     = 50; // The current current draw of the motor in ma
         control_modes control_mode   = stopped; // The current control mode of the motor
         boolean  homed               = true; // Whether or not the motor has been homed
         boolean  fault               = false; // Whether or not the motor has a fault
@@ -116,9 +116,9 @@ public:
         actuator_unit->message_dropped_count = 0;
         actuator_unit->connected = true;
         actuator_unit->motors[0].current_current =
-                (msg->data[0] << 8) | msg->data[1];
+                static_cast<int16_t>((msg->data[0] << 8) | msg->data[1]);
         actuator_unit->motors[1].current_current =
-                (msg->data[2] << 8) | msg->data[3];
+                static_cast<int16_t>((msg->data[2] << 8) | msg->data[3]);
         actuator_unit->data_flags |= CURENT_MASK;
     }
 

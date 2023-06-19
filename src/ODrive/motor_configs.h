@@ -6,16 +6,14 @@
 #define TEENSYCANTRANSCEIVER_MOTOR_CONFIGS_H
 #include <cstdint>
 
-struct ODRIVE_MOTOR_CONFIG {
-    float_t current_lim;
-    float_t velocity_lim;
-    float_t acceleration_lim;
-    float_t deceleration_lim;
-    float_t position_gain;
-    float_t velocity_gain;
-    float_t velocity_integrator_gain;
-};
+// Feed forward values
 
+struct feedforward_struct{
+    bool     symmetric;  // Whether or not the feedforward can be assumed to be mirrored
+    uint16_t size;
+    float_t* setpoints;  // Unit RPS
+    float_t* ff_gains;   // Unit NM
+};
 
 
 #endif //TEENSYCANTRANSCEIVER_MOTOR_CONFIGS_H

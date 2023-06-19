@@ -20,11 +20,6 @@ void ODrivePro::init() {
     this->send_command(odrive::Clear_Errors);
 }
 
-void ODrivePro::test(){
-    this->set_control_mode(odrive::control_modes::VELOCITY_CONTROL, odrive::MIRROR);
-    this->set_setpoint(50);
-}
-
 void ODrivePro::set_setpoint(float_t value) {
     switch(this->control_mode){
         case odrive::VOLTAGE_CONTROL:
@@ -35,7 +30,12 @@ void ODrivePro::set_setpoint(float_t value) {
             break;
         case odrive::VELOCITY_CONTROL:
             this->velocity_setpoint = value;
-            this->send_command(odrive::command_ids::Set_Input_Vel, value, 0);
+            if (this->has_feedforward) {
+                this->send_command(odrive::Set_Input_Vel, value,
+                                   this->calculate_feedforward(value));
+            } else {
+                this->send_command(odrive::Set_Input_Vel, value, 0);
+            }
             break;
         case odrive::POSITION_CONTROL:
             this->position_setpoint = value;
@@ -457,6 +457,41 @@ void ODrivePro::reboot() {
 void ODrivePro::calibrate() {
 //    this->send_command(odrive::)
 
+}
+
+float_t ODrivePro::calculate_feedforward(float_t setpoint){
+    // Interpolate the feedforward gain based on the setpoint using a linear interpolation between the two closest points
+    // This is done to avoid having to send a feedforward gain for every single setpoint
+    // Iterate through the feedforward array to find the two closest points
+
+    // If the feedforward is symmetric, use the absolute value of the setpoint
+    if (this->feedforward->symmetric) {
+        setpoint = std::abs(setpoint);
+    }
+    int i = 0;
+    while (setpoint > this->feedforward->setpoints[i] && i < this->feedforward->size) {
+        i++;
+    }
+    if (i == this->feedforward->size) {
+        // If the setpoint is larger than the largest setpoint in the array, use the last two points
+        i = this->feedforward->size - 2;
+    } else if (i == 0) {
+        // If the setpoint is smaller than the smallest setpoint in the array, use the first two points
+        i = 1;
+    }
+    // Calculate the slope of the line between the two points
+    float_t slope = (this->feedforward->ff_gains[i] - this->feedforward->ff_gains[i-1]) /
+            (this->feedforward->setpoints[i] - this->feedforward->setpoints[i-1]);
+    // Calculate the feedforward gain
+    float_t feedforward_gain = slope * (setpoint - this->feedforward->setpoints[i-1])
+            + this->feedforward->ff_gains[i-1];
+
+    return feedforward_gain;
+}
+
+void ODrivePro::set_feedforward(feedforward_struct* feedforward_struct) {
+    this->feedforward = feedforward_struct;
+    this->has_feedforward = true;
 }
 
 
