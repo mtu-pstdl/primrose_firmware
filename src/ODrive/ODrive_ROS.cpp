@@ -19,20 +19,25 @@ void ODrive_ROS::subscribe(ros::NodeHandle *nh) {
  * This function is called when a message is received on the setpoint topic
  */
 void ODrive_ROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
+    this->last_ros_command = millis();
     switch (static_cast<ODrive_ROS::ROS_COMMANDS>(msg.data[0])) {
         case E_STOP:
             this->odrive->emergency_stop();
             break;
-        case REBOOT:
-            this->odrive->reboot();
+        case DISARM:
+            this->odrive->set_axis_state(odrive::axis_states::IDLE);
             break;
         case CLEAR_ERRORS:
             this->odrive->clear_errors();
             break;
         case SET_CLOSED_LOOP:
-            this->odrive->set_control_mode(
-                    static_cast<odrive::control_modes>(msg.data[1]),
-                    static_cast<odrive::input_modes>(msg.data[2]));
+            // Check if we are already in the desired mode to avoid unnecessary can messages
+            if (this->odrive->get_control_mode() != static_cast<odrive::control_modes>(msg.data[1]) ||
+                this->odrive->get_input_mode() != static_cast<odrive::input_modes>(msg.data[2])) {
+                this->odrive->set_control_mode(
+                        static_cast<odrive::control_modes>(msg.data[1]),
+                        static_cast<odrive::input_modes>(msg.data[2]));
+            }
             break;
 //        case SET_MODE:
         case SET_POINT:
@@ -150,6 +155,12 @@ void ODrive_ROS::update() {
     this->output_topic->data[4] = this->odrive->get_axis_state();
     this->output_topic->data[5] = static_cast<int32_t>(this->odrive->get_axis_error());
     update_diagnostics();
+
+    if (odrive->get_axis_state() == odrive::axis_states::CLOSED_LOOP_CONTROL &&
+       this->last_ros_command < millis() - 1000) {
+        // If we haven't received a command in a while, request an ESTOP from the ODrive
+        this->odrive->emergency_stop();
+    }
 }
 
 ODrivePro* ODrive_ROS::get_odrive() {

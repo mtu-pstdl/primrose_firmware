@@ -494,6 +494,14 @@ void ODrivePro::set_feedforward(feedforward_struct* feedforward_struct) {
     this->has_feedforward = true;
 }
 
+odrive::input_modes ODrivePro::get_input_mode() const {
+    return this->input_mode;
+}
+
+void ODrivePro::set_axis_state(odrive::axis_states state) {
+    this->send_command(odrive::Set_Axis_State, state);
+}
+
 
 
 

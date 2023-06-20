@@ -72,7 +72,7 @@ private:
     uint32_t   last_axis_state  = 0;   // The last axis state time
     uint32_t   last_heartbeat   = 0;   // The time of the last heartbeat sent
 
-    uint32_t                     AXIS_ERROR       = 0;   // Axis error code
+    uint32_t                     AXIS_ERROR       = INITIALIZING;   // Axis error code
     odrive::axis_states          AXIS_STATE       = odrive::UNDEFINED;
     odrive::procedure_results    PROCEDURE_RESULT = odrive::UNKNOWN_PROCEDURE_RESULT;
 
@@ -126,6 +126,8 @@ private:
     float_t torque_setpoint   = 0; // The torque of the ODrive
 
     odrive::control_modes control_mode = odrive::UNKNOWN_CONTROL_MODE; // The control mode of the ODrive
+
+    odrive::input_modes input_mode = odrive::UNKNOWN_INPUT_MODE; // The input mode of the ODrive
 
     bool has_rev_conversion = false; // Whether or not the ODrive has a conversion from ticks to revolutions
     float_t ticks_per_rev = 0;  // The number of ticks per revolution of output shaft
@@ -202,6 +204,8 @@ public:
 
     float_t get_Iq_measured() const;
 
+    void set_axis_state(odrive::axis_states state);
+
     odrive::axis_states get_axis_state() const;
 
     char* get_axis_state_string();
@@ -223,6 +227,8 @@ public:
     char* get_procedure_results_string();
 
     odrive::control_modes get_control_mode() const;
+
+    odrive::input_modes get_input_mode() const;
 
     char* get_control_mode_string();
 
