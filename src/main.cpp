@@ -17,6 +17,7 @@
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticArray.h"
 #include "Sensors/LoadCells.h"
+#include "Sensors/BatteryMonitor.h"
 
 // Motor configurations
 feedforward_struct trencher_feedforward = {
@@ -39,10 +40,9 @@ uint32_t cpu_boost_time = 0;
 ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
 
+#define SYSTEM_DIAGNOSTICS_COUNT 14
 diagnostic_msgs::DiagnosticArray system_diagnostics;
-
 diagnostic_msgs::DiagnosticStatus* system_info;
-
 ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
 
 //#define HIGH_SPEED_USB
@@ -56,7 +56,9 @@ Actuators actuator_bus;
 
 LoadCells* load_cells[2];
 
-ROSNode* ros_nodes[12];
+BatteryMonitor* battery_monitor;
+
+ROSNode* ros_nodes[13];
 
 #define SYSTEM_INFO_COUNT 10
 char* system_info_strings[SYSTEM_INFO_COUNT];
@@ -93,8 +95,8 @@ int ram_usage_rate(){
 }
 
 void set_mciu_level_max(int8_t level) {
-    if (level > system_diagnostics.status[12].level) {
-        system_diagnostics.status[12].level = level;
+    if (level > system_diagnostics.status[SYSTEM_DIAGNOSTICS_COUNT - 1].level) {
+        system_diagnostics.status[SYSTEM_DIAGNOSTICS_COUNT - 1].level = level;
     }
 }
 
@@ -153,8 +155,8 @@ void setup() {
         if (odrive == nullptr) continue;
     }
 
-    system_diagnostics.status_length = 13;
-    system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[13];
+    system_diagnostics.status_length = SYSTEM_DIAGNOSTICS_COUNT;
+    system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[SYSTEM_DIAGNOSTICS_COUNT];
 
     odrive_ros[0] = new ODrive_ROS(odrives[0], &system_diagnostics.status[0],
                                    odrive_encoder_topics[0]->message, "Front_Left");
@@ -189,7 +191,7 @@ void setup() {
     load_cells[0] = new LoadCells(4, load_cell_clk_pins, load_cell_data_pins,
                                   load_cell_calibrations,
                                   &system_diagnostics.status[10], load_cell_topics[0]->message,
-                                  "Hopper", 0x00);
+                                  "Hopper", 2048);
     auto* load_cell_clk_pins_2 =     new int[4] {34, 35, 36, 37};
     auto* load_cell_data_pins_2 =    new int[4] {38, 39, 40, 41};
     auto* load_cell_calibrations_2 = new float[4] {1.0, 1.0, 1.0, 1.0};
@@ -197,6 +199,7 @@ void setup() {
                                   load_cell_calibrations_2,
                                   &system_diagnostics.status[11], load_cell_topics[1]->message,
                                   "Suspension", load_cells[0]->get_used_eeprom());
+    battery_monitor = new BatteryMonitor(&system_diagnostics.status[12]);
 
 
     // Add all ros nodes to the ros node array
@@ -204,12 +207,13 @@ void setup() {
     for (auto & odrive_ro : odrive_ros) ros_nodes[ros_node_count++] = odrive_ro;
     for (auto & actuator_ro : actuators_ros) ros_nodes[ros_node_count++] = actuator_ro;
     for (auto & load_cell : load_cells) ros_nodes[ros_node_count++] = load_cell;
+    ros_nodes[ros_node_count++] = battery_monitor;
 
     // Allocate memory for the system diagnostics strings
     for (auto & system_info_string : system_info_strings) system_info_string = new char[55];
     for (auto & system_status_message : system_status_messages) system_status_message = new char[20];
 
-    system_info = &system_diagnostics.status[12];
+    system_info = &system_diagnostics.status[SYSTEM_DIAGNOSTICS_COUNT - 1];
     system_info->values_length = SYSTEM_INFO_COUNT;
     system_info->values = new diagnostic_msgs::KeyValue[SYSTEM_INFO_COUNT];
     system_info->values[0].key = "Temperature";

@@ -134,6 +134,8 @@ private:
     bool has_meter_conversion = false; // Whether or not the ODrive has a conversion from revs to meters
     float_t meter_per_rev = 0; // The number of revolutions of the output shaft per meter of distance
 
+    float_t last_pos = 0; // The last position of the ODrive
+
     uint8_t send_command(odrive::command_ids command_id);
 
     template <typename T>
