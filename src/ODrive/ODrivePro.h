@@ -136,6 +136,7 @@ private:
 
     float_t last_pos = 0; // The last position of the ODrive
 
+
     uint8_t send_command(odrive::command_ids command_id);
 
     template <typename T>
