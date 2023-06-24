@@ -18,6 +18,7 @@
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticArray.h"
 #include "Sensors/LoadCells.h"
 #include "Sensors/BatteryMonitor.h"
+#include "Odometers.h"
 
 // Motor configurations
 feedforward_struct trencher_feedforward = {
@@ -59,6 +60,8 @@ LoadCells* load_cells[2];
 BatteryMonitor* battery_monitor;
 
 ROSNode* ros_nodes[13];
+
+Odometers odometers;
 
 #define SYSTEM_INFO_COUNT 10
 char* system_info_strings[SYSTEM_INFO_COUNT];
@@ -149,6 +152,7 @@ void setup() {
 
     for (int i = 0; i < 6; i++) {
         odrives[i] = new ODrivePro(i, &can1, &node_handle);
+        odrives[i]->pass_odometer_data(odometers.get_odometer(i));
     }
 
     for (ODrivePro* odrive : odrives) {
@@ -166,9 +170,9 @@ void setup() {
                                    odrive_encoder_topics[2]->message, "Rear_Left");
     odrive_ros[3] = new ODrive_ROS(odrives[3], &system_diagnostics.status[3],
                                    odrive_encoder_topics[3]->message, "Rear_Right");
-    odrive_ros[4] = new ODrive_ROS(odrives[4], &system_diagnostics.status[5],
+    odrive_ros[4] = new ODrive_ROS(odrives[5], &system_diagnostics.status[5],
                                    odrive_encoder_topics[4]->message, "Trencher");
-    odrive_ros[5] = new ODrive_ROS(odrives[5], &system_diagnostics.status[4],
+    odrive_ros[5] = new ODrive_ROS(odrives[4], &system_diagnostics.status[4],
                                    odrive_encoder_topics[5]->message, "Conveyor");
 
     actuators[0] = new ActuatorUnit(&actuator_bus, 128);

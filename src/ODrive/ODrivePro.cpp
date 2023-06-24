@@ -136,12 +136,15 @@ void ODrivePro::calibration_sequence() {
             }
             break;
         case 2:
-            if (this->AXIS_STATE == odrive::axis_states::IDLE) {
-                this->send_command(odrive::command_ids::Set_Axis_State,
-                                   odrive::ENCODER_OFFSET_CALIBRATION);
-                this->calibration_step++;
-            }
+            if (this->AXIS_STATE == odrive::axis_states::ENCODER_HALL_PHASE_CALIBRATION) this->calibration_step++;
             break;
+//        case 3:
+//            if (this->AXIS_STATE == odrive::axis_states::IDLE) {
+//                this->send_command(odrive::command_ids::Set_Axis_State,
+//                                   odrive::ENCODER_OFFSET_CALIBRATION);
+//                this->calibration_step++;
+//            }
+//            break;
         case 3:
             if (this->AXIS_STATE == odrive::axis_states::IDLE) {
                 this->calibrating = false;
@@ -455,8 +458,7 @@ void ODrivePro::reboot() {
 }
 
 void ODrivePro::calibrate() {
-//    this->send_command(odrive::)
-
+    this->calibrating = true;
 }
 
 float_t ODrivePro::calculate_feedforward(float_t setpoint){
@@ -500,6 +502,10 @@ odrive::input_modes ODrivePro::get_input_mode() const {
 
 void ODrivePro::set_axis_state(odrive::axis_states state) {
     this->send_command(odrive::Set_Axis_State, state);
+}
+
+void ODrivePro::pass_odometer_data(void *pointer) {
+    this->odometer = static_cast<ODrivePro::memory_odometer_value*>(pointer);
 }
 
 

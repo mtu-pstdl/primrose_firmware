@@ -25,6 +25,13 @@ public:
     char* vel_unit_string; // The unit string
     char* pos_unit_string; // The unit string
 
+    struct memory_odometer_value {  // stores odometer data in RAM
+        bool     changed;     // Indicates whether odometer data has changed since last save
+        uint32_t sequence_id; // Sequence ID (used to determine which odometer data is most recent)
+        uint32_t odometer;    // Unit: 10th of a turn
+        uint32_t used_power;  // Unit: watt-hours (scaled by 10)
+    };
+
 private:
 
     bool    calibrating = false; // Whether or not the ODrive is calibrating
@@ -136,6 +143,7 @@ private:
 
     float_t last_pos = 0; // The last position of the ODrive
 
+    memory_odometer_value* odometer = nullptr; // The odometer to update
 
     uint8_t send_command(odrive::command_ids command_id);
 
@@ -155,6 +163,8 @@ public:
 
     ODrivePro(uint8_t can_id, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64>* can_bus,
               void* estop_callback);
+
+    void pass_odometer_data(void* pointer);
 
     void set_feedforward(feedforward_struct* feedforward);
 
