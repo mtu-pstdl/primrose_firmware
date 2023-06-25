@@ -65,10 +65,10 @@ private:
             state_topic->values[5].key = "CONTROL_MODE";      // Or VEL_ESTIMATE
         } else {
             state_topic->values[1].key = "CONTROL_MODE";      // Or AXIS_ERROR
-            state_topic->values[2].key = "LAST_UPDATE";       // Or DISARM_REASON
-            state_topic->values[3].key = "SETPOINT";          // Or ACTIVE_ERRORS
-            state_topic->values[4].key = "TORQUE_ESTIMATE";   // Or PROCEDURE_RESULT
-            state_topic->values[5].key = "VEL_ESTIMATE";      // Or CONTROL_MODE
+            state_topic->values[2].key = "SETPOINT";          // Or DISARM_REASON
+            state_topic->values[3].key = "TORQUE_ESTIMATE";   // Or ACTIVE_ERRORS
+            state_topic->values[4].key = "VEL_ESTIMATE";      // Or PROCEDURE_RESULT
+            state_topic->values[5].key = "UNKNOWN";           // Or CONTROL_MODE
         }
     }
     void update_diagnostics_label();
@@ -91,9 +91,9 @@ private:
         state_topic->values[0].key  = "AXIS_STATE";
         state_topic->values[1].key  = "AXIS_ERROR";        // Or CONTROL_MODE
         state_topic->values[2].key  = "ACTIVE_ERRORS";     // Or SETPOINT
-        state_topic->values[3].key  = "DISARM_REASON";     // Or LAST_UPDATE
-        state_topic->values[4].key  = "PROCEDURE_RESULT";  // Or TORQUE_ESTIMATE
-        state_topic->values[5].key  = "CONTROL_MODE";      // Or VEL_ESTIMATE
+        state_topic->values[3].key  = "DISARM_REASON";     // Or TORQUE_ESTIMATE
+        state_topic->values[4].key  = "PROCEDURE_RESULT";  // Or VEL_ESTIMATE
+        state_topic->values[5].key  = "CONTROL_MODE";      // Or UNKNOWN
         state_topic->values[6].key  = "POS_ESTIMATE";
         state_topic->values[7].key  = "FET_TEMP";
         state_topic->values[8].key  = "MOTOR_TEMP";

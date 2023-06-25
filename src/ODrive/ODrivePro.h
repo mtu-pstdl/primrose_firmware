@@ -157,6 +157,10 @@ private:
 
     void calibration_sequence(); // The calibration sequence for the ODrive
 
+    void update_power_consumption(float_t voltage, float_t current); // Updates the power consumption of the ODrive
+
+    void update_odometer(); // Updates the odometer of the ODrive
+
 public:
 
     bool is_connected() const;
@@ -173,10 +177,6 @@ public:
     void reboot(); // Reboots the ODrive
 
     void on_message(const CAN_message_t &msg);
-
-    void set_ticks_per_rev(float_t value);
-
-    void set_conversion(float_t ticks_value, float_t revs_value);
 
     void set_control_mode(odrive::control_modes mode, odrive::input_modes input_mode);
 

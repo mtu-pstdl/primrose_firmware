@@ -410,29 +410,14 @@ char *ODrivePro::get_control_mode_string() {
     return this->control_mode_string;
 }
 
-void ODrivePro::set_ticks_per_rev(float_t value) {
-    this->ticks_per_rev = value;
-    this->has_rev_conversion = true;
-    sprintf(this->vel_unit_string, "RPM");
-}
-
-void ODrivePro::set_conversion(float_t ticks_value, float_t revs_value) {
-    this->ticks_per_rev = ticks_value;
-    this->meter_per_rev = revs_value;
-    sprintf(this->vel_unit_string, "m/s");
-    sprintf(this->pos_unit_string, "m");
-    this->has_rev_conversion = true;
-    this->has_meter_conversion = true;
-}
-
 uint32_t ODrivePro::get_last_update() const {
     return millis() - this->last_message;
 }
 
-void ODrivePro::set_control_mode(odrive::control_modes mode, odrive::input_modes input_mode) {
-    this->control_mode = mode;
-    this->send_command(odrive::Set_Controller_Mode, mode, input_mode);
-    this->send_command(odrive::Set_Axis_State, odrive::axis_states::CLOSED_LOOP_CONTROL, mode);
+void ODrivePro::set_control_mode(odrive::control_modes new_control_mode, odrive::input_modes new_input_mode) {
+    this->control_mode = new_control_mode;
+    this->send_command(odrive::Set_Controller_Mode, new_control_mode, new_input_mode);
+    this->send_command(odrive::Set_Axis_State, odrive::axis_states::CLOSED_LOOP_CONTROL);
 }
 
 char *ODrivePro::get_setpoint_string() {
@@ -506,6 +491,10 @@ void ODrivePro::set_axis_state(odrive::axis_states state) {
 
 void ODrivePro::pass_odometer_data(void *pointer) {
     this->odometer = static_cast<ODrivePro::memory_odometer_value*>(pointer);
+}
+
+void ODrivePro::update_power_consumption(float_t voltage, float_t current) {
+    // Calculate the
 }
 
 
