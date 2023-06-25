@@ -218,6 +218,8 @@ public:
 
     float_t get_Iq_measured() const;
 
+    double_t get_odometer() const;
+
     void set_axis_state(odrive::axis_states state);
 
     odrive::axis_states get_axis_state() const;

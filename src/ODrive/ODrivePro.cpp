@@ -371,7 +371,7 @@ char* ODrivePro::get_disarm_reason_string() {
 }
 
 bool ODrivePro::is_connected() const {
-    if (millis() - this->last_message > 7500) {
+    if (millis() - this->last_message > 1000) {
         return false;
     } else {
         return true;
@@ -501,6 +501,14 @@ char *ODrivePro::get_input_mode_string() {
     sprintf(this->input_mode_string, ""); // Clear the string
     odrive::sprint_input_mode(this->input_mode_string, this->input_mode);
     return this->input_mode_string;
+}
+
+double_t ODrivePro::get_odometer() const {
+    if (this->odometer != nullptr) {
+        return this->odometer->odometer / 10.0;
+    } else {
+        return FP_NAN;
+    }
 }
 
 

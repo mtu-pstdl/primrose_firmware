@@ -127,14 +127,15 @@ void ODrive_ROS::update_diagnostics() {
         sprintf(strings[9], "%05.2f V", this->odrive->get_vbus_voltage());
         sprintf(strings[10], "%05.2f A", this->odrive->get_vbus_current());
         sprintf(strings[11], "%05.2f A", this->odrive->get_Iq_measured());
+        sprintf(strings[12], "%05.2f",   this->odrive->get_odometer());
         // Show the binary representation of the inflight bitmask
-        for (int i = 0; i < 8; i++) {
-            if (this->odrive->get_inflight_bitmask() & (1 << i)) {
-                strings[12][i] = '1';
-            } else {
-                strings[12][i] = '0';
-            }
-        }
+//        for (int i = 0; i < 8; i++) {
+//            if (this->odrive->get_inflight_bitmask() & (1 << i)) {
+//                strings[12][i] = '1';
+//            } else {
+//                strings[12][i] = '0';
+//            }
+//        }
     }
 }
 
