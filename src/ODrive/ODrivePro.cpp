@@ -497,6 +497,12 @@ void ODrivePro::update_power_consumption(float_t voltage, float_t current) {
     // Calculate the
 }
 
+char *ODrivePro::get_input_mode_string() {
+    sprintf(this->input_mode_string, ""); // Clear the string
+    odrive::sprint_input_mode(this->input_mode_string, this->input_mode);
+    return this->input_mode_string;
+}
+
 
 
 

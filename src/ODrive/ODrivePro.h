@@ -48,6 +48,7 @@ private:
     char* active_errors_string; // The active errors string
     char* disarm_reason_string; // The disarm reason string
     char* control_mode_string; // The control mode string
+    char* input_mode_string; // The input mode string
     char* setpoint_string; // The setpoint string
 
     void allocate_strings() {
@@ -65,6 +66,8 @@ private:
         sprintf(control_mode_string, "Not initialized");
         setpoint_string = new char[25];
         sprintf(setpoint_string, "Not initialized");
+        input_mode_string = new char[25];
+        sprintf(input_mode_string, "Not initialized");
         vel_unit_string = new char[5];
         sprintf(vel_unit_string, "RPS");
         pos_unit_string = new char[5];
@@ -193,8 +196,6 @@ public:
 
     // Getters and setters
 
-//    String* get_state_string(); // Returns the state as a string
-
     uint8_t get_can_id() const;
 
     float_t get_fet_temp() const;
@@ -244,6 +245,8 @@ public:
     odrive::input_modes get_input_mode() const;
 
     char* get_control_mode_string();
+
+    char* get_input_mode_string();
 
     float_t get_setpoint() const;
 

@@ -93,6 +93,8 @@ namespace odrive {
 
     void sprint_control_mode(char* buffer, control_modes mode);
 
+    void sprint_input_mode(char* buffer, input_modes mode);
+
 }
 
 #endif //TEENSYCANTRANSCEIVER_ODRIVE_CONSTANTS_H

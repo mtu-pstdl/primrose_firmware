@@ -19,7 +19,7 @@ namespace odrive {
         sprintf(buffer, "");
         // For each error code, check if it is set and if so, add it to the string with a comma
 
-        // Check if there are more than 4 errors present (these can be over many different bits)
+        // Check if there are more than 4 errors present to avoid a buffer overflow in the sprintf
         uint32_t errors_present = 0;
         for (int i = 0; i < 32; i++) {
             if (error_code & (1 << i)) {
@@ -181,4 +181,38 @@ namespace odrive {
         }
     }
 
+    void sprint_input_mode(char* buffer, input_modes input_mode) {
+        switch (input_mode) {
+            case MOTOR_INACTIVE:
+                sprintf(buffer, "MOTOR_INACTIVE");
+                break;
+            case PASSTHROUGH:
+                sprintf(buffer, "PASSTHROUGH");
+                break;
+            case VEL_RAMP:
+                sprintf(buffer, "VEL_RAMP");
+                break;
+            case POS_FILTER:
+                sprintf(buffer, "POS_FILTER");
+                break;
+            case MIX_CHANNELS:
+                sprintf(buffer, "MIX_CHANNELS");
+                break;
+            case TRAP_TRAJ:
+                sprintf(buffer, "TRAP_TRAJ");
+                break;
+            case TORQUE_RAMP:
+                sprintf(buffer, "TORQUE_RAMP");
+                break;
+            case MIRROR:
+                sprintf(buffer, "MIRROR");
+                break;
+            case TUNING:
+                sprintf(buffer, "TUNING");
+                break;
+            default:
+                sprintf(buffer, "UNKNOWN_INPUT_MODE");
+                break;
+        }
+    }
 }

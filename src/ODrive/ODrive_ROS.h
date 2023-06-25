@@ -90,17 +90,17 @@ private:
         this->state_topic->values = new diagnostic_msgs::KeyValue[NUM_CONDITIONS];
         state_topic->values[0].key  = "AXIS_STATE";
         state_topic->values[1].key  = "AXIS_ERROR";        // Or CONTROL_MODE
-        state_topic->values[2].key  = "ACTIVE_ERRORS";     // Or SETPOINT
-        state_topic->values[3].key  = "DISARM_REASON";     // Or TORQUE_ESTIMATE
-        state_topic->values[4].key  = "PROCEDURE_RESULT";  // Or VEL_ESTIMATE
-        state_topic->values[5].key  = "CONTROL_MODE";      // Or UNKNOWN
+        state_topic->values[2].key  = "ACTIVE_ERRORS";     // Or INPUT_MODE
+        state_topic->values[3].key  = "DISARM_REASON";     // Or SETPOINT
+        state_topic->values[4].key  = "PROCEDURE_RESULT";  // Or TORQUE_ESTIMATE
+        state_topic->values[5].key  = "CONTROL_MODE";      // Or VEL_ESTIMATE
         state_topic->values[6].key  = "POS_ESTIMATE";
         state_topic->values[7].key  = "FET_TEMP";
-        state_topic->values[8].key  = "MOTOR_TEMP";
-        state_topic->values[9].key  = "VBUS_VOLTAGE";
-        state_topic->values[10].key = "VBUS_CURRENT";
-        state_topic->values[11].key = "IQ_MEASURED";
-        state_topic->values[12].key = "IN-FLIGHT";
+        state_topic->values[8].key  = "MTR_TEMP";
+        state_topic->values[9].key  = "BUS_VOLTAGE";
+        state_topic->values[10].key = "BUS_CURRENT";
+        state_topic->values[11].key = "MTR_CURRENT";       // AKA IQ_MEASURED
+        state_topic->values[12].key = "ODOMETER";
         state_topic->name = "ODrive";
         state_topic->message = status_string;
         sprintf(status_string, "Initialising");

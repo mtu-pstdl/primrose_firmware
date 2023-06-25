@@ -115,7 +115,7 @@ void ODrive_ROS::update_diagnostics() {
             update_diagnostics_keys(false);
             sprintf(strings[0], "%24s", this->odrive->get_axis_state_string());
             sprintf(strings[1], "%24s", this->odrive->get_control_mode_string());
-            sprintf(strings[2], "%lums", this->odrive->get_last_update()); // "Last Update:
+            sprintf(strings[2], "%24s", this->odrive->get_input_mode_string());
             sprintf(strings[3], "%24s", this->odrive->get_setpoint_string());
             sprintf(strings[4], "%.2f N/m", this->odrive->get_torque_estimate());
             sprintf(strings[5], "%.2f %s", this->odrive->get_vel_estimate(), this->odrive->vel_unit_string);
