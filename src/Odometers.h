@@ -28,8 +28,8 @@ class Odometers {
     struct memory_odometer_value {  // stores odometer data in RAM
         bool     changed;     // Indicates whether odometer data has changed since last save
         uint32_t sequence_id; // Sequence ID (used to determine which odometer data is most recent)
-        uint32_t odometer;    // Unit: 10th of a turn
-        uint32_t used_power;  // Unit: watt-hours (scaled by 10)
+        uint32_t odometer;    // Unit: 100th of a turn or encoder counts (depending on encoder type)
+        uint32_t used_power;  // Unit: milliwatt-hours
     };
 
     saved_odometer eeprom_odometers[ODOMETER_COUNT]{};  // stores odometer data in RAM
@@ -131,6 +131,14 @@ public:
 
     Odometers() {
         load_odometers();
+    }
+
+    void reset_odometer(uint8_t id) {
+        // Resets the odometer data for a given odometer ID
+        odometers[id].odometer = 0;
+        odometers[id].used_power = 0;
+        odometers[id].sequence_id = 0;
+        odometers[id].changed = true;
     }
 
     memory_odometer_value* get_odometer(uint8_t id) {

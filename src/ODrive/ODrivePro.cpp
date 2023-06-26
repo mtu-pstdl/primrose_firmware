@@ -89,30 +89,32 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
         case odrive::Get_Encoder_Estimates:
             this->POS_ESTIMATE = * (float *) &upper_32;
             this->VEL_ESTIMATE = * (float *) &lower_32;
+            this->update_odometer();
             this->last_encoder_update = millis();
             this->in_flight_bitmask &= ~ENCODER_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Iq:
-            this->IQ_SETPOINT = * (float *) &lower_32;
-            this->IQ_MEASURED = * (float *) &upper_32;
+            this->IQ_SETPOINT = * (float *) &upper_32;
+            this->IQ_MEASURED = * (float *) &lower_32;
             this->last_iq_update = millis();
             this->in_flight_bitmask &= ~IQ_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Temperature:
-            this->MOTOR_TEMP = * (float *) &lower_32;
             this->FET_TEMP   = * (float *) &upper_32;
+            this->MOTOR_TEMP = * (float *) &lower_32;
             this->last_temp_update = millis();
             this->in_flight_bitmask &= ~TEMP_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Bus_Voltage_Current:
             this->VBUS_CURRENT = * (float *) &lower_32;
             this->VBUS_VOLTAGE = * (float *) &upper_32;
+            this->update_power_consumption();
             this->last_vbus_update = millis();
             this->in_flight_bitmask &= ~VBUS_FLIGHT_BIT; // Clear the bit
             break;
         case odrive::Get_Torques:
-            this->TORQUE_TARGET   = * (float *) &upper_32;
-            this->TORQUE_ESTIMATE = * (float *) &lower_32;
+            this->TORQUE_TARGET   = * (float *) &lower_32;
+            this->TORQUE_ESTIMATE = * (float *) &upper_32;
             this->last_torque_update = millis();
             this->in_flight_bitmask &= ~TORQUE_FLIGHT_BIT; // Clear the bit
             break;
@@ -371,7 +373,7 @@ char* ODrivePro::get_disarm_reason_string() {
 }
 
 bool ODrivePro::is_connected() const {
-    if (millis() - this->last_message > 1000) {
+    if (millis() - this->last_message > 7000) {
         return false;
     } else {
         return true;
@@ -493,10 +495,6 @@ void ODrivePro::pass_odometer_data(void *pointer) {
     this->odometer = static_cast<ODrivePro::memory_odometer_value*>(pointer);
 }
 
-void ODrivePro::update_power_consumption(float_t voltage, float_t current) {
-    // Calculate the
-}
-
 char *ODrivePro::get_input_mode_string() {
     sprintf(this->input_mode_string, ""); // Clear the string
     odrive::sprint_input_mode(this->input_mode_string, this->input_mode);
@@ -511,10 +509,44 @@ double_t ODrivePro::get_odometer() const {
     }
 }
 
+void ODrivePro::update_odometer() {
+    // Take the absolute value of the difference between the current position and the last position
+    if (this->last_pos != this->POS_ESTIMATE && this->AXIS_STATE == odrive::axis_states::CLOSED_LOOP_CONTROL) {
+        float_t difference = std::abs(this->POS_ESTIMATE - this->last_pos);
+        // Convert the difference to uint32_t
+        auto difference_uint = static_cast<uint32_t>(difference * 100);
+        this->odometer->odometer += difference_uint;
+        this->odometer->changed = true;
+        this->last_pos = this->POS_ESTIMATE;
+    }
+}
 
 
+void ODrivePro::update_power_consumption() {
+    // Calculate the power consumption
+    if (this->AXIS_STATE == odrive::axis_states::CLOSED_LOOP_CONTROL) {
+        float_t power = this->get_vbus_voltage() * this->get_vbus_current();  // Power in Watts
+        float_t power_mW = power * 1000;  // Power in mW
+        // Add the power consumption to the rolling average array
+        this->power_consumption_samples[this->power_consumption_index] = power_mW;
+        this->power_consumption_index++;
+        if (this->power_consumption_index == VBUS_SAMPLE_SIZE) {
+            // Calculate the milliwatt hours consumed using the average power consumption and
+            // the time since the last update
+            float_t time_since_last_update = (millis() - this->last_power_consumption) / 3600000.0f;  // Time in hours
 
-
-
-
+            // Calculate the average power consumption
+            float_t average_power_consumption_mW = 0;
+            for (float power_consumption_sample : this->power_consumption_samples) {
+                average_power_consumption_mW += power_consumption_sample;
+            }
+            average_power_consumption_mW /= VBUS_SAMPLE_SIZE;
+            float_t power_consumption_mWh = average_power_consumption_mW * time_since_last_update;
+            this->odometer->used_power += static_cast<uint32_t>(power_consumption_mWh);  // Power consumption in mWh
+            this->odometer->changed = true;
+            this->power_consumption_index = 0;
+            this->last_power_consumption = millis();
+        }
+    }
+}
 

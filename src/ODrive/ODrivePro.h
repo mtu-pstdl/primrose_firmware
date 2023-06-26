@@ -15,6 +15,7 @@
 
 #include <FlexCAN_T4.h>
 
+#define VBUS_SAMPLE_SIZE 20
 
 class ODrivePro{
 
@@ -146,6 +147,10 @@ private:
 
     float_t last_pos = 0; // The last position of the ODrive
 
+    uint32_t last_power_consumption = 0; // The last time the vbus was calculated
+    uint16_t power_consumption_index = 0; // The index of the current vbus sample
+    float_t  power_consumption_samples[VBUS_SAMPLE_SIZE]; // The last VBus samples
+
     memory_odometer_value* odometer = nullptr; // The odometer to update
 
     uint8_t send_command(odrive::command_ids command_id);
@@ -160,7 +165,7 @@ private:
 
     void calibration_sequence(); // The calibration sequence for the ODrive
 
-    void update_power_consumption(float_t voltage, float_t current); // Updates the power consumption of the ODrive
+    void update_power_consumption(); // Updates the power consumption of the ODrive
 
     void update_odometer(); // Updates the odometer of the ODrive
 

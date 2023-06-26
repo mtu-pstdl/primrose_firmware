@@ -152,6 +152,7 @@ void setup() {
 
     for (int i = 0; i < 6; i++) {
         odrives[i] = new ODrivePro(i, &can1, &node_handle);
+//        odometers.reset_odometer(i);
         odrives[i]->pass_odometer_data(odometers.get_odometer(i));
     }
 
@@ -226,7 +227,7 @@ void setup() {
     system_info->values[3].key = "Loop Time";
     system_info->values[4].key = "Remaining Memory";
     system_info->values[5].key = "CAN TX Overflow";
-    system_info->values[6].key = "Actuator Buffer Size";
+    system_info->values[6].key = "Actuator Buffer Info";
     system_info->values[7].key = "Actuator Response Time";
     system_info->values[8].key = "MCIU Uptime";
     system_info->values[9].key = "Firmware Build Date";
@@ -284,6 +285,8 @@ void loop() {
         }
     }
 
+    odometers.refresh();
+
     system_diagnostics.header.stamp = node_handle.now();
     system_diagnostics.header.seq++;
 
@@ -319,7 +322,7 @@ void loop() {
 
     digitalWriteFast(LED_BUILTIN, HIGH); // Turn off the LED
     // Allow the actuator bus to preform serial communication for the remaining time in the loop
-    sprintf(system_info_strings[6], "%02d, F:%05lu, E:%05lu",
+    sprintf(system_info_strings[6], "S:%02d, F:%05lu, E:%05lu",
             actuator_bus.get_queue_size(),
             actuator_bus.total_messages_sent - actuator_bus.total_messages_received,
             actuator_bus.total_messages_received - actuator_bus.total_messages_processed);

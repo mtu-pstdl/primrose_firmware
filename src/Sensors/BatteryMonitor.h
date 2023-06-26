@@ -23,7 +23,7 @@ public:
     BatteryMonitor(diagnostic_msgs::DiagnosticStatus* status) {
         this->diagnostic_topic = status;
 
-        this->diagnostic_topic->name = "Battery Monitor";
+        this->diagnostic_topic->name = "Battery";
         this->diagnostic_topic->hardware_id = "DC Bus";
         this->diagnostic_topic->values_length = 4;
         this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[4];
