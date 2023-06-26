@@ -22,7 +22,7 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/KeyValue.h"
 
 #define POS_UNIT_SCALE 100
-#define VEL_UNIT_SCALE 10000
+//#define VEL_UNIT_SCALE 10000
 
 class ODrive_ROS : public ROSNode {
 

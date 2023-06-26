@@ -35,7 +35,7 @@ private:
 
     String name;
 
-    char* strings[9];
+    char* strings[9]{};
     char* status_string = new char[25];
     char* pub_name = new char[50];
 
