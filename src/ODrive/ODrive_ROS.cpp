@@ -39,7 +39,6 @@ void ODrive_ROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
                         static_cast<odrive::input_modes>(msg.data[2]));
             }
             break;
-//        case SET_MODE:
         case SET_POINT:
             this->odrive->set_setpoint(ODrive_ROS::from_fixed_point(msg.data[1], POS_UNIT_SCALE));
             break;

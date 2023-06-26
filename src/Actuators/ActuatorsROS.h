@@ -22,6 +22,12 @@ class ActuatorsROS : public ROSNode {
 
 private:
 
+    enum ros_commands {
+        STOP = 0,
+        SET_CONTROL_MODE = 1,
+        SET_INPUT_VALUE = 2,
+    };
+
     ros::Subscriber<std_msgs::Int32MultiArray, ActuatorsROS> command_sub;
 
     diagnostic_msgs::DiagnosticStatus* diagnostic_topic;
