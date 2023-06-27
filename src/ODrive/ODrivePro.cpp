@@ -503,7 +503,7 @@ char *ODrivePro::get_input_mode_string() {
 
 double_t ODrivePro::get_odometer() const {
     if (this->odometer != nullptr) {
-        return this->odometer->odometer / 10.0;
+        return this->odometer->odometer / 100.0;
     } else {
         return FP_NAN;
     }
@@ -517,8 +517,8 @@ void ODrivePro::update_odometer() {
         auto difference_uint = static_cast<uint32_t>(difference * 100);
         this->odometer->odometer += difference_uint;
         this->odometer->changed = true;
-        this->last_pos = this->POS_ESTIMATE;
     }
+    this->last_pos = this->POS_ESTIMATE;
 }
 
 
@@ -547,6 +547,14 @@ void ODrivePro::update_power_consumption() {
             this->power_consumption_index = 0;
             this->last_power_consumption = millis();
         }
+    }
+}
+
+double_t ODrivePro::get_power_consumption() const {
+    if (this->odometer != nullptr) {
+        return this->odometer->used_power / 1000.0;
+    } else {
+        return FP_NAN;
     }
 }
 

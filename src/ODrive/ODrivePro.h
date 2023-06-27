@@ -225,6 +225,8 @@ public:
 
     double_t get_odometer() const;
 
+    double_t get_power_consumption() const;
+
     void set_axis_state(odrive::axis_states state);
 
     odrive::axis_states get_axis_state() const;
