@@ -88,10 +88,12 @@ public:
     uint32_t total_messages_received = 0;
     uint32_t total_messages_processed = 0;
 
-    uint16_t crc;
-    uint16_t calc_crc;
+    uint16_t crc = 0;
+    uint16_t calc_crc = 0;
 
     Actuators(){
+//        Serial2.setRX(8);
+//        Serial2.setTX(7, true);
         Serial2.begin(100000);
         // Yellow to brown
         // Green to purple

@@ -176,10 +176,10 @@ void setup() {
     odrive_ros[5] = new ODrive_ROS(odrives[4], &system_diagnostics.status[4],
                                    odrive_encoder_topics[5]->message, "Conveyor");
 
-    actuators[0] = new ActuatorUnit(&actuator_bus, 128);
-    actuators[1] = new ActuatorUnit(&actuator_bus, 129);
-    actuators[2] = new ActuatorUnit(&actuator_bus, 130);
-    actuators[3] = new ActuatorUnit(&actuator_bus, 131);
+    actuators[0] = new ActuatorUnit(&actuator_bus, 128); // Slot 3L
+    actuators[1] = new ActuatorUnit(&actuator_bus, 129); // Slot 1L
+    actuators[2] = new ActuatorUnit(&actuator_bus, 130); // Slot 2L
+    actuators[3] = new ActuatorUnit(&actuator_bus, 131); // Slot 1R
 
     actuators_ros[0] = new ActuatorsROS(actuators[0], actuator_encoder_topics[0]->message,
                                         &system_diagnostics.status[6], "Front_Left");

@@ -373,7 +373,7 @@ char* ODrivePro::get_disarm_reason_string() {
 }
 
 bool ODrivePro::is_connected() const {
-    if (millis() - this->last_message > 7000) {
+    if (millis() - this->last_message > 1500) {
         return false;
     } else {
         return true;
@@ -529,24 +529,25 @@ void ODrivePro::update_power_consumption() {
         float_t power_mW = power * 1000;  // Power in mW
         // Add the power consumption to the rolling average array
         this->power_consumption_samples[this->power_consumption_index] = power_mW;
-        this->power_consumption_index++;
-        if (this->power_consumption_index == VBUS_SAMPLE_SIZE) {
-            // Calculate the milliwatt hours consumed using the average power consumption and
-            // the time since the last update
-            float_t time_since_last_update = (millis() - this->last_power_consumption) / 3600000.0f;  // Time in hours
+    } else this->power_consumption_samples[this->power_consumption_index] = 0;
+    this->power_consumption_index++;
 
-            // Calculate the average power consumption
-            float_t average_power_consumption_mW = 0;
-            for (float power_consumption_sample : this->power_consumption_samples) {
-                average_power_consumption_mW += power_consumption_sample;
-            }
-            average_power_consumption_mW /= VBUS_SAMPLE_SIZE;
-            float_t power_consumption_mWh = average_power_consumption_mW * time_since_last_update;
-            this->odometer->used_power += static_cast<uint32_t>(power_consumption_mWh);  // Power consumption in mWh
-            this->odometer->changed = true;
-            this->power_consumption_index = 0;
-            this->last_power_consumption = millis();
+    if (this->power_consumption_index == VBUS_SAMPLE_SIZE) {
+        // Calculate the milliwatt hours consumed using the average power consumption and
+        // the time since the last update
+        float_t time_since_last_update = (millis() - this->last_power_consumption) / 3600000.0f;  // Time in hours
+
+        // Calculate the average power consumption
+        float_t average_power_consumption_mW = 0;
+        for (float power_consumption_sample : this->power_consumption_samples) {
+            average_power_consumption_mW += power_consumption_sample;
         }
+        average_power_consumption_mW /= VBUS_SAMPLE_SIZE;
+        float_t power_consumption_mWh = average_power_consumption_mW * time_since_last_update;
+        this->odometer->used_power += static_cast<uint32_t>(power_consumption_mWh);  // Power consumption in mWh
+        this->odometer->changed = this->AXIS_STATE == odrive::axis_states::CLOSED_LOOP_CONTROL ? true : false;
+        this->power_consumption_index = 0;
+        this->last_power_consumption = millis();
     }
 }
 
