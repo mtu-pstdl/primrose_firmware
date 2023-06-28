@@ -21,11 +21,11 @@
 #include "Odometers.h"
 
 // Motor configurations
-feedforward_struct trencher_feedforward = {
+feedforward_struct trencher_ff = {
         true,
-        2,
-        new float_t[2]{0.0, 100},
-        new float_t[2]{0.0, 0.5}
+        19,
+        new float_t[19]{100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900},
+        new float_t[19]{0.8924418571359903, 0.9336526961981934, 0.9564353191563113, 1.0545682968419106, 1.0956791896783447, 1.1655547321087025, 1.1496691199748679, 1.1904955891573539, 1.2093394546417329, 1.2397901319373068, 1.28819931056913, 1.2661215055746053, 1.2726709948459896, 1.2938049218498964, 1.4171302597609259, 1.4186923515245125, 1.4106400849419782, 1.4540763298221129, 1.4360584135375623}
 };
 
 #define CPU_FREQ_BOOST 816000000 //
@@ -155,6 +155,8 @@ void setup() {
 //        odometers.reset_odometer(i);
         odrives[i]->pass_odometer_data(odometers.get_odometer(i));
     }
+
+    odrives[5]->set_feedforward(&trencher_ff);
 
     for (ODrivePro* odrive : odrives) {
         if (odrive == nullptr) continue;

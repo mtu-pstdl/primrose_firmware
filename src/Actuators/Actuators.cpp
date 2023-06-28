@@ -141,7 +141,7 @@ boolean Actuators::spin(boolean lastSpin) {
             // Append the CRC to the message
             memcpy(this->transmit_buffer + next_message->data_length + 2, &transmit_crc, sizeof(crc));
             Serial2.write(this->transmit_buffer, next_message->data_length + sizeof(crc) + 2);
-            Serial2.flush();  // Wait for the message to be sent
+//            Serial2.flush();  // Wait for the message to be sent
 //            delay(1);
             this->total_messages_sent++;
             this->waiting_for_response = true;

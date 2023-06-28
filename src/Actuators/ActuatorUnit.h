@@ -173,7 +173,7 @@ private:
 
     uint16_t message_dropped_count = 0;
     uint16_t message_failure_count = 0;
-    const uint16_t message_failure_threshold = 5;
+    const uint16_t message_failure_threshold = 20;
 
     char* status_string = nullptr;
 

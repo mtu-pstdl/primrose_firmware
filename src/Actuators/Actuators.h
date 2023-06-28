@@ -92,9 +92,9 @@ public:
     uint16_t calc_crc = 0;
 
     Actuators(){
-//        Serial2.setRX(8);
-//        Serial2.setTX(7, true);
-        Serial2.begin(100000);
+//        Serial2.setRX(7);
+//        Serial2.setTX(8);
+        Serial2.begin(57600, SERIAL_8N1);
         // Yellow to brown
         // Green to purple
 //        Serial2.addMemoryForWrite(write_buffer, 64);

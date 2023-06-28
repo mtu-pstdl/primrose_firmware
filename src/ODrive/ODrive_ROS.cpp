@@ -110,7 +110,7 @@ void ODrive_ROS::update_diagnostics() {
             sprintf(strings[3], "%24s", this->odrive->get_disarm_reason_string());      // Disarm Reason
             sprintf(strings[4], "%24s", this->odrive->get_procedure_results_string());  // Procedure Results
             sprintf(strings[5], "%24s", this->odrive->get_control_mode_string());       // Control Mode
-        } else {
+        } else {  // CLOSED_LOOP_CONTROL
             update_diagnostics_keys(false);
             sprintf(strings[0], "%24s", this->odrive->get_axis_state_string());
             sprintf(strings[1], "%24s", this->odrive->get_control_mode_string());
@@ -126,8 +126,6 @@ void ODrive_ROS::update_diagnostics() {
         sprintf(strings[9], "%05.2f V", this->odrive->get_vbus_voltage());
         sprintf(strings[10], "%05.2f A", this->odrive->get_vbus_current());
         sprintf(strings[11], "%05.2f A", this->odrive->get_Iq_setpoint());
-        sprintf(strings[12], "%010.2fRevs %010.2fW/h",
-                this->odrive->get_odometer(), this->odrive->get_power_consumption());
         // Show the binary representation of the inflight bitmask
 //        for (int i = 0; i < 8; i++) {
 //            if (this->odrive->get_inflight_bitmask() & (1 << i)) {
@@ -137,6 +135,8 @@ void ODrive_ROS::update_diagnostics() {
 //            }
 //        }
     }
+    sprintf(strings[12], "%010.2fKRevs %010.2fW/h",
+            this->odrive->get_odometer() / 1000, this->odrive->get_power_consumption());
 }
 
 int32_t ODrive_ROS::to_fixed_point(float value, float scale) {

@@ -8,7 +8,7 @@
 
 void ActuatorUnit::build_telemetry_messages() {
     reocurring_messages[0] = *build_message(
-            Actuators::serial_commands::read_encoder_count_m1,
+            Actuators::serial_commands::read_encoder_count_m2,
             50, 5, &ActuatorUnit::encoder_count_callback);
     reocurring_messages[1] = *build_message(
             Actuators::serial_commands::read_encoder_count_m2,
@@ -185,15 +185,12 @@ void ActuatorUnit::send_target_position(uint8_t motor) {
 }
 
 void ActuatorUnit::check_connection() {
-    auto* msg = new Actuators::message;
-    msg->command = Actuators::serial_commands::read_encoder_count_m2;
-    msg->data_length = 5;
-    msg->failure_callback = ActuatorUnit::message_failure_callback;
-    msg->callback = ActuatorUnit::encoder_speed_callback;
-    msg->object = this;
-    msg->free_after_callback = true;
-    msg->expect_response = true;
-    command_bus->queue_message(msg);
+    // Queue a telemetry message to check if the actuator unit is connected
+    if (!this->connected) {
+       if (millis() - reocurring_messages[2].last_send_time > 500) {
+           this->command_bus->queue_message(reocurring_messages[2].msg);
+       }
+    }
 }
 
 void ActuatorUnit::detailed_encoder_count_callback(void *actuator, Actuators::message *msg) {
