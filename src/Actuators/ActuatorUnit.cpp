@@ -63,7 +63,6 @@ void ActuatorUnit::set_duty_cycle(int16_t duty_cycle, uint8_t motor) {
         memcpy(this->command_messages[0].msg->data, &duty_cycle, 2);
         this->command_messages[0].msg->data_length = 2;
         this->motors[0].control_mode = control_modes::velocity;
-
     } else {
         this->command_messages[1].msg->command = Actuators::serial_commands::drive_m2_duty_cycle;
         memcpy(this->command_messages[1].msg->data, &duty_cycle, 2);
@@ -73,13 +72,13 @@ void ActuatorUnit::set_duty_cycle(int16_t duty_cycle, uint8_t motor) {
 
 
 void ActuatorUnit::queue_telemetry_messages() {
-//    for (int i = 0; i < 2; i++) {
-//        if (millis() - command_messages[i].last_send_time > command_messages[i].send_interval) {
-//            if (!command_bus->space_available()) return;
-//            command_bus->queue_message(command_messages[i].msg);
-//            command_messages[i].last_send_time = millis();
-//        }
-//    }
+    for (int i = 0; i < 2; i++) {
+        if (millis() - command_messages[i].last_send_time > command_messages[i].send_interval) {
+            if (!command_bus->space_available()) return;
+            command_bus->queue_message(command_messages[i].msg);
+            command_messages[i].last_send_time = millis();
+        }
+    }
     for (int i = 0; i < 9; i++) {
         if (millis() - reocurring_messages[i].last_send_time > reocurring_messages[i].send_interval) {
             if (!command_bus->space_available()) return;

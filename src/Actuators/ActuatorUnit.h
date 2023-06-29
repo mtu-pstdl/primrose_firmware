@@ -243,8 +243,8 @@ public:
         this->command_messages[1].msg->id = this->id;
         this->command_messages[0].msg->free_after_callback = false;
         this->command_messages[1].msg->free_after_callback = false;
-        this->command_messages[0].send_interval = 10000;
-        this->command_messages[1].send_interval = 10000;
+        this->command_messages[0].send_interval = 1000;
+        this->command_messages[1].send_interval = 1000;
         this->command_messages[0].msg->object = this;
         this->command_messages[1].msg->object = this;
         this->command_messages[0].msg->callback = &command_message_callback;
