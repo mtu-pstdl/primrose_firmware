@@ -153,6 +153,12 @@ public:
         actuator_unit->data_flags |= STATUS_MASK;
     }
 
+    static void command_message_callback(void *actuator, Actuators::message *msg) {
+        auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
+        actuator_unit->message_dropped_count = 0;
+        actuator_unit->connected = true;
+    }
+
     static void message_failure_callback(void *actuator, Actuators::message *msg) {
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
         // Check if the message failed because of CRC failure
@@ -173,7 +179,7 @@ private:
 
     uint16_t message_dropped_count = 0;
     uint16_t message_failure_count = 0;
-    const uint16_t message_failure_threshold = 20;
+    const uint16_t message_failure_threshold = 10;
 
     char* status_string = nullptr;
 
@@ -198,7 +204,14 @@ private:
         uint32_t send_interval;  // The minimum time between sending the message
     };
 
+    struct command_message{
+        Actuators::message* msg; // The message to send
+        uint32_t last_send_time; // The time the message was last sent
+        uint32_t send_interval;  // The minimum time between sending the message
+    };
+
     telemetry_message* reocurring_messages;
+    command_message* command_messages;
 
     // Shared variables between motor 1 and motor 2
     uint16_t controller_temperature = 0;
@@ -223,6 +236,27 @@ public:
 
         // Setup all the required messages for gathering information from the object
         this->reocurring_messages = new telemetry_message[7];
+        this->command_messages = new command_message[2];
+        this->command_messages[0].msg = new Actuators::message();
+        this->command_messages[1].msg = new Actuators::message();
+        this->command_messages[0].msg->id = this->id;
+        this->command_messages[1].msg->id = this->id;
+        this->command_messages[0].msg->free_after_callback = false;
+        this->command_messages[1].msg->free_after_callback = false;
+        this->command_messages[0].send_interval = 10000;
+        this->command_messages[1].send_interval = 10000;
+        this->command_messages[0].msg->object = this;
+        this->command_messages[1].msg->object = this;
+        this->command_messages[0].msg->callback = &command_message_callback;
+        this->command_messages[1].msg->callback = &command_message_callback;
+        this->command_messages[0].msg->failure_callback = &message_failure_callback;
+        this->command_messages[1].msg->failure_callback = &message_failure_callback;
+        this->command_messages[0].msg->expect_response = false;
+        this->command_messages[1].msg->expect_response = false;
+
+        this->set_duty_cycle(0, 0);
+        this->set_duty_cycle(0, 1);
+
         this->build_telemetry_messages();
         this->allocate_strings();
     }
@@ -263,6 +297,8 @@ public:
     float_t get_logic_battery_voltage() const;
 
     void check_connection();
+
+    void set_duty_cycle(int16_t duty_cycle, uint8_t motor);
 };
 
 

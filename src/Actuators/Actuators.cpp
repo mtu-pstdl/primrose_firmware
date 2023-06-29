@@ -129,6 +129,7 @@ boolean Actuators::spin(boolean lastSpin) {
         }
         message* next_message = this->get_next_message();
         if (next_message != nullptr){
+            this->sent_last_cycle++;
             // Clear the transmit buffer
             memset(this->transmit_buffer, 0, sizeof(this->transmit_buffer));
             // Clear the serial buffer
@@ -161,7 +162,7 @@ Actuators::message *Actuators::get_next_message() {
         return nullptr;
     } else {
         this->message_queue_dequeue_position++;
-        if (this->message_queue_dequeue_position >= 20){
+        if (this->message_queue_dequeue_position >= MESSAGE_QUEUE_SIZE){
             this->message_queue_dequeue_position = 0;
         }
         return this->message_queue[this->message_queue_dequeue_position];
@@ -170,11 +171,11 @@ Actuators::message *Actuators::get_next_message() {
 
 void Actuators::queue_message(Actuators::message *message) {
     if (!this->space_available()) {
-        free(message);
+        if (message->free_after_callback) delete message;
         return;
     }
     this->message_queue_enqueue_position++;
-    if (this->message_queue_enqueue_position >= 20){
+    if (this->message_queue_enqueue_position >= MESSAGE_QUEUE_SIZE){
         this->message_queue_enqueue_position = 0;
     }
     this->message_queue[this->message_queue_enqueue_position] = message;
@@ -186,7 +187,7 @@ bool Actuators::space_available() const {
         return true;
     } else {
         int next_position = this->message_queue_enqueue_position + 1;
-        if (next_position >= 20){
+        if (next_position >= MESSAGE_QUEUE_SIZE){
             next_position = 0;
         }
         if (next_position == this->message_queue_dequeue_position){
@@ -204,7 +205,7 @@ uint8_t Actuators::get_queue_size() const {
     } else if (this->message_queue_enqueue_position > this->message_queue_dequeue_position){
         return this->message_queue_enqueue_position - this->message_queue_dequeue_position;
     } else {
-        return 20 - this->message_queue_dequeue_position + this->message_queue_enqueue_position;
+        return MESSAGE_QUEUE_SIZE - this->message_queue_dequeue_position + this->message_queue_enqueue_position;
     }
 }
 

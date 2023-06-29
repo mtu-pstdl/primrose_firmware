@@ -97,7 +97,7 @@ public:
 
     LoadCells(int total_load_cells, int* clock_pins, int* data_pins, float* calibration_factors,
               diagnostic_msgs::DiagnosticStatus* status, std_msgs::Int32MultiArray* output_topic,
-                String disp_name, uint32_t eeprom_address) :
+                const String& disp_name, uint32_t eeprom_address) :
             control_sub("template_for_later", &LoadCells::message_callback, this) {
 
         this->load_cells = new HX711*[total_load_cells];

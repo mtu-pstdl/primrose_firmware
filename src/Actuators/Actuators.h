@@ -7,6 +7,8 @@
 
 #include <Arduino.h>
 
+#define MESSAGE_QUEUE_SIZE 20
+
 class Actuators {
 
 public:
@@ -54,7 +56,7 @@ private:
     // The message queue is a buffer for having object objects send messages to their respective actuators
 
 
-    message* message_queue[20] = {nullptr};
+    message* message_queue[MESSAGE_QUEUE_SIZE] = {nullptr};
     uint8_t response_buffer[128] = {0};
     uint8_t transmit_buffer[128] = {0};
     uint8_t message_queue_enqueue_position = 0;
@@ -87,6 +89,8 @@ public:
     uint32_t total_messages_sent = 0;
     uint32_t total_messages_received = 0;
     uint32_t total_messages_processed = 0;
+
+    uint32_t sent_last_cycle = 0;
 
     uint16_t crc = 0;
     uint16_t calc_crc = 0;

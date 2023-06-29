@@ -137,8 +137,9 @@ public:
         // Resets the odometer data for a given odometer ID
         odometers[id].odometer = 0;
         odometers[id].used_power = 0;
-        odometers[id].sequence_id = 0;
+//        odometers[id].sequence_id = 0;
         odometers[id].changed = true;
+        save_odometers();
     }
 
     memory_odometer_value* get_odometer(uint8_t id) {

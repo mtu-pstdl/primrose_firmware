@@ -268,6 +268,7 @@ void loop() {
         string[0] = '\0';
     }
     system_info->level = diagnostic_msgs::DiagnosticStatus::OK;
+    actuator_bus.sent_last_cycle = 0;
 
     // Get the teensy temperature
 
@@ -356,7 +357,9 @@ void loop() {
     sprintf(system_info_strings[4], "%.2fKiB (%.2f%%), %dKib/s", remaining_memory / 1024.0,
             100.0 * remaining_memory / 512000.0, ram_usage_rate());
     sprintf(system_info_strings[5], "%lu", can1.getTXQueueCount());
-    sprintf(system_info_strings[7], "%lums", actuator_bus.round_trip_time());
+    sprintf(system_info_strings[7], "%lums (Sent %lu)",
+            actuator_bus.round_trip_time(),
+            actuator_bus.sent_last_cycle);
     // Update the uptime
     sprintf(system_info_strings[8], "%.2luh %.2lum %.2lus",
             millis() / 3600000, (millis() / 60000) % 60, (millis() / 1000) % 60);
