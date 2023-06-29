@@ -57,19 +57,39 @@ ActuatorUnit::build_message(Actuators::serial_commands command, uint32_t send_in
     return telem;
 }
 
-void ActuatorUnit::set_duty_cycle(int16_t duty_cycle, uint8_t motor) {
+void ActuatorUnit::set_duty_cycle(float_t duty_cycle, uint8_t motor) {
+    // Convert duty cycle to signed 16 bit integer
+    auto duty_cycle_int = (int16_t) (duty_cycle * INT16_MAX);
     if (motor == 0) {
         this->command_messages[0].msg->command = Actuators::serial_commands::drive_m1_duty_cycle;
-        memcpy(this->command_messages[0].msg->data, &duty_cycle, 2);
+        memcpy(this->command_messages[0].msg->data, &duty_cycle_int, 2);
         this->command_messages[0].msg->data_length = 2;
         this->motors[0].control_mode = control_modes::velocity;
     } else {
         this->command_messages[1].msg->command = Actuators::serial_commands::drive_m2_duty_cycle;
-        memcpy(this->command_messages[1].msg->data, &duty_cycle, 2);
+        memcpy(this->command_messages[1].msg->data, &duty_cycle_int, 2);
+        this->command_messages[1].msg->data_length = 2;
         this->motors[1].control_mode = control_modes::velocity;
     }
 }
 
+void ActuatorUnit::set_target_position(int32_t position, uint8_t motor) {
+    int32_t acceleration = 200;
+    int32_t deceleration = 200;
+    int32_t max_speed    = 500;
+    if (motor == 0) {
+        this->command_messages[0].msg->command = Actuators::serial_commands::set_position_m1;
+    } else {
+        this->command_messages[1].msg->command = Actuators::serial_commands::set_position_m2;
+    }
+    this->motors[motor].control_mode = control_modes::position;
+    memcpy(this->command_messages[motor].msg->data + 0,  &acceleration, 4);
+    memcpy(this->command_messages[motor].msg->data + 4,  &max_speed, 4);
+    memcpy(this->command_messages[motor].msg->data + 8,  &deceleration, 4);
+    memcpy(this->command_messages[motor].msg->data + 12, &position, 4);
+    this->command_messages[motor].msg->data[16] = 1;
+
+}
 
 void ActuatorUnit::queue_telemetry_messages() {
     for (int i = 0; i < 2; i++) {
@@ -86,19 +106,6 @@ void ActuatorUnit::queue_telemetry_messages() {
             reocurring_messages[i].last_send_time = millis();
         }
     }
-}
-
-void ActuatorUnit::set_target_position(int32_t position, uint8_t motor) {
-    if (motor == 0) {
-        this->motors[0].target_position = position;
-        this->motors[0].control_mode = control_modes::position;
-        this->send_target_position(0);
-    } else {
-        this->motors[1].target_position = position;
-        this->motors[1].control_mode = control_modes::position;
-        this->send_target_position(1);
-    }
-
 }
 
 void ActuatorUnit::emergency_stop() {

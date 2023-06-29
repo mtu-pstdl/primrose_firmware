@@ -7,7 +7,7 @@
 
 #include <Arduino.h>
 
-#define MESSAGE_QUEUE_SIZE 20
+#define MESSAGE_QUEUE_SIZE 30
 
 class Actuators {
 
@@ -96,8 +96,6 @@ public:
     uint16_t calc_crc = 0;
 
     Actuators(){
-//        Serial2.setRX(7);
-//        Serial2.setTX(8);
         Serial2.begin(57600);
         // Yellow to brown
         // Green to purple

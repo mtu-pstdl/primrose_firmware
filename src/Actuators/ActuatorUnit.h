@@ -159,6 +159,8 @@ public:
         actuator_unit->connected = true;
     }
 
+    static void command_failure_callback
+
     static void message_failure_callback(void *actuator, Actuators::message *msg) {
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
         // Check if the message failed because of CRC failure
@@ -298,7 +300,7 @@ public:
 
     void check_connection();
 
-    void set_duty_cycle(int16_t duty_cycle, uint8_t motor);
+    void set_duty_cycle(float_t duty_cycle, uint8_t motor);
 };
 
 

@@ -96,7 +96,7 @@ void Actuators::check_for_response(){
     } else {
         this->process_data_serial(msg);   // This checks for a data message
     }
-    if (this->waiting_for_response && ((millis() - this->last_message_sent_time) > 10)){
+    if (this->waiting_for_response && ((millis() - this->last_message_sent_time) > 11)){
         // If we have waited more than 10ms second for a response, then we abort this message and remove it
         // from the queue and call the failure callback
         this->waiting_for_response = false; // We are no longer waiting for a response
@@ -145,7 +145,7 @@ boolean Actuators::spin(boolean lastSpin) {
             // Append the CRC to the message
             memcpy(this->transmit_buffer + next_message->data_length + 2, &transmit_crc, sizeof(crc));
             Serial2.write(this->transmit_buffer, next_message->data_length + sizeof(crc) + 2);
-//            Serial2.flush();  // Wait for the message to be sent
+            Serial2.flush();  // Wait for the message to be sent
 //            delay(1);
             this->total_messages_sent++;
             this->waiting_for_response = true;
