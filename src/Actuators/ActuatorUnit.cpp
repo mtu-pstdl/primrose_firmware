@@ -89,18 +89,25 @@ void ActuatorUnit::emergency_stop() {
 
 void ActuatorUnit::update() {
     if (this->connected) {
+        int16_t max_speed = 0x7FFF;
+        int16_t stopped = 0;
         this->queue_telemetry_messages();
         for (int i = 0; i < 2; i++) {
             auto &motor = motors[i];
             switch (motor.control_mode) {
                 case control_modes::position:
                 case control_modes::velocity:
+                    // Queue the target duty cycle message
+//                    if (millis() - motor.last_send_time > 50) {
+//                        this->send_target_position(i);
+//                        motor.last_send_time = millis();
+//                    }
                 case control_modes::stopped:
                     break;
                 case control_modes::homing:
+                    auto* msg = new Actuators::message;
                     // Check if the motor has stopped moving
-                    if (motor.current_speed == 0 && motor.current_current == 0) {
-                        auto *msg = new Actuators::message;
+                    if (motor.current_speed == 0 && motor.current_current == 0 && motor.current_position != 0) {
                         if (i == 0) {
                             msg->command = Actuators::serial_commands::set_encoder_count_m1;
                         } else msg->command = Actuators::serial_commands::set_encoder_count_m2;
@@ -114,6 +121,17 @@ void ActuatorUnit::update() {
                         command_bus->queue_message(msg);
                         motor.homed = true;
                         this->set_control_mode(control_modes::stopped, i);
+                    } else {
+                        // Command the motor to move towards the home position
+                        if (i == 0) {
+                            msg->command = Actuators::serial_commands::drive_m1_duty_cycle;
+                        } else msg->command = Actuators::serial_commands::drive_m2_duty_cycle;
+                        msg->data_length = 2;
+                        msg->data[0] = (max_speed >> 8);
+                        msg->data[1] = max_speed & 0xFF;
+                        msg->free_after_callback = true;
+                        msg->expect_response = false;
+                        command_bus->queue_message(msg);
                     }
                     break;
             }
@@ -126,7 +144,7 @@ void ActuatorUnit::update() {
 
 void ActuatorUnit::set_control_mode(control_modes mode, uint8_t motor) {
     auto* msg = new Actuators::message;
-    int16_t max_speed = 0x7FFF;
+    int16_t max_speed = -0x7FFF;
     int16_t stopped = 0;
     switch (mode) {
         case control_modes::position:
@@ -154,7 +172,7 @@ void ActuatorUnit::set_control_mode(control_modes mode, uint8_t motor) {
                 msg->command = Actuators::serial_commands::drive_m1_duty_cycle;
             } else msg->command = Actuators::serial_commands::drive_m2_duty_cycle;
             msg->data_length = 2;
-            msg->data[0] = (max_speed >> 8) & 0xFF;
+            msg->data[0] = (max_speed >> 8);
             msg->data[1] = max_speed & 0xFF;
             msg->free_after_callback = true;
             msg->expect_response = false;

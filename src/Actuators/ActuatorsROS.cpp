@@ -8,16 +8,16 @@ void ActuatorsROS::control_callback(const std_msgs::Int32MultiArray &msg) {
     // First element is the command and the second is the target actuator
     switch (msg.data[0]) {
         case STOP:
-            if (msg.data_length != 2) return;
+//            if (msg.data_length != 2) return;
             this->actuator->set_control_mode(ActuatorUnit::control_modes::stopped, msg.data[1]);
             break;
         case SET_CONTROL_MODE:
-            if (msg.data_length != 3) return;
+//            if (msg.data_length != 3) return;
             this->actuator->set_control_mode(static_cast<ActuatorUnit::control_modes>(msg.data[1]),
                                              msg.data[2]);
             break;
         case SET_INPUT_VALUE:
-            if (msg.data_length != 3) return;
+//            if (msg.data_length != 3) return;
             this->actuator->set_target_position(msg.data[1], msg.data[2]);
             break;
     }

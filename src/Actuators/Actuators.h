@@ -94,7 +94,7 @@ public:
     Actuators(){
 //        Serial2.setRX(7);
 //        Serial2.setTX(8);
-        Serial2.begin(57600, SERIAL_8N1);
+        Serial2.begin(57600);
         // Yellow to brown
         // Green to purple
 //        Serial2.addMemoryForWrite(write_buffer, 64);
