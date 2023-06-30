@@ -91,10 +91,10 @@ void Actuators::process_data_serial(message *msg) {
 
 void Actuators::check_for_response(){
     message* msg = this->message_queue[this->message_queue_dequeue_position];
-    if(!msg->expect_response) { // Determine if we are waiting for data or just a success message
-        this->process_no_data_serial(msg);  // This checks for a success message
-    } else {
+    if(msg->expect_response) { // Determine if we are waiting for data or just a success message
         this->process_data_serial(msg);   // This checks for a data message
+    } else {
+        this->process_no_data_serial(msg);  // This checks for a success message
     }
     if (this->waiting_for_response && ((millis() - this->last_message_sent_time) > 11)){
         // If we have waited more than 10ms second for a response, then we abort this message and remove it
@@ -140,11 +140,16 @@ boolean Actuators::spin(boolean lastSpin) {
             // Send the message
             this->transmit_buffer[0] = next_message->id;
             this->transmit_buffer[1] = next_message->command;
-            memcpy(this->transmit_buffer + 2, next_message->data, next_message->data_length);
-            uint16_t transmit_crc = this->crc16(this->transmit_buffer, next_message->data_length + 2);
-            // Append the CRC to the message
-            memcpy(this->transmit_buffer + next_message->data_length + 2, &transmit_crc, sizeof(crc));
-            Serial2.write(this->transmit_buffer, next_message->data_length + sizeof(crc) + 2);
+            if (next_message->protected_action){
+                memcpy(this->transmit_buffer + 2, next_message->data, next_message->data_length);
+                uint16_t transmit_crc = this->crc16(this->transmit_buffer, next_message->data_length + 2);
+                // Append the CRC to the message (MSB first)
+                this->transmit_buffer[next_message->data_length + 2] = (uint8_t) (transmit_crc >> 8);
+                this->transmit_buffer[next_message->data_length + 3] = (uint8_t) (transmit_crc & 0xFF);
+                Serial2.write(this->transmit_buffer, next_message->data_length + sizeof(transmit_crc) + 2);
+            } else {
+                Serial2.write(this->transmit_buffer, 2);
+            }
             Serial2.flush();  // Wait for the message to be sent
 //            delay(1);
             this->total_messages_sent++;

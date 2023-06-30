@@ -8,17 +8,17 @@
 
 void ActuatorUnit::build_telemetry_messages() {
     reocurring_messages[0] = *build_message(
-            Actuators::serial_commands::read_encoder_count_m2,
+            Actuators::serial_commands::read_encoder_count_m1,
             50, 5, &ActuatorUnit::encoder_count_callback);
     reocurring_messages[1] = *build_message(
             Actuators::serial_commands::read_encoder_count_m2,
             50, 5, &ActuatorUnit::encoder_count_callback);
     reocurring_messages[2] = *build_message(
             Actuators::serial_commands::read_encoder_speed_m1,
-            100, 5, &ActuatorUnit::encoder_speed_callback);
+            60, 5, &ActuatorUnit::encoder_speed_callback);
     reocurring_messages[3] = *build_message(
             Actuators::serial_commands::read_encoder_speed_m2,
-            100, 5, &ActuatorUnit::encoder_speed_callback);
+            60, 5, &ActuatorUnit::encoder_speed_callback);
     reocurring_messages[4] = *build_message(
             Actuators::serial_commands::read_main_battery_voltage,
             350, 2, &ActuatorUnit::main_battery_voltage_callback);
@@ -47,7 +47,8 @@ ActuatorUnit::build_message(Actuators::serial_commands command, uint32_t send_in
     telem->msg->command = command;
     telem->msg->data_length = data_length;
     telem->msg->id = this->id;
-    telem->msg->expect_response = data_length > 0;
+    telem->msg->expect_response = true;
+    telem->msg->protected_action = false;
     telem->msg->object = this;
     telem->msg->callback = callback;
     telem->msg->failure_callback = &ActuatorUnit::message_failure_callback;
@@ -59,20 +60,23 @@ ActuatorUnit::build_message(Actuators::serial_commands command, uint32_t send_in
 
 void ActuatorUnit::set_duty_cycle(float_t duty_cycle, uint8_t motor) {
     // Convert duty cycle to signed 16 bit integer
-//    auto duty_cycle_int = (int16_t) (duty_cycle * INT16_MAX);
-    auto duty_cycle_int = INT16_MAX;
+    auto duty_cycle_int = (int16_t) (duty_cycle * INT16_MAX);
+//    auto duty_cycle_int = INT16_MAX;
+    // The controller is big endian but the teensy is little endian
     if (motor == 0) {
         this->command_messages[0].msg->command = Actuators::serial_commands::drive_m1_duty_cycle;
-        memcpy(this->command_messages[0].msg->data, &duty_cycle_int, 2);
+        this->command_messages[0].msg->data[0] = duty_cycle_int >> 8;
+        this->command_messages[0].msg->data[1] = duty_cycle_int & 0xFF;
         this->command_messages[0].msg->data_length = 2;
         this->motors[0].control_mode = control_modes::velocity;
     } else {
         this->command_messages[1].msg->command = Actuators::serial_commands::drive_m2_duty_cycle;
-        memcpy(this->command_messages[1].msg->data, &duty_cycle_int, 2);
+        this->command_messages[1].msg->data[0] = duty_cycle_int >> 8;
+        this->command_messages[1].msg->data[1] = duty_cycle_int & 0xFF;
         this->command_messages[1].msg->data_length = 2;
         this->motors[1].control_mode = control_modes::velocity;
     }
-    this->command_bus->queue_message(this->command_messages[motor].msg);
+//    this->command_bus->queue_message(this->command_messages[motor].msg);
 }
 
 void ActuatorUnit::set_target_position(int32_t position, uint8_t motor) {
@@ -305,6 +309,8 @@ uint16_t ActuatorUnit::get_status() const {
 }
 
 char* ActuatorUnit::get_motor_fault_string(uint8_t motor) {
+//    this->motors[motor].fault = false;
+//    this->motors[motor].warn = false;
     sprintf(this->motors[motor].status_string, "");
     if (!motors[motor].homed && motors[motor].control_mode != homing)
         sprintf(this->motors[motor].status_string, "%s%s_NOT_HOMED ", motors[motor].status_string, motors[motor].name);

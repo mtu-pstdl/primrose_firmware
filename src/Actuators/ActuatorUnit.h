@@ -190,7 +190,7 @@ private:
 
     uint16_t message_dropped_count = 0;
     uint16_t message_failure_count = 0;
-    const uint16_t message_failure_threshold = 10;
+    const uint16_t message_failure_threshold = 20;
 
     char* status_string = nullptr;
 
@@ -245,16 +245,17 @@ public:
         this->command_messages[0].msg = new Actuators::message();
         this->command_messages[1].msg = new Actuators::message();
         for (int i = 0; i < 2; i++) {
-            this->command_messages[i].send_interval = 1000;
+            this->command_messages[i].send_interval = 100;
             this->command_messages[i].msg->id = this->id;
             this->command_messages[i].msg->object = this;
             this->command_messages[i].msg->callback = &command_message_callback;
             this->command_messages[i].msg->failure_callback = &command_failure_callback;
             this->command_messages[i].msg->expect_response = false;
+            this->command_messages[i].msg->protected_action = true;
             this->command_messages[i].msg->free_after_callback = false;
         }
-        this->set_duty_cycle(0.5, 0);
-        this->set_duty_cycle(0.5, 1);
+        this->set_duty_cycle(0, 0);
+        this->set_duty_cycle(0, 1);
 
         this->build_telemetry_messages();
         this->allocate_strings();

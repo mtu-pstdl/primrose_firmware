@@ -18,7 +18,8 @@ void ActuatorsROS::control_callback(const std_msgs::Int32MultiArray &msg) {
             break;
         case SET_INPUT_VALUE:
 //            if (msg.data_length != 3) return;
-            this->actuator->set_target_position(msg.data[1], msg.data[2]);
+//            this->actuator->set_target_position(msg.data[1], msg.data[2]);
+            this->actuator->set_duty_cycle(msg.data[1] / 100.f, msg.data[2]);
             break;
     }
 }

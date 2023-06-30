@@ -7,7 +7,7 @@
 
 #include <Arduino.h>
 
-#define MESSAGE_QUEUE_SIZE 30
+#define MESSAGE_QUEUE_SIZE 40
 
 class Actuators {
 
@@ -42,6 +42,7 @@ public:
         uint16_t data_length        = 0;
         uint8_t data[24]            = {0};
         bool expect_response        = false;  // If true the object will send data back
+        bool protected_action       = false;  // If true the message will be sent with a crc
         bool failed_crc             = false;  // If true the message failed the crc check
         // The callback function to call when the message is received
         void* object                = nullptr;
