@@ -159,7 +159,16 @@ public:
         actuator_unit->connected = true;
     }
 
-    static void command_failure_callback
+    static void command_failure_callback(void *actuator, Actuators::message *msg) {
+        auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
+        // Because command messages are more important than status messages we must resend them if they fail
+//        actuator_unit->command_bus->queue_message(msg);
+
+        actuator_unit->message_dropped_count++;
+        if (actuator_unit->message_dropped_count > actuator_unit->message_failure_threshold) {
+            actuator_unit->connected = false;
+        }
+    }
 
     static void message_failure_callback(void *actuator, Actuators::message *msg) {
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
@@ -206,14 +215,8 @@ private:
         uint32_t send_interval;  // The minimum time between sending the message
     };
 
-    struct command_message{
-        Actuators::message* msg; // The message to send
-        uint32_t last_send_time; // The time the message was last sent
-        uint32_t send_interval;  // The minimum time between sending the message
-    };
-
     telemetry_message* reocurring_messages;
-    command_message* command_messages;
+    telemetry_message* command_messages;
 
     // Shared variables between motor 1 and motor 2
     uint16_t controller_temperature = 0;
@@ -237,27 +240,21 @@ public:
         this->id = id;
 
         // Setup all the required messages for gathering information from the object
-        this->reocurring_messages = new telemetry_message[7];
-        this->command_messages = new command_message[2];
+        this->reocurring_messages = new telemetry_message[9];
+        this->command_messages = new telemetry_message[2];
         this->command_messages[0].msg = new Actuators::message();
         this->command_messages[1].msg = new Actuators::message();
-        this->command_messages[0].msg->id = this->id;
-        this->command_messages[1].msg->id = this->id;
-        this->command_messages[0].msg->free_after_callback = false;
-        this->command_messages[1].msg->free_after_callback = false;
-        this->command_messages[0].send_interval = 1000;
-        this->command_messages[1].send_interval = 1000;
-        this->command_messages[0].msg->object = this;
-        this->command_messages[1].msg->object = this;
-        this->command_messages[0].msg->callback = &command_message_callback;
-        this->command_messages[1].msg->callback = &command_message_callback;
-        this->command_messages[0].msg->failure_callback = &message_failure_callback;
-        this->command_messages[1].msg->failure_callback = &message_failure_callback;
-        this->command_messages[0].msg->expect_response = false;
-        this->command_messages[1].msg->expect_response = false;
-
-        this->set_duty_cycle(0, 0);
-        this->set_duty_cycle(0, 1);
+        for (int i = 0; i < 2; i++) {
+            this->command_messages[i].send_interval = 1000;
+            this->command_messages[i].msg->id = this->id;
+            this->command_messages[i].msg->object = this;
+            this->command_messages[i].msg->callback = &command_message_callback;
+            this->command_messages[i].msg->failure_callback = &command_failure_callback;
+            this->command_messages[i].msg->expect_response = false;
+            this->command_messages[i].msg->free_after_callback = false;
+        }
+        this->set_duty_cycle(0.5, 0);
+        this->set_duty_cycle(0.5, 1);
 
         this->build_telemetry_messages();
         this->allocate_strings();
@@ -275,6 +272,8 @@ public:
     void set_control_mode(control_modes mode, uint8_t motor);
 
     void set_target_position(int32_t position, uint8_t motor);
+
+    void set_duty_cycle(float_t duty_cycle, uint8_t motor);
 
     int32_t get_target_position(uint8_t motor);
 
@@ -299,8 +298,6 @@ public:
     float_t get_logic_battery_voltage() const;
 
     void check_connection();
-
-    void set_duty_cycle(float_t duty_cycle, uint8_t motor);
 };
 
 

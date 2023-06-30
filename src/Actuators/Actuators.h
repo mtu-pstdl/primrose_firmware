@@ -38,8 +38,8 @@ public:
 
     struct message{
         uint8_t id                  = 0;
-        serial_commands command     = read_buffer_length;
-        uint8_t data_length         = 0;
+        serial_commands command     = read_encoder_count_m2;
+        uint16_t data_length        = 0;
         uint8_t data[24]            = {0};
         bool expect_response        = false;  // If true the object will send data back
         bool failed_crc             = false;  // If true the message failed the crc check
@@ -59,6 +59,7 @@ private:
     message* message_queue[MESSAGE_QUEUE_SIZE] = {nullptr};
     uint8_t response_buffer[128] = {0};
     uint8_t transmit_buffer[128] = {0};
+    uint8_t write_buffer[128]    = {0};
     uint8_t message_queue_enqueue_position = 0;
     uint8_t message_queue_dequeue_position = 19;
     boolean waiting_for_response = false;
@@ -99,7 +100,7 @@ public:
         Serial2.begin(57600);
         // Yellow to brown
         // Green to purple
-//        Serial2.addMemoryForWrite(write_buffer, 64);
+        Serial2.addMemoryForWrite(write_buffer, 128);
         Serial2.setTimeout(1000);
         for (auto & i : message_queue){
             i = nullptr;

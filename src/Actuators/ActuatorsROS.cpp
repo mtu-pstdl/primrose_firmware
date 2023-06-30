@@ -26,7 +26,7 @@ void ActuatorsROS::control_callback(const std_msgs::Int32MultiArray &msg) {
 void ActuatorsROS::update_status_message(){
     if (this->actuator->connected){
         sprintf(this->status_string, "%24s", this->actuator->get_status_string());
-        this->diagnostic_topic->level = 1;
+        this->diagnostic_topic->level = 0;
     } else {
         sprintf(this->status_string, "%24s", "Not Connected");
         this->diagnostic_topic->level = 2;
