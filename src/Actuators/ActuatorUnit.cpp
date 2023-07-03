@@ -79,6 +79,19 @@ void ActuatorUnit::set_duty_cycle(float_t duty_cycle, uint8_t motor) {
 //    this->command_bus->queue_message(this->command_messages[motor].msg);
 }
 
+//void ActuatorUnit::set_pid_gains(float_t p, float_t i, float_t d, uint8_t motor) {
+//    if (motor == 0) {
+//        this->command_messages[0].msg->command = Actuators::serial_commands::set_velocity_pid_gains_m1;
+//    } else {
+//        this->command_messages[1].msg->command = Actuators::serial_commands::set_velocity_pid_gains_m2;
+//    }
+//    int32_t
+//    int32_t p_int = (int32_t) (p * 1000000);
+//    int32_t i_int = (int32_t) (i * 1000000);
+//    int32_t d_int = (int32_t) (d * 1000000);
+//    this->command_messages[motor].msg->data_length = 12;
+//}
+
 void ActuatorUnit::set_target_position(int32_t position, uint8_t motor) {
     int32_t acceleration = 200;
     int32_t deceleration = 200;
@@ -98,14 +111,14 @@ void ActuatorUnit::set_target_position(int32_t position, uint8_t motor) {
 }
 
 void ActuatorUnit::queue_telemetry_messages() {
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 2; i++) {  // Queue command messages first so they get priority
         if (millis() - command_messages[i].last_send_time > command_messages[i].send_interval) {
             if (!command_bus->space_available()) return;
             command_bus->queue_message(this->command_messages[i].msg);
             command_messages[i].last_send_time = millis();
         }
     }
-    for (int i = 0; i < 9; i++) {
+    for (int i = 0; i < 9; i++) {  // Queue telemetry messages last so they get sent if there is space
         if (millis() - reocurring_messages[i].last_send_time > reocurring_messages[i].send_interval) {
             if (!command_bus->space_available()) return;
             command_bus->queue_message(this->reocurring_messages[i].msg);
@@ -309,8 +322,8 @@ uint16_t ActuatorUnit::get_status() const {
 }
 
 char* ActuatorUnit::get_motor_fault_string(uint8_t motor) {
-//    this->motors[motor].fault = false;
-//    this->motors[motor].warn = false;
+    this->motors[motor].fault = false;
+    this->motors[motor].warn = false;
     sprintf(this->motors[motor].status_string, "");
     if (!motors[motor].homed && motors[motor].control_mode != homing)
         sprintf(this->motors[motor].status_string, "%s%s_NOT_HOMED ", motors[motor].status_string, motors[motor].name);

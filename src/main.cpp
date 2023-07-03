@@ -329,7 +329,7 @@ void loop() {
             actuator_bus.get_queue_size(),
             actuator_bus.total_messages_sent - actuator_bus.total_messages_received,
             actuator_bus.total_messages_received - actuator_bus.total_messages_processed);
-    while (actuator_bus.spin(micros() - loop_start > 50000)) {
+    while (actuator_bus.spin(micros() - loop_start > 45000)) {
         yield();  // Yield to other tasks
     }
     uint32_t execution_time = micros() - loop_start;

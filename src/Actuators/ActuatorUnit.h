@@ -59,7 +59,7 @@ public:
         int32_t max_position        = 0; // The maximum position of the motor in ticks
         int32_t current_speed       = 0; // The current velocity of the motor in ticks per second
         int16_t current_current     = 7; // The current current draw of the motor in ma
-        int16_t warning_current     = 50; // The current current draw of the motor in ma
+        int16_t warning_current     = 500; // The current current draw of the motor in ma
         control_modes control_mode   = stopped; // The current control mode of the motor
         boolean  homed               = true; // Whether or not the motor has been homed
         boolean  fault               = false; // Whether or not the motor has a fault
@@ -162,7 +162,8 @@ public:
     static void command_failure_callback(void *actuator, Actuators::message *msg) {
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
         // Because command messages are more important than status messages we must resend them if they fail
-//        actuator_unit->command_bus->queue_message(msg);
+//        if (actuator_unit->command_bus->space_available())
+//            actuator_unit->command_bus->queue_message(msg);
 
         actuator_unit->message_dropped_count++;
         if (actuator_unit->message_dropped_count > actuator_unit->message_failure_threshold) {
@@ -254,8 +255,8 @@ public:
             this->command_messages[i].msg->protected_action = true;
             this->command_messages[i].msg->free_after_callback = false;
         }
-        this->set_duty_cycle(0, 0);
-        this->set_duty_cycle(0, 1);
+        this->set_duty_cycle(0.1, 0);
+        this->set_duty_cycle(0.1, 1);
 
         this->build_telemetry_messages();
         this->allocate_strings();

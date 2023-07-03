@@ -24,14 +24,16 @@ uint16_t Actuators::crc16(const uint8_t *packet, uint32_t nBytes) {
 
 void Actuators::process_no_data_serial(message* msg){
     if (Serial2.available() >= 1) {
+        this->total_messages_received++;
         if (Serial2.read() == 0xFF) {
             this->waiting_for_response = false;
             if (msg->object != nullptr) {
-//                // Call the callback function
+                // Call the callback function
                 auto object = msg->object;
                 auto callback = msg->callback; // Cast the callback to a function pointer
-//                callback(object, msg);
+                callback(object, msg);
                 if (msg->free_after_callback) delete msg;
+                this->total_messages_processed++;
             }
         } else {
             // If the response is not successful, send the message again

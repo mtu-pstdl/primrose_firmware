@@ -25,9 +25,17 @@ void ActuatorsROS::control_callback(const std_msgs::Int32MultiArray &msg) {
 }
 
 void ActuatorsROS::update_status_message(){
-    if (this->actuator->connected){
-        sprintf(this->status_string, "%24s", this->actuator->get_status_string());
-        this->diagnostic_topic->level = 0;
+    if (this->actuator->connected) {
+        if (this->actuator->get_temperature() > 80) {
+            this->diagnostic_topic->level = 2;
+            sprintf(this->status_string, "OVERHEAT: %3.1fC", this->actuator->get_temperature());
+        } else if (this->actuator->get_temperature() > 65){
+            this->diagnostic_topic->level = 1;
+            sprintf(this->status_string, "HIGH_TEMP: %3.1fC", this->actuator->get_temperature());
+        } else {
+            sprintf(this->status_string, "%24s", this->actuator->get_status_string());
+            this->diagnostic_topic->level = 0;
+        }
     } else {
         sprintf(this->status_string, "%24s", "Not Connected");
         this->diagnostic_topic->level = 2;

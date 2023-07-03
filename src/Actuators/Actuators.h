@@ -33,6 +33,8 @@ public:
         set_position_m1 = 65,
         set_position_m2 = 66,
         set_positions = 67,
+        set_velocity_pid_gains_m1 = 28,
+        set_velocity_pid_gains_m2 = 29,
     };
 
 
@@ -51,6 +53,7 @@ public:
         // The callback to call if the message fails to send
         void (*failure_callback)(void* actuator, message* msg) = nullptr;
     };
+
 
 private:
 
