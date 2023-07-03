@@ -74,7 +74,7 @@ void ActuatorsROS::update_diagnostics_topic(){
 }
 
 void ActuatorsROS::update() {
-    this->actuator->update();
+//    this->actuator->update();
     this->output_topic->data[0] = this->actuator->get_position(0);
     this->output_topic->data[1] = this->actuator->get_target_position(0);
     this->output_topic->data[2] = this->actuator->get_velocity(0);

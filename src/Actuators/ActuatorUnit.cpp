@@ -33,7 +33,7 @@ void ActuatorUnit::build_telemetry_messages() {
             750, 2, &ActuatorUnit::controller_temp_callback);
     reocurring_messages[8] = *build_message(
             Actuators::serial_commands::read_status,
-            1000, 2, &ActuatorUnit::controller_status_callback);
+            1000, 1, &ActuatorUnit::controller_status_callback);
 
 }
 

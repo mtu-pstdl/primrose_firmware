@@ -9,7 +9,7 @@
 #include "Actuators/ActuatorsROS.h"
 #include <std_srvs/SetBool.h>
 #include <std_msgs/Float32.h>
-
+#include <math.h>
 #include "ROS_Publishers.h"
 #include "ROS_Subscribers.h"
 #include "ROS_Services.h"
@@ -81,6 +81,8 @@ extern char *__brkval;  // current top of heap
 uint32_t last_ram_time = 0;
 int last_ram = 0;
 int last_ram_usage = 0;
+
+int starting_actuator = 0;
 
 int freeram() {
     return (char *)&_heap_end - __brkval;
@@ -280,6 +282,16 @@ void loop() {
         odrive->refresh_data();
     }
 
+    // For the actuators pick a random one to start with first each cycle (to avoid bias)
+
+    for (int i = 0; i < 4; i++) {
+        uint32_t actuator_index = (i + starting_actuator) % 4;
+        if (actuators[actuator_index] == nullptr) continue;
+        actuators[actuator_index]->update();
+    }
+    starting_actuator = (starting_actuator + 1) % 4;
+
+
     if (node_handle.connected()) {
         for (ROSNode *node: ros_nodes) {
             if (node == nullptr) continue;
@@ -287,6 +299,20 @@ void loop() {
             node->publish();
         }
     }
+
+    // Calculate the bus voltage by averaging the voltages of all the ODrives
+    float_t bus_voltage = 0;
+    uint32_t odrive_count = 0;
+    for (ODrivePro *odrive: odrives) {
+        if (odrive == nullptr) continue;
+        float_t voltage = odrive->get_vbus_voltage();
+        if (isnanf(voltage)) continue;
+        bus_voltage += voltage;
+        odrive_count++;
+    }
+    bus_voltage /= odrive_count;
+    battery_monitor->update_bus_voltage(bus_voltage);
+
 
     odometers.refresh();
 

@@ -7,7 +7,7 @@
 
 #include <Arduino.h>
 
-#define MESSAGE_QUEUE_SIZE 40
+#define MESSAGE_QUEUE_SIZE 100
 
 class Actuators {
 

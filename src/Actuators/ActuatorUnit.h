@@ -149,14 +149,15 @@ public:
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
         actuator_unit->message_dropped_count = 0;
         actuator_unit->connected = true;
-        actuator_unit->status = (msg->data[0] << 8) | msg->data[1];
+        actuator_unit->status = msg->data[0];
+//        actuator_unit->status = (msg->data[0] << 8) | msg->data[1];
         actuator_unit->data_flags |= STATUS_MASK;
     }
 
     static void command_message_callback(void *actuator, Actuators::message *msg) {
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-        actuator_unit->message_dropped_count = 0;
-        actuator_unit->connected = true;
+//        actuator_unit->message_dropped_count = 0;
+//        actuator_unit->connected = true;
     }
 
     static void command_failure_callback(void *actuator, Actuators::message *msg) {
@@ -255,8 +256,8 @@ public:
             this->command_messages[i].msg->protected_action = true;
             this->command_messages[i].msg->free_after_callback = false;
         }
-        this->set_duty_cycle(0.1, 0);
-        this->set_duty_cycle(0.1, 1);
+        this->set_duty_cycle(0, 0);
+        this->set_duty_cycle(0, 1);
 
         this->build_telemetry_messages();
         this->allocate_strings();

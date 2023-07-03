@@ -271,6 +271,8 @@ float_t ODrivePro::get_motor_temp() const {
 }
 
 float_t ODrivePro::get_vbus_voltage() const {
+    // Check if the voltage has been updated in the last 100ms
+    if (this->last_vbus_update + VBUS_UPDATE_RATE < millis()) return NAN;
     return this->VBUS_VOLTAGE;
 }
 
