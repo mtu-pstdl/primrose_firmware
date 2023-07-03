@@ -52,7 +52,7 @@ void Actuators::process_no_data_serial(message* msg){
 
 void Actuators::process_data_serial(message *msg) {
     if (Serial2.available() == msg->data_length + sizeof(uint16_t)){
-        this->total_messages_received++;
+        this->total_messages_received++; // Increment the total messages received
         Serial2.readBytes(this->response_buffer, msg->data_length + sizeof(uint16_t));
         memcpy(msg->data, this->response_buffer, msg->data_length); // Copy the data into the message
         uint8_t crc_buffer[128] = {0};
@@ -70,7 +70,7 @@ void Actuators::process_data_serial(message *msg) {
             this->waiting_for_response = false;
             if (msg->object != nullptr && msg->callback != nullptr) {
                 // Call the callback function
-                auto object = msg->object;
+                auto object = msg->object;  // Get the messages actuator object
                 auto callback = msg->callback; // Cast the callback to a function pointer
                 callback(object, msg);  // Call the callback function with the object and the message
                 if (msg->free_after_callback) delete msg; // Free the message if we are supposed to

@@ -22,7 +22,7 @@ class Odometers {
     };
 
     struct saved_odometer {
-        saved_odometer_value values[4];  // Saves 3 copies of odometer data for redundancy and error correction
+        saved_odometer_value values[4];  // Saves 4 copies of odometer data for redundancy and error correction
     };
 
     struct memory_odometer_value {  // stores odometer data in RAM

@@ -251,9 +251,10 @@ void ActuatorUnit::send_target_position(uint8_t motor) {
 void ActuatorUnit::check_connection() {
     // Queue a telemetry message to check if the actuator unit is connected
     if (!this->connected) {
-       if (millis() - reocurring_messages[2].last_send_time > 500) {
-           this->command_bus->queue_message(reocurring_messages[2].msg);
-       }
+        if (millis() - reocurring_messages[2].last_send_time > 100) {
+            this->command_bus->queue_message(reocurring_messages[2].msg);
+            reocurring_messages[2].last_send_time = millis();
+        }
     }
 }
 
