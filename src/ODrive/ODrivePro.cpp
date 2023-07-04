@@ -51,8 +51,8 @@ uint8_t ODrivePro::get_can_id() const {
 }
 
 /**
- * This method is called any time a message is received from the ODrive
- * @param msg A can message received from the ODrive this object represents
+ * This method is called any time a serial_message is received from the ODrive
+ * @param msg A can serial_message received from the ODrive this object represents
  */
 void ODrivePro::on_message(const CAN_message_t &msg) {
     uint8_t msg_type = msg.id & 0x1F; // Use bitmask of 0b00000011111 to get the last 5 bits
@@ -159,7 +159,7 @@ void ODrivePro::calibration_sequence() {
 /**
  * This method is called to make sure all the data from the ODrive is up to date
  * If not if will send the corresponding data request to the ODrive
- * This method also sends the Heartbeat message to the ODrive to prevent it from E-Stopping
+ * This method also sends the Heartbeat serial_message to the ODrive to prevent it from E-Stopping
  */
 void ODrivePro::refresh_data() {
 

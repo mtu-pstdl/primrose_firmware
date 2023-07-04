@@ -38,29 +38,30 @@ public:
     };
 
 
-    struct message{
-        uint8_t id                  = 0;
-        serial_commands command     = read_encoder_count_m2;
-        uint16_t data_length        = 0;
+    struct serial_message {
+        uint8_t id                  = 0;        // The address of the actuator
+        serial_commands command     = read_encoder_count_m2;  // The command to send to the actuator
+        uint16_t data_length        = 0;        // The length of the data to send
+        uint16_t response_length    = 0;        // The length of the response to expect
         uint8_t data[24]            = {0};
-        bool expect_response        = false;  // If true the object will send data back
-        bool protected_action       = false;  // If true the message will be sent with a crc
-        bool failed_crc             = false;  // If true the message failed the crc check
-        // The callback function to call when the message is received
-        void* object                = nullptr;
-        void (*callback)(void* actuator, message* msg) = nullptr;
-        boolean free_after_callback = false; // If true the message will be deleted after the callback is called
-        // The callback to call if the message fails to send
-        void (*failure_callback)(void* actuator, message* msg) = nullptr;
+        bool expect_response        = false;    // If true the actuator will send data back
+        bool protected_action       = false;    // If true the serial_message will be sent with a crc
+        bool failed_crc             = false;    // If true the serial_message failed the crc check
+        // The callback function to call when the serial_message is received
+        void* object                = nullptr;  // The pointer to the object that sent the serial_message
+        void (*callback)(void* actuator, serial_message* msg) = nullptr; // The pointer to the callback function
+        boolean free_after_callback = false; // If true the serial_message will be deleted after the callback is called
+        // The callback to call if the serial_message fails to send
+        void (*failure_callback)(void* actuator, serial_message* msg) = nullptr;
     };
 
 
 private:
 
-    // The message queue is a buffer for having object objects send messages to their respective actuators
+    // The serial_message queue is a buffer for having object objects send messages to their respective actuators
 
 
-    message* message_queue[MESSAGE_QUEUE_SIZE] = {nullptr};
+    serial_message* message_queue[MESSAGE_QUEUE_SIZE] = {nullptr};
     uint8_t response_buffer[128] = {0};
     uint8_t transmit_buffer[128] = {0};
     uint8_t write_buffer[128]    = {0};
@@ -76,13 +77,13 @@ private:
 
     static uint16_t crc16(const uint8_t *packet, uint32_t nBytes);
 
-    message* get_next_message();
+    serial_message* get_next_message();
 
     void check_for_response();
 
-    void process_no_data_serial(message* msg);
+    void process_no_data_serial(serial_message* msg);
 
-    void process_data_serial(message* msg);
+    void process_data_serial(serial_message* msg);
 
 public:
 
@@ -111,7 +112,7 @@ public:
         }
     }
 
-    void queue_message(message *message);
+    void queue_message(serial_message *message);
 
     bool space_available() const;
 
@@ -120,11 +121,11 @@ public:
     uint32_t round_trip_time() const;
 
     /**
-    * Sendsd messages to the actuators from the message queue
-    * @param lastSpin - True if this is the last time the spin function will be called
+    * Sendsd messages to the actuators from the serial_message queue
+    * @param finalSpin - True if this is the last time the spin function will be called
     * @return True if there are more messages to send
     */
-    boolean spin(boolean lastSpin);
+    boolean spin(boolean finalSpin);
 
     String* get_status_string();
 

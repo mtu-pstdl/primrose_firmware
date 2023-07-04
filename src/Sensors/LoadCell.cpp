@@ -91,6 +91,6 @@ void LoadCells::tare() {
 }
 
 void LoadCells::message_callback(const std_msgs::Int32MultiArray &msg) {
-    // This is a very simple callback, if a message is ever received it just tares the load cells
+    // This is a very simple callback, if a serial_message is ever received it just tares the load cells
     tare();
 }

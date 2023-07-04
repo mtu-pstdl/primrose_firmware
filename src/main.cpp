@@ -242,7 +242,7 @@ void setup() {
     system_info->hardware_id = "MCIU";
 
     for (int i = 0; i < SYSTEM_INFO_COUNT; i++) system_info->values[i].value = system_info_strings[i];
-    // For each ODrive add its diagnostic message
+    // For each ODrive add its diagnostic serial_message
 
     node_handle.advertise(sys_diag_pub);
     sys_diag_pub.publish(&system_diagnostics);

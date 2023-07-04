@@ -75,7 +75,7 @@ private:
         sprintf(pos_unit_string, "Revs");
     }
 
-    uint32_t last_message = 0; // The last time a message was received from the ODrive
+    uint32_t last_message = 0; // The last time a serial_message was received from the ODrive
     uint32_t in_flight_bitmask = 0; // The number of messages in flight
 
 #define AXIS_STATE_UPDATE_RATE 110 // The rate at which the axis state is updated in ms

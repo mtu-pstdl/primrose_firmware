@@ -16,7 +16,7 @@ void ODrive_ROS::subscribe(ros::NodeHandle *nh) {
 }
 
 /**
- * This function is called when a message is received on the setpoint topic
+ * This function is called when a serial_message is received on the setpoint topic
  */
 void ODrive_ROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
     this->last_ros_command = millis();

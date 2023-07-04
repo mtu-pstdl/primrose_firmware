@@ -4,9 +4,7 @@
 
 #include "Actuators.h"
 
-
-
-//Calculates CRC16 of nBytes of data in byte array message
+//Calculates CRC16 of nBytes of data in byte array serial_message
 uint16_t Actuators::crc16(const uint8_t *packet, uint32_t nBytes) {
     uint16_t crc = 0;
     for (int byte = 0; byte < nBytes; byte++) {
@@ -22,7 +20,7 @@ uint16_t Actuators::crc16(const uint8_t *packet, uint32_t nBytes) {
     return crc;
 }
 
-void Actuators::process_no_data_serial(message* msg){
+void Actuators::process_no_data_serial(serial_message* msg){
     if (Serial2.available() >= 1) {
         this->total_messages_received++;
         if (Serial2.read() == 0xFF) {
@@ -36,10 +34,10 @@ void Actuators::process_no_data_serial(message* msg){
                 this->total_messages_processed++;
             }
         } else {
-            // If the response is not successful, send the message again
+            // If the response is not successful, send the serial_message again
             this->waiting_for_response = false;
             msg->failed_crc = true;
-            // Free the message
+            // Free the serial_message
             if (msg->failure_callback != nullptr) {
                 auto object = msg->object;
                 auto callback = msg->failure_callback; // Cast the callback to a function pointer
@@ -50,11 +48,11 @@ void Actuators::process_no_data_serial(message* msg){
     }
 }
 
-void Actuators::process_data_serial(message *msg) {
+void Actuators::process_data_serial(serial_message *msg) {
     if (Serial2.available() == msg->data_length + sizeof(uint16_t)){
         this->total_messages_received++; // Increment the total messages received
         Serial2.readBytes(this->response_buffer, msg->data_length + sizeof(uint16_t));
-        memcpy(msg->data, this->response_buffer, msg->data_length); // Copy the data into the message
+        memcpy(msg->data, this->response_buffer, msg->data_length); // Copy the data into the serial_message
         uint8_t crc_buffer[128] = {0};
         // Copy the sent address and the command id into the first two bytes of the crc buffer
         crc_buffer[0] = msg->id;
@@ -72,15 +70,15 @@ void Actuators::process_data_serial(message *msg) {
                 // Call the callback function
                 auto object = msg->object;  // Get the messages actuator object
                 auto callback = msg->callback; // Cast the callback to a function pointer
-                callback(object, msg);  // Call the callback function with the object and the message
-                if (msg->free_after_callback) delete msg; // Free the message if we are supposed to
+                callback(object, msg);  // Call the callback function with the object and the serial_message
+                if (msg->free_after_callback) delete msg; // Free the serial_message if we are supposed to
                 this->total_messages_processed++;
             }
         } else {
             // If the response fails the CRC, then call the failure callback
             this->waiting_for_response = false;
             msg->failed_crc = true;
-            // Free the message
+            // Free the serial_message
             if (msg->failure_callback != nullptr) {
                 auto object = msg->object;
                 auto callback = msg->failure_callback; // Cast the callback to a function pointer
@@ -92,14 +90,14 @@ void Actuators::process_data_serial(message *msg) {
 }
 
 void Actuators::check_for_response(){
-    message* msg = this->message_queue[this->message_queue_dequeue_position];
-    if(msg->expect_response) { // Determine if we are waiting for data or just a success message
-        this->process_data_serial(msg);   // This checks for a data message
+    serial_message* msg = this->message_queue[this->message_queue_dequeue_position];
+    if(msg->expect_response) { // Determine if we are waiting for data or just a success serial_message
+        this->process_data_serial(msg);   // This checks for a data serial_message
     } else {
-        this->process_no_data_serial(msg);  // This checks for a success message
+        this->process_no_data_serial(msg);  // This checks for a success serial_message
     }
     if (this->waiting_for_response && ((millis() - this->last_message_sent_time) > 11)){
-        // If we have waited more than 10ms second for a response, then we abort this message and remove it
+        // If we have waited more than 10ms second for a response, then we abort this serial_message and remove it
         // from the queue and call the failure callback
         this->waiting_for_response = false; // We are no longer waiting for a response
         auto object = msg->object;
@@ -119,7 +117,7 @@ void Actuators::check_for_response(){
     }
 }
 
-boolean Actuators::spin(boolean lastSpin) {
+boolean Actuators::spin(boolean finalSpin) {
     if (this->waiting_for_response){
         this->check_for_response();
         return true;
@@ -127,33 +125,32 @@ boolean Actuators::spin(boolean lastSpin) {
         if (this->spin_start_time == 0){
             this->spin_start_time = millis();
         }
-        if (lastSpin){  // If we have run out of spin time, then don't send another message
+        if (finalSpin){  // If we have run out of spin time, then don't send another serial_message
             this->spin_total_time = millis() - this->spin_start_time;
             this->spin_start_time = 0;
             return false;
         }
-        message* next_message = this->get_next_message();
+        serial_message* next_message = this->get_next_message();
         if (next_message != nullptr){
             this->sent_last_cycle++;
             // Clear the transmit buffer
             memset(this->transmit_buffer, 0, sizeof(this->transmit_buffer));
             // Clear the serial buffer
             Serial2.clear();
-            // Send the message
+            // Send the serial_message
             this->transmit_buffer[0] = next_message->id;
             this->transmit_buffer[1] = next_message->command;
-            if (next_message->protected_action){
-                memcpy(this->transmit_buffer + 2, next_message->data, next_message->data_length);
+            memcpy(this->transmit_buffer + 2, next_message->data, next_message->data_length);
+            if (next_message->protected_action){  // If this is a protected action, then we need to calculate the CRC
                 uint16_t transmit_crc = this->crc16(this->transmit_buffer, next_message->data_length + 2);
-                // Append the CRC to the message (MSB first)
+                // Append the CRC to the serial_message (MSB first)
                 this->transmit_buffer[next_message->data_length + 2] = (uint8_t) (transmit_crc >> 8);
                 this->transmit_buffer[next_message->data_length + 3] = (uint8_t) (transmit_crc & 0xFF);
                 Serial2.write(this->transmit_buffer, next_message->data_length + sizeof(transmit_crc) + 2);
             } else {
-                Serial2.write(this->transmit_buffer, 2);
+                Serial2.write(this->transmit_buffer, next_message->data_length + 2);
             }
-            Serial2.flush();  // Wait for the message to be sent
-//            delay(1);
+            Serial2.flush();  // Wait for the serial_message to be sent
             this->total_messages_sent++;
             this->waiting_for_response = true;
             this->last_message_sent_time = millis();
@@ -166,8 +163,8 @@ boolean Actuators::spin(boolean lastSpin) {
     }
 }
 
-Actuators::message *Actuators::get_next_message() {
-    // The message queue is a circular buffer
+Actuators::serial_message *Actuators::get_next_message() {
+    // The serial_message queue is a circular buffer
     if (this->message_queue_enqueue_position == this->message_queue_dequeue_position){
         return nullptr;
     } else {
@@ -179,7 +176,7 @@ Actuators::message *Actuators::get_next_message() {
     }
 }
 
-void Actuators::queue_message(Actuators::message *message) {
+void Actuators::queue_message(Actuators::serial_message *message) {
     if (!this->space_available()) {
         if (message->free_after_callback) delete message;
         return;
@@ -221,15 +218,4 @@ uint8_t Actuators::get_queue_size() const {
 
 uint32_t Actuators::round_trip_time() const {
     return this->last_message_round_trip;
-}
-
-String* Actuators::get_status_string() {
-    auto* status_string = new String();
-    status_string->concat("\r\n-------------Actuator bus diagnostics_topic------------\r\n");
-    status_string->concat("Average round trip time: " + String(this->average_time_per_message) + "ms\r\n");
-    status_string->concat("Last round trip time: " + String(this->last_message_round_trip) + "ms\r\n");
-    status_string->concat("Messages in queue: " + String(this->get_queue_size()) + "\r\n");
-    status_string->concat("Waiting for response: " + String(this->waiting_for_response) + "\r\n");
-    status_string->concat("Spin time: " + String(this->spin_total_time) + "ms\r\n");
-    return status_string;
 }

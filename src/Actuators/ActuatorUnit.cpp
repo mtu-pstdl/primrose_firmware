@@ -41,9 +41,9 @@ void ActuatorUnit::build_telemetry_messages() {
 
 ActuatorUnit::telemetry_message*
 ActuatorUnit::build_message(Actuators::serial_commands command, uint32_t send_interval, uint8_t data_length,
-                            void (*callback)(void *, Actuators::message*)) {
+                            void (*callback)(void *, Actuators::serial_message*)) {
     auto* telem = new telemetry_message;
-    telem->msg = new Actuators::message;
+    telem->msg = new Actuators::serial_message;
     telem->msg->command = command;
     telem->msg->data_length = data_length;
     telem->msg->id = this->id;
@@ -143,7 +143,7 @@ void ActuatorUnit::update() {
             switch (motor.control_mode) {
                 case control_modes::position:
                 case control_modes::velocity:
-                    // Queue the target duty cycle message
+                    // Queue the target duty cycle serial_message
 //                    if (millis() - motor.last_send_time > 50) {
 //                        this->send_target_position(i);
 //                        motor.last_send_time = millis();
@@ -151,7 +151,7 @@ void ActuatorUnit::update() {
                 case control_modes::stopped:
                     break;
                 case control_modes::homing:
-                    auto* msg = new Actuators::message;
+                    auto* msg = new Actuators::serial_message;
                     // Check if the motor has stopped moving
                     if (motor.current_speed == 0 && motor.current_current == 0 && motor.current_position != 0) {
                         if (i == 0) {
@@ -189,7 +189,7 @@ void ActuatorUnit::update() {
 
 
 void ActuatorUnit::set_control_mode(control_modes mode, uint8_t motor) {
-    auto* msg = new Actuators::message;
+    auto* msg = new Actuators::serial_message;
     int16_t max_speed = -0x7FFF;
     int16_t stopped = 0;
     switch (mode) {
@@ -229,7 +229,7 @@ void ActuatorUnit::set_control_mode(control_modes mode, uint8_t motor) {
 }
 
 void ActuatorUnit::send_target_position(uint8_t motor) {
-    auto* msg = new Actuators::message;
+    auto* msg = new Actuators::serial_message;
     if (motor == 0) {
         msg->command = Actuators::serial_commands::set_position_m1;
     } else msg->command = Actuators::serial_commands::set_position_m2;
@@ -249,7 +249,7 @@ void ActuatorUnit::send_target_position(uint8_t motor) {
 }
 
 void ActuatorUnit::check_connection() {
-    // Queue a telemetry message to check if the actuator unit is connected
+    // Queue a telemetry serial_message to check if the actuator unit is connected
     if (!this->connected) {
         if (millis() - reocurring_messages[2].last_send_time > 100) {
             this->command_bus->queue_message(reocurring_messages[2].msg);
@@ -258,7 +258,7 @@ void ActuatorUnit::check_connection() {
     }
 }
 
-void ActuatorUnit::detailed_encoder_count_callback(void *actuator, Actuators::message *msg) {
+void ActuatorUnit::detailed_encoder_count_callback(void *actuator, Actuators::serial_message *msg) {
     auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
     uint32_t raw_position;
     bool negative;

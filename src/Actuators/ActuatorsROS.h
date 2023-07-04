@@ -97,8 +97,8 @@ public:
     void subscribe(ros::NodeHandle* node_handle) override;
 
     /**
-     * This function is called when a message is received on the setpoint topic
-     * @param msg The length of the message is 2
+     * This function is called when a serial_message is received on the setpoint topic
+     * @param msg The length of the serial_message is 2
      */
     void control_callback(const std_msgs::Int32MultiArray &msg);
 

@@ -70,11 +70,11 @@ private:
 
     }
 
-    void calculate_power_draw(){
-        this->bus_current = analogRead(CURRENT_SENSOR_PIN) * 0.0005;
-        this->battery_data.total_session_current_draw += this->bus_current;
-        this->battery_data.all_time_power_draw += this->bus_current;
-    }
+//    void calculate_power_draw(){
+//        this->bus_current = analogRead(CURRENT_SENSOR_PIN) * 0.0005;
+//        this->battery_data.total_session_current_draw += this->bus_current;
+//        this->battery_data.all_time_power_draw += this->bus_current;
+//    }
 
 public:
 
@@ -104,7 +104,7 @@ public:
         this->bus_voltage = voltage;
     }
 
-    void update(){
+    void update() override {
         sprintf(this->diagnostic_topic->values[0].value, "%05.2f V", this->bus_voltage);
         sprintf(this->diagnostic_topic->values[1].value, "%05.2f A", this->bus_current);
     }
