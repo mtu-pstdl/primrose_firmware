@@ -67,6 +67,8 @@ private:
 
     ros::Subscriber<std_msgs::Int32MultiArray, BatteryMonitor> battery_sub;
 
+    EStopController* estop_controller;
+
     void battery_callback(const std_msgs::Int32MultiArray& msg){
 
     }
@@ -82,6 +84,7 @@ public:
     explicit BatteryMonitor(diagnostic_msgs::DiagnosticStatus* status, EStopController* estop_controller) :
             battery_sub("battery_monitor", &BatteryMonitor::battery_callback, this) {
         this->diagnostic_topic = status;
+        this->estop_controller = estop_controller;
 
         pinMode(CURRENT_SENSOR_PIN, INPUT);
 
@@ -109,7 +112,8 @@ public:
     void update() override {
         sprintf(this->diagnostic_topic->values[0].value, "%05.2f V", this->bus_voltage);
         sprintf(this->diagnostic_topic->values[1].value, "%05.2f A", this->bus_current);
-        sprintf(this->diagnostic_topic->values[2].value, "%s", "Closed");
+        sprintf(this->diagnostic_topic->values[2].value, "%s",
+                EStopController::is_high_voltage_enabled() ? "Closed*" : "Open");
         sprintf(this->diagnostic_topic->values[3].value, "%05.2f W/h", this->battery_data.estimated_remaining_capacity);
         sprintf(this->diagnostic_topic->values[4].value, "%05.2f W/h", this->battery_data.total_session_power_draw);
         sprintf(this->diagnostic_topic->values[5].value, "%05.2f W/h", this->battery_data.all_time_power_draw);

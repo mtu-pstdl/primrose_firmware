@@ -314,7 +314,9 @@ void loop() {
         bus_voltage += voltage;
         odrive_count++;
     }
-    bus_voltage /= odrive_count;
+    if (odrive_count == 0) {
+        bus_voltage = NAN;
+    } else bus_voltage /= odrive_count;
     battery_monitor->update_bus_voltage(bus_voltage);
 
 

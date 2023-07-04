@@ -19,16 +19,28 @@ class EStopController : public ROSNode {
 
 private:
 
+    enum ros_commands {
+        ESTOP = 0,
+        RESUME = 1,
+        ENABLE_AUTOMATIC = 2,
+        DISABLE_AUTOMATIC = 3,
+    };
+
     ros::Subscriber<std_msgs::Int32, EStopController> estop_sub;
 
     void estop_callback(const std_msgs::Int32& msg);
 
-    EStopDevice* estop_devices[10] = {nullptr};
+    // An array of pointers to estop devices
+    EStopDevice* estop_devices[15] = {nullptr};
 
-    boolean  automatic_estop_enabled = true;
+    // Automatic E-Stop variables
+    boolean         automatic_estop_enabled = true;
+    EStopDevice*    tripped_device = nullptr;  // The device that tripped the E-Stop
 
+    // E-Stop variables
     boolean  estop_triggered = false;
     uint32_t estop_triggered_time = 0;
+    uint32_t estop_resume_time = 0;  // The time to wait after the contactor is closed before the E-Stop is cleared
 
 
     void check_for_faults() {
@@ -60,6 +72,10 @@ public:
         }
     }
 
+    static bool is_high_voltage_enabled() {
+        return digitalReadFast(MAIN_CONTACTOR_PIN);
+    }
+
     void trigger_estop() {
         for (auto & estop_device : estop_devices) {
             if (estop_device != nullptr) {
@@ -68,17 +84,25 @@ public:
         }
     }
 
+    void resume() {
+        digitalWrite(MAIN_CONTACTOR_PIN, HIGH);
+        estop_triggered = false;
+        estop_triggered_time = 0;
+        estop_resume_time = millis();
+    }
+
     void subscribe(ros::NodeHandle *node_handle) override {
         node_handle->subscribe(estop_sub);
     }
 
     void update() override {
         if (!estop_triggered) {
+            if (millis() - estop_resume_time > 1000)
+                digitalWriteFast(MAIN_CONTACTOR_PIN, HIGH);  // Close the main contactor
             this->check_for_faults();
         } else {
-            if (millis() - estop_triggered_time > ESTOP_CONTACTOR_DELAY) {
-                digitalWrite(MAIN_CONTACTOR_PIN, LOW);
-            }
+            if (millis() - estop_triggered_time > ESTOP_CONTACTOR_DELAY)
+                digitalWriteFast(MAIN_CONTACTOR_PIN, LOW);  // Open the main contactor
         }
     }
 

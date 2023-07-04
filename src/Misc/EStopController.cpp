@@ -5,5 +5,18 @@
 #include "EStopController.h"
 
 void EStopController::estop_callback(const std_msgs::Int32 &msg) {
-
+    switch (msg.data) {
+        case ESTOP:
+            this->trigger_estop();
+            break;
+        case RESUME:
+            this->resume();
+            break;
+        case ENABLE_AUTOMATIC:
+            this->automatic_estop_enabled = true;
+            break;
+        case DISABLE_AUTOMATIC:
+            this->automatic_estop_enabled = false;
+            break;
+    }
 }
