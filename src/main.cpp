@@ -19,6 +19,7 @@
 #include "Sensors/LoadCells.h"
 #include "Sensors/BatteryMonitor.h"
 #include "Odometers.h"
+#include "Misc/HopperDoor.h"
 
 // Motor configurations
 feedforward_struct trencher_ff = {
@@ -59,11 +60,12 @@ LoadCells* load_cells[2];
 
 BatteryMonitor* battery_monitor;
 
-ROSNode* ros_nodes[13];
+ROSNode* ros_nodes[15];
 
 Odometers odometers;
 
-EStopController e_stop_controller;
+EStopController* e_stop_controller;
+HopperDoor* hopper_door;
 
 #define SYSTEM_INFO_COUNT 10
 char* system_info_strings[SYSTEM_INFO_COUNT];
@@ -154,8 +156,6 @@ void setup() {
     can1.enableFIFO();
     can1.enableFIFOInterrupt();
 
-
-
     for (int i = 0; i < 6; i++) {
         odrives[i] = new ODrivePro(i, &can1, &node_handle);
 //        odometers.reset_odometer(i);
@@ -212,8 +212,13 @@ void setup() {
                                   load_cell_calibrations_2,
                                   &system_diagnostics.status[11], load_cell_topics[1]->message,
                                   "Suspension", load_cells[0]->get_used_eeprom());
-    battery_monitor = new BatteryMonitor(&system_diagnostics.status[12], &e_stop_controller);
 
+    e_stop_controller = new EStopController();
+    hopper_door = new HopperDoor();
+    battery_monitor = new BatteryMonitor(&system_diagnostics.status[12], e_stop_controller);
+
+    for (auto & odrive : odrives) e_stop_controller->add_estop_device(odrive);
+    for (auto & actuator : actuators) e_stop_controller->add_estop_device(actuator);
 
     // Add all ros nodes to the ros node array
     int ros_node_count = 0;
