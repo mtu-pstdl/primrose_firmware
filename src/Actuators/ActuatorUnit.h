@@ -7,6 +7,8 @@
 
 #include <Arduino.h>
 #include "Actuators.h"
+#include "Misc/EStopDevice.h"
+
 #define ACTUATOR_SPEED 1000000
 #define ACTUATOR_ACCEL 1000000
 #define ACTUATOR_DECEL 1000000
@@ -20,7 +22,7 @@
 #define MN_BAT_MASK 0b01000000
 #define STATUS_MASK 0b10000000
 
-class ActuatorUnit {
+class ActuatorUnit : public EStopDevice {
 
 public:
 
@@ -265,7 +267,9 @@ public:
 
     void update();
 
-    void estop();
+    void estop() override;
+
+    bool tripped() override;
 
     /**
      * Queues all telemetry messages that need to be sent during this cycle

@@ -6,7 +6,9 @@
 #define PRIMROSE_MCIU_HOPPERDOOR_H
 
 
-class HopperDoor {
+#include "ROSNode.h"
+
+class HopperDoor : public ROSNode {
 
 };
 

@@ -3,3 +3,7 @@
 //
 
 #include "EStopController.h"
+
+void EStopController::estop_callback(const std_msgs::Int32 &msg) {
+
+}

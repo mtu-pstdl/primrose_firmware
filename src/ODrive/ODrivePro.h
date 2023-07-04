@@ -12,12 +12,13 @@
 #include "motor_configs.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Float32MultiArray.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32MultiArray.h"
+#include "Misc/EStopDevice.h"
 
 #include <FlexCAN_T4.h>
 
 #define VBUS_SAMPLE_SIZE 20
 
-class ODrivePro{
+class ODrivePro: public EStopDevice {
 
 public:
     String* name = nullptr; // The name of the ODrive

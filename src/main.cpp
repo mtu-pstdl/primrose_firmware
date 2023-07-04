@@ -63,6 +63,8 @@ ROSNode* ros_nodes[13];
 
 Odometers odometers;
 
+EStopController e_stop_controller;
+
 #define SYSTEM_INFO_COUNT 10
 char* system_info_strings[SYSTEM_INFO_COUNT];
 
@@ -152,6 +154,8 @@ void setup() {
     can1.enableFIFO();
     can1.enableFIFOInterrupt();
 
+
+
     for (int i = 0; i < 6; i++) {
         odrives[i] = new ODrivePro(i, &can1, &node_handle);
 //        odometers.reset_odometer(i);
@@ -208,7 +212,7 @@ void setup() {
                                   load_cell_calibrations_2,
                                   &system_diagnostics.status[11], load_cell_topics[1]->message,
                                   "Suspension", load_cells[0]->get_used_eeprom());
-    battery_monitor = new BatteryMonitor(&system_diagnostics.status[12]);
+    battery_monitor = new BatteryMonitor(&system_diagnostics.status[12], &e_stop_controller);
 
 
     // Add all ros nodes to the ros node array

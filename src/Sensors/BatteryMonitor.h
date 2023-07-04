@@ -11,6 +11,7 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/KeyValue.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/subscriber.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32MultiArray.h"
+#include "Misc/EStopController.h"
 #include <Arduino.h>
 #include <EEPROM.h>
 
@@ -78,7 +79,7 @@ private:
 
 public:
 
-    explicit BatteryMonitor(diagnostic_msgs::DiagnosticStatus* status) :
+    explicit BatteryMonitor(diagnostic_msgs::DiagnosticStatus* status, EStopController* estop_controller) :
             battery_sub("battery_monitor", &BatteryMonitor::battery_callback, this) {
         this->diagnostic_topic = status;
 
@@ -88,12 +89,13 @@ public:
         this->diagnostic_topic->message = "All Ok";
         this->diagnostic_topic->hardware_id = "DC Bus";
         this->diagnostic_topic->values_length = 5;
-        this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[5];
+        this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[6];
         this->diagnostic_topic->values[0].key = "Main Bus Voltage";
         this->diagnostic_topic->values[1].key = "Main Bus Current";
-        this->diagnostic_topic->values[2].key = "Estimated Remaining Capacity";
-        this->diagnostic_topic->values[3].key = "Total Session Current Draw";
-        this->diagnostic_topic->values[4].key = "All Time Power Draw";
+        this->diagnostic_topic->values[2].key = "High Voltage Contactor";
+        this->diagnostic_topic->values[3].key = "Estimated Remaining Capacity";
+        this->diagnostic_topic->values[4].key = "Total Session Power Draw";
+        this->diagnostic_topic->values[5].key = "All Time Power Draw";
         for (int i = 0; i < this->diagnostic_topic->values_length; i++){
             this->diagnostic_topic->values[i].value = new char[10];
             sprintf(this->diagnostic_topic->values[i].value, "");
@@ -107,6 +109,10 @@ public:
     void update() override {
         sprintf(this->diagnostic_topic->values[0].value, "%05.2f V", this->bus_voltage);
         sprintf(this->diagnostic_topic->values[1].value, "%05.2f A", this->bus_current);
+        sprintf(this->diagnostic_topic->values[2].value, "%s", "Closed");
+        sprintf(this->diagnostic_topic->values[3].value, "%05.2f W/h", this->battery_data.estimated_remaining_capacity);
+        sprintf(this->diagnostic_topic->values[4].value, "%05.2f W/h", this->battery_data.total_session_power_draw);
+        sprintf(this->diagnostic_topic->values[5].value, "%05.2f W/h", this->battery_data.all_time_power_draw);
     }
 };
 

@@ -135,8 +135,8 @@ void ActuatorUnit::emergency_stop() {
 
 void ActuatorUnit::update() {
     if (this->connected) {
-        int16_t max_speed = 0x7FFF;
-        int16_t stopped = 0;
+//        int16_t max_speed = 0x7FFF;
+//        int16_t stopped = 0;
         this->queue_telemetry_messages();
         for (int i = 0; i < 2; i++) {
             auto &motor = motors[i];
@@ -156,12 +156,12 @@ void ActuatorUnit::update() {
 
 
 void ActuatorUnit::set_control_mode(control_modes mode, uint8_t motor) {
-    switch (mode) {
-        case control_modes::position:
-        case control_modes::velocity:
-        case control_modes::stopped:
-        case control_modes::homing:
-    }
+//    switch (mode) {
+//        case control_modes::position:
+//        case control_modes::velocity:
+//        case control_modes::stopped:
+//        case control_modes::homing:
+//    }
 
 }
 
@@ -350,7 +350,23 @@ int32_t ActuatorUnit::get_target_position(uint8_t motor) {
     return this->motors[motor].target_position;
 }
 
+void ActuatorUnit::estop() {
+    this->set_duty_cycle(0, 0);
+    this->set_duty_cycle(1, 0);
+}
 
+bool ActuatorUnit::tripped() {
+    // The conditions that would trip an actuator unit are:
+    // 1. Lost communication with the controller
+    // 2. Logic battery voltage too low
+    // 3. Main battery voltage too low
+    // 4. Controller temperature has exceeded 80C
+    if (!this->connected) return true;
+    if (this->get_logic_battery_voltage() < 9) return true;
+    if (this->get_main_battery_voltage() < 45) return true;
+    if (this->get_temperature() > 80) return true;
+    return false;
+}
 
 
 
