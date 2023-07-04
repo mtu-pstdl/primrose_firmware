@@ -14,15 +14,21 @@
 #include "Misc/EStopController.h"
 #include <Arduino.h>
 #include <EEPROM.h>
+#include "../../.pio/libdeps/teensy40/TLI4971-Current-Sensor/src/TLI4971.h"
 
 #define BATTERY_MONITOR_EEPROM_ADDRESS 3500
-#define CURRENT_SENSOR_PIN A0
+
+#define AREF_PIN A0
+#define VREF_PIN A1
 
 class BatteryMonitor : public ROSNode {
 
 
 private:
     diagnostic_msgs::DiagnosticStatus* diagnostic_topic;
+
+    TLI4971 CurrentSensor = TLI4971(AREF_PIN, VREF_PIN, 120, 5, 0, 0, 0, false);
+
 
     float_t bus_voltage = 0;
     float_t bus_current = 0;
@@ -86,7 +92,7 @@ public:
         this->diagnostic_topic = status;
         this->estop_controller = estop_controller;
 
-        pinMode(CURRENT_SENSOR_PIN, INPUT);
+//        pinMode(, INPUT);
 
         this->diagnostic_topic->name = "Battery";
         this->diagnostic_topic->message = "All Ok";
