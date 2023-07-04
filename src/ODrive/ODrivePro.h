@@ -146,6 +146,8 @@ private:
     bool has_meter_conversion = false; // Whether or not the ODrive has a conversion from revs to meters
     float_t meter_per_rev = 0; // The number of revolutions of the output shaft per meter of distance
 
+    bool was_in_closed_loop = false; // Whether or not the ODrive was in closed loop mode
+
     float_t last_pos = 0; // The last position of the ODrive
 
     uint32_t last_power_consumption = 0; // The last time the vbus was calculated
@@ -171,6 +173,12 @@ private:
     void update_odometer(); // Updates the odometer of the ODrive
 
 public:
+
+    bool tripped() override;
+
+    void estop() override;
+
+    void resume() override;
 
     bool is_connected() const;
 

@@ -35,6 +35,7 @@ private:
 
     // Automatic E-Stop variables
     boolean         automatic_estop_enabled = true;
+    boolean         automatic_estop_inhibited = false;
     EStopDevice*    tripped_device = nullptr;  // The device that tripped the E-Stop
 
     // E-Stop variables
@@ -44,7 +45,7 @@ private:
 
 
     void check_for_faults() {
-        if (!automatic_estop_enabled) {
+        if (!automatic_estop_enabled || automatic_estop_inhibited) {
             return;
         }
         for (auto & estop_device : estop_devices) {
@@ -61,6 +62,7 @@ public:
 
     EStopController() :
         estop_sub("/mciu/estop_controller", &EStopController::estop_callback, this) {
+        pinMode(MAIN_CONTACTOR_PIN, OUTPUT);
     }
 
     void add_estop_device(EStopDevice* estop_device) {
@@ -89,6 +91,7 @@ public:
         estop_triggered = false;
         estop_triggered_time = 0;
         estop_resume_time = millis();
+        this->automatic_estop_inhibited = true;
     }
 
     void subscribe(ros::NodeHandle *node_handle) override {
@@ -97,8 +100,8 @@ public:
 
     void update() override {
         if (!estop_triggered) {
-            if (millis() - estop_resume_time > 1000)
-                digitalWriteFast(MAIN_CONTACTOR_PIN, HIGH);  // Close the main contactor
+            if (millis() - estop_resume_time > 3000)
+                this->automatic_estop_inhibited = false;
             this->check_for_faults();
         } else {
             if (millis() - estop_triggered_time > ESTOP_CONTACTOR_DELAY)
