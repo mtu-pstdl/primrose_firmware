@@ -45,6 +45,7 @@ void ODrive_ROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
         case CALIBRATE:
             this->odrive->calibrate();
         case SET_VEL_LIMIT:
+//            this->odrive->set_velocity_limit(ODrive_ROS::from_fixed_point(msg.data[1], VEL_UNIT_SCALE));
             break;
     }
 }
@@ -112,18 +113,18 @@ void ODrive_ROS::update_diagnostics() {
             sprintf(strings[5], "%24s", this->odrive->get_control_mode_string());       // Control Mode
         } else {  // CLOSED_LOOP_CONTROL
             update_diagnostics_keys(false);
-            sprintf(strings[0], "%24s", this->odrive->get_axis_state_string());
-            sprintf(strings[1], "%24s", this->odrive->get_control_mode_string());
-            sprintf(strings[2], "%24s", this->odrive->get_input_mode_string());
-            sprintf(strings[3], "%24s", this->odrive->get_setpoint_string());
+            sprintf(strings[0], "%24s",     this->odrive->get_axis_state_string());
+            sprintf(strings[1], "%24s",     this->odrive->get_control_mode_string());
+            sprintf(strings[2], "%24s",     this->odrive->get_input_mode_string());
+            sprintf(strings[3], "%24s",     this->odrive->get_setpoint_string());
             sprintf(strings[4], "%.2f N/m", this->odrive->get_torque_estimate());
-            sprintf(strings[5], "%.2f %s", this->odrive->get_vel_estimate(), this->odrive->vel_unit_string);
+            sprintf(strings[5], "%.2f %s",  this->odrive->get_vel_estimate(), this->odrive->vel_unit_string);
         }
         // Print the fet temp in hex
         sprintf(strings[6], "%07.2f %s", this->odrive->get_pos_estimate(), this->odrive->pos_unit_string);
-        sprintf(strings[7], "%05.2f C", this->odrive->get_fet_temp());
-        sprintf(strings[8], "%05.2f C", this->odrive->get_motor_temp());
-        sprintf(strings[9], "%05.2f V", this->odrive->get_vbus_voltage());
+        sprintf(strings[7], "%05.2f C",  this->odrive->get_fet_temp());
+        sprintf(strings[8], "%05.2f C",  this->odrive->get_motor_temp());
+        sprintf(strings[9], "%05.2f V",  this->odrive->get_vbus_voltage());
         sprintf(strings[10], "%05.2f A", this->odrive->get_vbus_current());
         sprintf(strings[11], "%05.2f A", this->odrive->get_Iq_setpoint());
         // Show the binary representation of the inflight bitmask
@@ -158,8 +159,8 @@ void ODrive_ROS::update() {
     update_diagnostics();
 
     if (odrive->get_axis_state() == odrive::axis_states::CLOSED_LOOP_CONTROL &&
-       this->last_ros_command < millis() - 1000) {
-        // If we haven't received a command in a while, request an ESTOP from the ODrive
+       this->last_ros_command < millis() - 2500) {
+        // If we haven't received a ROS command in 2.5 initiate an emergency stop
         this->odrive->emergency_stop();
     }
 }

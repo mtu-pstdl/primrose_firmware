@@ -145,8 +145,8 @@ void setup() {
     node_handle.initNode();
     node_handle.requestSyncTime();  // Sync time with ROS master
 
-    String log_msg = "Starting MCIU with build version: " + String(__DATE__) + " " + String(__TIME__);
-    node_handle.loginfo(log_msg.c_str());
+//    String log_msg = "Starting MCIU with build version: " + String(__DATE__) + " " + String(__TIME__);
+//    node_handle.loginfo(log_msg.c_str());
 
     // Set up the CAN bus
     can1.begin();
@@ -225,6 +225,8 @@ void setup() {
     for (auto & odrive_ro : odrive_ros) ros_nodes[ros_node_count++] = odrive_ro;
     for (auto & actuator_ro : actuators_ros) ros_nodes[ros_node_count++] = actuator_ro;
     for (auto & load_cell : load_cells) ros_nodes[ros_node_count++] = load_cell;
+    ros_nodes[ros_node_count++] = e_stop_controller;
+    ros_nodes[ros_node_count++] = hopper_door;
     ros_nodes[ros_node_count++] = battery_monitor;
 
     // Allocate memory for the system diagnostics strings
@@ -276,7 +278,7 @@ void loop() {
 
     system_message_count = 0;
     for (char *string: system_status_messages) {
-        string[0] = '\0';
+        string[0] = '\0';  // Clear the system status messages
     }
     system_info->level = diagnostic_msgs::DiagnosticStatus::OK;
     actuator_bus.sent_last_cycle = 0;
@@ -288,11 +290,10 @@ void loop() {
 
     for (ODrivePro *odrive: odrives) {
         if (odrive == nullptr) continue;
-        odrive->refresh_data();
+        odrive->refresh_data();  // Get the latest data from the ODrive
     }
 
-    // For the actuators pick a random one to start with first each cycle (to avoid bias)
-
+    // Every cycle start with a different actuator to prevent the same actuator from always being the first to update
     for (int i = 0; i < 4; i++) {
         uint32_t actuator_index = (i + starting_actuator) % 4;
         if (actuators[actuator_index] == nullptr) continue;
@@ -320,15 +321,16 @@ void loop() {
         odrive_count++;
     }
     if (odrive_count == 0) {
-        bus_voltage = NAN;
+        bus_voltage = NAN;  // If there are no ODrives connected set the bus voltage to NAN
     } else bus_voltage /= odrive_count;
     battery_monitor->update_bus_voltage(bus_voltage);
 
+    e_stop_controller->update();
 
-    odometers.refresh();
+    odometers.refresh();  // Save the updated odometer data to the EEPROM if necessary
 
-    system_diagnostics.header.stamp = node_handle.now();
-    system_diagnostics.header.seq++;
+    system_diagnostics.header.stamp = node_handle.now(); // Update the timestamp of the diagnostics message
+    system_diagnostics.header.seq++;  // Increment the sequence number for the diagnostics message
 
     for (ros_topic *topic: all_topics) {
         if (topic == nullptr) continue;
@@ -366,7 +368,7 @@ void loop() {
             actuator_bus.get_queue_size(),
             actuator_bus.total_messages_sent - actuator_bus.total_messages_received,
             actuator_bus.total_messages_received - actuator_bus.total_messages_processed);
-    while (actuator_bus.spin(micros() - loop_start > 45000)) {
+    while (actuator_bus.spin(false) && micros() - loop_start < 45000 ) {
         yield();  // Yield to other tasks
     }
     uint32_t execution_time = micros() - loop_start;

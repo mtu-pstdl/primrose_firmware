@@ -9,11 +9,12 @@
 #include "ROSNode.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/subscriber.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32.h"
+#include "EStopDevice.h"
 
 #define PWM_PIN 4
 #define DIRECTION_PIN 3
 
-class HopperDoor : public ROSNode {
+class HopperDoor : public ROSNode, public EStopDevice {
 
 private:
 

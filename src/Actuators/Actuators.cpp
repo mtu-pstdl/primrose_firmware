@@ -125,11 +125,11 @@ boolean Actuators::spin(boolean finalSpin) {
         if (this->spin_start_time == 0){
             this->spin_start_time = millis();
         }
-        if (finalSpin){  // If we have run out of spin time, then don't send another serial_message
-            this->spin_total_time = millis() - this->spin_start_time;
-            this->spin_start_time = 0;
-            return false;
-        }
+//        if (finalSpin){  // If we have run out of spin time, then don't send another serial_message
+//            this->spin_total_time = millis() - this->spin_start_time;
+//            this->spin_start_time = 0;
+//            return false;
+//        }
         serial_message* next_message = this->get_next_message();
         if (next_message != nullptr){
             this->sent_last_cycle++;
