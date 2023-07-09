@@ -20,6 +20,7 @@
 #include "Sensors/BatteryMonitor.h"
 #include "Odometers.h"
 #include "Misc/HopperDoor.h"
+#include "Misc/AccessoryPower.h"
 
 // Motor configurations
 feedforward_struct trencher_ff = {
@@ -60,12 +61,13 @@ LoadCells* load_cells[2];
 
 BatteryMonitor* battery_monitor;
 
-ROSNode* ros_nodes[15];
+ROSNode* ros_nodes[16];
 
 Odometers odometers;
 
 EStopController* e_stop_controller;
 HopperDoor* hopper_door;
+AccessoryPower* accessory_power;
 
 #define SYSTEM_INFO_COUNT 10
 char* system_info_strings[SYSTEM_INFO_COUNT];
@@ -218,6 +220,7 @@ void setup() {
     e_stop_controller = new EStopController();
     hopper_door = new HopperDoor();
     battery_monitor = new BatteryMonitor(&system_diagnostics.status[12], e_stop_controller);
+    accessory_power = new AccessoryPower();
 
     for (auto & odrive : odrives) e_stop_controller->add_estop_device(odrive);
     for (auto & actuator : actuators) e_stop_controller->add_estop_device(actuator);
@@ -230,6 +233,7 @@ void setup() {
     ros_nodes[ros_node_count++] = e_stop_controller;
     ros_nodes[ros_node_count++] = hopper_door;
     ros_nodes[ros_node_count++] = battery_monitor;
+    ros_nodes[ros_node_count++] = accessory_power;
 
     // Allocate memory for the system diagnostics strings
     for (auto & system_info_string : system_info_strings) system_info_string = new char[55];
