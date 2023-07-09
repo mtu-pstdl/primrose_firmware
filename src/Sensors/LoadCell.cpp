@@ -25,15 +25,35 @@ void LoadCells::publish() {
 
 }
 
-void LoadCells::update() {
-    // Read all connected load cells
+void LoadCells::read() {
+    if (this->averaging_position == AVERAGING_BUFFER_SIZE || millis() - this->last_read_time > MINIMUM_READ_INTERVAL) {
+        return;  // If the averaging buffer is full or the minimum read interval has not passed, do not read
+    }
     for (int i = 0; i < total_load_cells; i++) {
         if (connected[i]) {
-            this->data[i] = load_cells[i]->read();
+            this->averaging_buffer[i][this->averaging_position] = load_cells[i]->read();
         } else {
-            this->data[i] = INT32_MIN;
+            this->averaging_buffer[i][this->averaging_position] = INT32_MIN;
         }
     }
+    this->averaging_position++;
+    this->last_read_time = millis();
+}
+
+void LoadCells::update() {
+    // Read the average of the last 10 readings from each load cell and store it in the data array
+    for (int i = 0; i < total_load_cells; i++) {
+        if (connected[i]) {
+            data[i] = 0;
+            for (int j = 0; j < this->averaging_position; j++) {
+                data[i] += averaging_buffer[i][j];
+            }
+            data[i] /= this->averaging_position;
+        } else {
+            data[i] = INT32_MIN;
+        }
+    }
+    this->averaging_position = 0;
     // If more than 1 load cell is connected, calculate the total weight by extrapolating the weight on
     // the missing load cells
     if (online_load_cells() > 1) {

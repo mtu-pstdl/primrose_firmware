@@ -117,7 +117,7 @@ void Actuators::check_for_response(){
     }
 }
 
-boolean Actuators::spin(boolean finalSpin) {
+boolean Actuators::spin() {
     if (this->waiting_for_response){
         this->check_for_response();
         return true;

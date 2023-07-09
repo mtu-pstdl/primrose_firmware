@@ -95,13 +95,17 @@ private:
     void battery_callback(const std_msgs::Int32MultiArray& msg){
         switch (msg.data[0]){
             case SET_FUllY_CHARGED:
-                this->battery_data.estimated_remaining_capacity = 0;
+                this->battery_data.estimated_remaining_capacity = BATTERY_NORM_CAPACITY;
                 break;
             case INCREASE_CHARGE:
-                this->battery_data.estimated_remaining_capacity += (msg.data[1] * 0.001f) * BATTERY_MAX_CAPACITY;
+                this->battery_data.estimated_remaining_capacity += (msg.data[1] * 0.01f) * BATTERY_MAX_CAPACITY;
+                if (this->battery_data.estimated_remaining_capacity > BATTERY_MAX_CAPACITY)
+                    this->battery_data.estimated_remaining_capacity = BATTERY_MAX_CAPACITY;
                 break;
             case DECREASE_CHARGE:
-                this->battery_data.estimated_remaining_capacity -= (msg.data[1] * 0.001f) * BATTERY_MAX_CAPACITY;
+                this->battery_data.estimated_remaining_capacity -= (msg.data[1] * 0.01f) * BATTERY_MAX_CAPACITY;
+                if (this->battery_data.estimated_remaining_capacity < 0)
+                    this->battery_data.estimated_remaining_capacity = 0;
                 break;
         }
     }
@@ -130,9 +134,9 @@ public:
         this->battery_status = new char[25];
         sprintf(this->battery_status, "OK");
 
-        this->diagnostic_topic->name = "Battery";
+        this->diagnostic_topic->name = "Monitor";
         this->diagnostic_topic->message = this->battery_status;
-        this->diagnostic_topic->hardware_id = "DC Bus";
+        this->diagnostic_topic->hardware_id = "HVDC Bus";
         this->diagnostic_topic->values_length = 6;
         this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[6];
         this->diagnostic_topic->values[0].key = "Main Bus Voltage";
@@ -142,7 +146,7 @@ public:
         this->diagnostic_topic->values[4].key = "Total Session Power Draw";
         this->diagnostic_topic->values[5].key = "All Time Power Draw";
         for (int i = 0; i < this->diagnostic_topic->values_length; i++){
-            this->diagnostic_topic->values[i].value = new char[10];
+            this->diagnostic_topic->values[i].value = new char[20];
             sprintf(this->diagnostic_topic->values[i].value, "");
         }
     }
@@ -152,11 +156,17 @@ public:
     }
 
     void update_status(){
-        if (!this->estop_controller->is_high_voltage_enabled()){
-            sprintf(this->battery_status, "HV Contactor Open");
+        if (!this->estop_controller->is_high_voltage_enabled()) {
+            sprintf(this->battery_status, "HVDC Contactor Open");
             this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
-        } else if (this->battery_data.estimated_remaining_capacity < BATTERY_MIN_CAPACITY){
+        } else if (isnanf(this->bus_voltage)) {
+                sprintf(this->battery_status, "No HVDC Bus Voltage");
+                this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
+        } else if (this->battery_data.estimated_remaining_capacity < BATTERY_MIN_CAPACITY) {
             sprintf(this->battery_status, "Low Estimated Capacity");
+            this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
+        } else if (this->bus_voltage < 45) {
+            sprintf(this->battery_status, "Low HVDC Bus Voltage (%05.2f V)", this->bus_voltage);
             this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
         } else {
             sprintf(this->battery_status, "OK (%05.2f V)", this->bus_voltage);
@@ -170,9 +180,15 @@ public:
         sprintf(this->diagnostic_topic->values[1].value, "%05.2f A", this->bus_current);
         sprintf(this->diagnostic_topic->values[2].value, "%s",
                 this->estop_controller->is_high_voltage_enabled() ? "Closed*" : "Open");
-        sprintf(this->diagnostic_topic->values[3].value, "%05.2f W/h", this->battery_data.estimated_remaining_capacity);
-        sprintf(this->diagnostic_topic->values[4].value, "%05.2f W/h", this->battery_data.total_session_power_draw);
-        sprintf(this->diagnostic_topic->values[5].value, "%05.2f W/h", this->battery_data.all_time_power_draw);
+        sprintf(this->diagnostic_topic->values[3].value, "%07.2f W/h (~%05.2f%%)",
+                this->battery_data.estimated_remaining_capacity,
+                (this->battery_data.estimated_remaining_capacity / BATTERY_NORM_CAPACITY) * 100);
+        sprintf(this->diagnostic_topic->values[4].value, "%010.2f W/h", this->battery_data.total_session_power_draw);
+        sprintf(this->diagnostic_topic->values[5].value, "%010.2f W/h", this->battery_data.all_time_power_draw);
+    }
+
+    void subscribe(ros::NodeHandle *node_handle) override {
+        node_handle->subscribe(this->battery_sub);
     }
 };
 

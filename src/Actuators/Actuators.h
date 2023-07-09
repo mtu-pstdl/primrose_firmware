@@ -125,9 +125,7 @@ public:
     * @param finalSpin - True if this is the last time the spin function will be called
     * @return True if there are more messages to send
     */
-    boolean spin(boolean finalSpin);
-
-    String* get_status_string();
+    boolean spin();
 
 };
 

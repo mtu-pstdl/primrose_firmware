@@ -18,6 +18,8 @@
 #include <utility>
 
 #define EEPROM_CALIBRATION_ADDRESS_START 0xFF
+#define AVERAGING_BUFFER_SIZE 10
+#define MINIMUM_READ_INTERVAL 2
 
 class LoadCells : public ROSNode {
 
@@ -32,6 +34,10 @@ class LoadCells : public ROSNode {
     int32_t* data;
     int32_t total_weight = 0;
     bool tare_flag = false;
+
+    uint32_t  last_read_time = 0;
+    int32_t  averaging_position = 0;  // position in the averaging buffer
+    int32_t** averaging_buffer;        // store the last 10 readings from each load cell
 
     HX711** load_cells;
 
@@ -115,6 +121,11 @@ public:
         this->output_topic->data = new int32_t[(total_load_cells + 1) * 2];
         this->output_topic->data[0] = 0;
 
+        this->averaging_buffer = new int32_t*[total_load_cells];
+        for (int i = 0; i < total_load_cells; i++) {
+            this->averaging_buffer[i] = new int32_t[AVERAGING_BUFFER_SIZE];
+        }
+
         this->name_strings = new char*[(total_load_cells + 1) * 2];
         this->value_strings = new char*[(total_load_cells + 1) * 2];
         this->connected = new bool[total_load_cells];
@@ -179,6 +190,8 @@ public:
 
         this->update_diagnostics_topic();
     }
+
+    void read();
 
     void update() override;
 

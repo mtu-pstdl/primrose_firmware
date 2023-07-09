@@ -47,7 +47,7 @@ diagnostic_msgs::DiagnosticArray system_diagnostics;
 diagnostic_msgs::DiagnosticStatus* system_info;
 ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
 
-//#define HIGH_SPEED_USB
+//IntervalTimer load_cell_read_timer;
 
 ODrivePro* odrives[6];
 ODrive_ROS* odrive_ros[6];
@@ -109,6 +109,11 @@ void set_mciu_level_max(int8_t level) {
     }
 }
 
+void read_load_cells() {
+    load_cells[0]->read();
+    load_cells[1]->read();
+}
+
 void can_recieve(const CAN_message_t &msg) {
     // Check node ID (Upper 6 bits of CAN ID)
     uint8_t node_id = msg.id >> 5;
@@ -144,9 +149,6 @@ void setup() {
     node_handle.setSpinTimeout(100); // 50ms
     node_handle.initNode();
     node_handle.requestSyncTime();  // Sync time with ROS master
-
-//    String log_msg = "Starting MCIU with build version: " + String(__DATE__) + " " + String(__TIME__);
-//    node_handle.loginfo(log_msg.c_str());
 
     // Set up the CAN bus
     can1.begin();
@@ -339,9 +341,6 @@ void loop() {
 
     String log_msg = "";
     int8_t spin_result = 0;
-    if (!node_handle.connected()) {
-//        node_handle.logerror("NodeHandle not properly configured");
-    }
     spin_result = node_handle.spinOnce(); // 50ms timeout
 
     switch (spin_result) {
@@ -361,17 +360,15 @@ void loop() {
             node_handle.logerror(log_msg.c_str());
             break;
     }
-
-    digitalWriteFast(LED_BUILTIN, HIGH); // Turn off the LED
     // Allow the actuator bus to preform serial communication for the remaining time in the loop
     sprintf(system_info_strings[6], "S:%02d, F:%05lu, E:%05lu",
             actuator_bus.get_queue_size(),
             actuator_bus.total_messages_sent - actuator_bus.total_messages_received,
             actuator_bus.total_messages_received - actuator_bus.total_messages_processed);
-    while (actuator_bus.spin(false) && micros() - loop_start < 45000 ) {
+
+    while (actuator_bus.spin() && micros() - loop_start < 45000) {
         yield();  // Yield to other tasks
     }
-    uint32_t execution_time = micros() - loop_start;
 
     uint32_t remaining_memory = freeram();
 
@@ -388,7 +385,7 @@ void loop() {
         set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::WARN);
         sprintf(system_status_messages[system_message_count++], "Low Memory");
     }
-
+    uint32_t execution_time = micros() - loop_start;
     sprintf(system_info_strings[1], "%.2f Mhz (%.2f%%)", F_CPU_ACTUAL / 1000000.0,
             100.0 * F_CPU_ACTUAL / F_CPU);
     sprintf(system_info_strings[2], "%.5luus (%05.2f%%)", execution_time,
