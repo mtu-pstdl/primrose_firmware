@@ -312,7 +312,7 @@ void loop() {
         for (ROSNode *node: ros_nodes) {
             if (node == nullptr) continue;
             node->update();
-            node->publish();
+//            node->publish();
         }
     }
 

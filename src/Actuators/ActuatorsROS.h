@@ -24,8 +24,8 @@ private:
 
     enum ros_commands {
         STOP = 0,
-        SET_CONTROL_MODE = 1,
-        SET_INPUT_VALUE = 2,
+        SET_DUTY_CYCLE  = 1,
+        SET_POSITION    = 2,
     };
 
     ros::Subscriber<std_msgs::Int32MultiArray, ActuatorsROS> command_sub;

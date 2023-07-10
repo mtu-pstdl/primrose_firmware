@@ -11,12 +11,12 @@ void ActuatorsROS::control_callback(const std_msgs::Int32MultiArray &msg) {
 //            if (msg.data_length != 2) return;
             this->actuator->set_control_mode(ActuatorUnit::control_modes::stopped, msg.data[1]);
             break;
-        case SET_CONTROL_MODE:
+        case SET_POSITION:
 //            if (msg.data_length != 3) return;
             this->actuator->set_control_mode(static_cast<ActuatorUnit::control_modes>(msg.data[1]),
                                              msg.data[2]);
             break;
-        case SET_INPUT_VALUE:
+        case SET_DUTY_CYCLE:
 //            if (msg.data_length != 3) return;
 //            this->actuator->set_target_position(msg.data[1], msg.data[2]);
             this->actuator->set_duty_cycle(msg.data[1] / 100.f, msg.data[2]);
