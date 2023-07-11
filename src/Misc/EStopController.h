@@ -10,7 +10,7 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32.h"
 #include "EStopDevice.h"
 
-#define MAIN_CONTACTOR_PIN 13
+#define MAIN_CONTACTOR_PIN 0
 
 // The time in milliseconds to wait after an estop is triggered before the main contactor is opened (to reduce back EMF)
 #define ESTOP_CONTACTOR_DELAY 2500  // 2.5 seconds
@@ -63,6 +63,8 @@ public:
     EStopController() :
         estop_sub("/mciu/estop_controller", &EStopController::estop_callback, this) {
         pinMode(MAIN_CONTACTOR_PIN, OUTPUT);
+        digitalWrite(MAIN_CONTACTOR_PIN, HIGH);
+        this->trigger_estop();
     }
 
     void add_estop_device(EStopDevice* estop_device) {
@@ -90,7 +92,7 @@ public:
     }
 
     void resume() {
-        digitalWrite(MAIN_CONTACTOR_PIN, HIGH);
+        digitalWrite(MAIN_CONTACTOR_PIN, LOW);
         estop_triggered = false;
         estop_triggered_time = 0;
         estop_resume_time = millis();
@@ -108,7 +110,7 @@ public:
             this->check_for_faults();
         } else {
             if (millis() - estop_triggered_time > ESTOP_CONTACTOR_DELAY)
-                digitalWriteFast(MAIN_CONTACTOR_PIN, LOW);  // Open the main contactor
+                digitalWriteFast(MAIN_CONTACTOR_PIN, HIGH);  // Open the main contactor
         }
     }
 

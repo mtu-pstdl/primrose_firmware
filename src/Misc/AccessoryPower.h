@@ -23,7 +23,8 @@ private:
         void accessory_power_callback(const std_msgs::Int32MultiArray& msg) {
             switch (msg.data[0]) {
                 case LASERS:
-                    digitalWriteFast(LASER_PIN, msg.data[1]);
+                    digitalWriteFast(LASER_PIN, msg.data[1] ? HIGH : LOW);
+                    break;
             }
         }
 

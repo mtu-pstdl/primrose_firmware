@@ -23,12 +23,14 @@
 #define BATTERY_NORM_CAPACITY 4600 // in W/h
 #define BATTERY_MIN_CAPACITY  600 // in W/h
 
+#define CURRENT_SENSOR_SCALE_FACTOR 0.0005 // 0.5 mV/A
+
 #define BATTERY_AVERAGE_BUFFER_SIZE 20
 
 #define AREF_PIN A0
 #define VREF_PIN A1
 
-#define CURRENT_SENSOR_PIN A2
+#define CURRENT_SENSOR_PIN 14
 
 class BatteryMonitor : public ROSNode {
 
@@ -179,8 +181,8 @@ private:
     }
 
     void calculate_power_draw(){
+        this->inst_bus_current = analogRead(CURRENT_SENSOR_PIN) * CURRENT_SENSOR_SCALE_FACTOR;
         if (!isnanf(this->inst_bus_voltage)) {
-            this->inst_bus_current = analogRead(CURRENT_SENSOR_PIN) * 0.0005f;
             // Calculate power draw
             this->inst_bus_power = this->inst_bus_voltage * this->inst_bus_current;
             // Calculate total session power draw
@@ -232,6 +234,7 @@ public:
             sprintf(this->diagnostic_topic->values[i].value, "");
         }
         load_data();
+        pinMode(CURRENT_SENSOR_PIN, INPUT);
     }
 
     void update_bus_voltage(float_t voltage){
@@ -270,7 +273,7 @@ public:
         if (this->estop_controller->is_high_voltage_enabled()) {
             sprintf(this->diagnostic_topic->values[0].value, "%05.2f V", this->inst_bus_voltage);
         } else sprintf(this->diagnostic_topic->values[0].value, "Contactor Open");
-        sprintf(this->diagnostic_topic->values[1].value, "%05.2f A", this->inst_bus_current);
+        sprintf(this->diagnostic_topic->values[1].value, "%010.6f A", this->inst_bus_current);
         sprintf(this->diagnostic_topic->values[2].value, "%s",
                 this->estop_controller->is_high_voltage_enabled() ? "Closed*" : "Open");
         sprintf(this->diagnostic_topic->values[3].value, "%07.2f W/h (~%05.2f%%)",
