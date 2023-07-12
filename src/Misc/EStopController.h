@@ -9,6 +9,8 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/subscriber.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32.h"
 #include "EStopDevice.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/KeyValue.h"
 
 #define MAIN_CONTACTOR_PIN 0
 
@@ -27,6 +29,7 @@ private:
     };
 
     ros::Subscriber<std_msgs::Int32, EStopController> estop_sub;
+    diagnostic_msgs::DiagnosticStatus* diagnostic_topic;
 
     void estop_callback(const std_msgs::Int32& msg);
 
@@ -58,10 +61,33 @@ private:
         }
     }
 
+    char* message_string = new char[20];
+
 public:
 
-    EStopController() :
+    EStopController(diagnostic_msgs::DiagnosticStatus* status) :
         estop_sub("/mciu/estop_controller", &EStopController::estop_callback, this) {
+        this->diagnostic_topic = status;
+
+        // Setup the diagnostic topic
+        this->diagnostic_topic->name = "E-Stop";
+        this->diagnostic_topic->hardware_id = "MCIU";
+        this->diagnostic_topic->message = message_string;
+        sprintf(this->diagnostic_topic->message, "Initializing");
+
+        this->diagnostic_topic->values_length = 4;
+        this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[4];
+        this->diagnostic_topic->values[0].key = "E-Stop Active";
+        this->diagnostic_topic->values[1].key = "Auto E-Stop Enabled";
+        this->diagnostic_topic->values[2].key = "Triggering Device";
+        this->diagnostic_topic->values[3].key = "Reason";
+
+        // Assign the strings
+        for (int i = 0; i < this->diagnostic_topic->values_length; i++) {
+            this->diagnostic_topic->values[i].value = new char[20];
+            sprintf(this->diagnostic_topic->values[i].value, "Initializing");
+        }
+
         pinMode(MAIN_CONTACTOR_PIN, OUTPUT);
         digitalWrite(MAIN_CONTACTOR_PIN, HIGH);
         this->trigger_estop();
@@ -103,7 +129,24 @@ public:
         node_handle->subscribe(estop_sub);
     }
 
+    void update_strings(){
+        if (this->estop_triggered) {
+            sprintf(this->diagnostic_topic->values[0].value, "True");
+            this->diagnostic_topic->level = 2;
+            sprintf(this->message_string, "E-Stop Triggered");
+        } else if (!this->automatic_estop_enabled) {
+            sprintf(this->diagnostic_topic->values[0].value, "False");
+            this->diagnostic_topic->level = 1;
+            sprintf(this->message_string, "Automatic E-Stop Disabled");
+        } else {
+            sprintf(this->diagnostic_topic->values[0].value, "False");
+            this->diagnostic_topic->level = 0;
+            sprintf(this->message_string, "OK");
+        }
+    }
+
     void update() override {
+        this->update_strings();
         if (!estop_triggered) {
             if (millis() - estop_resume_time > 3000)
                 this->automatic_estop_inhibited = false;

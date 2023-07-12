@@ -23,7 +23,8 @@
 #define BATTERY_NORM_CAPACITY 4600 // in W/h
 #define BATTERY_MIN_CAPACITY  600 // in W/h
 
-#define CURRENT_SENSOR_SCALE_FACTOR 0.0005 // 0.5 mV/A
+// The scale factor is 40mv/A
+#define CURRENT_SENSOR_SCALE_FACTOR 0.04 // in V/A (40 mV/A)
 
 #define BATTERY_AVERAGE_BUFFER_SIZE 20
 
@@ -44,6 +45,8 @@ private:
     float_t inst_bus_voltage = 0;
     float_t inst_bus_current = 0;
     float_t inst_bus_power   = 0;
+
+    uint32_t last_update_time = 0;
 
     uint16_t average_buffer_index = 0;
     float_t  bus_power_average_buffer[BATTERY_AVERAGE_BUFFER_SIZE] = {0};
@@ -182,29 +185,32 @@ private:
 
     void calculate_power_draw(){
         this->inst_bus_current = analogRead(CURRENT_SENSOR_PIN) * CURRENT_SENSOR_SCALE_FACTOR;
-//        if (!isnanf(this->inst_bus_voltage)) {
-//            // Calculate power draw
-//            this->inst_bus_power = this->inst_bus_voltage * this->inst_bus_current;
-//            // Calculate total session power draw
-//            this->battery_data.total_session_power_draw += this->inst_bus_voltage;
-//            this->battery_data.all_time_power_draw += this->inst_bus_current;
-//            this->battery_data.estimated_remaining_capacity -= this->inst_bus_power;
-//            // Add to the average power draw
-//            bus_power_average_buffer[this->average_buffer_index] = this->inst_bus_power;
-//            this->average_buffer_index++;
-//            if (this->average_buffer_index >= BATTERY_AVERAGE_BUFFER_SIZE) {  // Calculate average power draw
-//                this->average_buffer_index = 0;
-//                float_t sum = 0;
-//                for (auto &i: bus_power_average_buffer) {
-//                    sum += i;
-//                }
-//                this->bus_power_average = sum / BATTERY_AVERAGE_BUFFER_SIZE;
-//            }
-//        } else {
-//            this->inst_bus_current = 0;
-//            this->inst_bus_power = 0;
-//            this->bus_power_average = 0;
-//        }
+        if (!isnanf(this->inst_bus_voltage)) {
+            // Calculate power draw
+            this->inst_bus_power = this->inst_bus_voltage * this->inst_bus_current;
+            // Convert bus power to watt/hours so we can add it to the total power draw
+            // Use the time since the last loop to calculate the watt/hours so that the reading is time based
+            float_t consumption_rate = this->inst_bus_power * ((millis() - this->last_update_time) / 3600000.0f);
+            this->last_update_time = millis();
+            this->battery_data.total_session_power_draw += consumption_rate;
+            this->battery_data.all_time_power_draw += consumption_rate;
+            this->battery_data.estimated_remaining_capacity -= consumption_rate;
+            // Add to the average power draw
+            bus_power_average_buffer[this->average_buffer_index] = this->inst_bus_power;
+            this->average_buffer_index++;
+            if (this->average_buffer_index >= BATTERY_AVERAGE_BUFFER_SIZE) {  // Calculate average power draw
+                this->average_buffer_index = 0;
+                float_t sum = 0;
+                for (auto &i: bus_power_average_buffer) {
+                    sum += i;
+                }
+                this->bus_power_average = sum / BATTERY_AVERAGE_BUFFER_SIZE;
+            }
+        } else {
+            this->inst_bus_current = 0;
+            this->inst_bus_power = 0;
+            this->bus_power_average = 0;
+        }
     }
 
 public:
@@ -214,7 +220,7 @@ public:
         this->diagnostic_topic = status;
         this->estop_controller = estop_controller;
 
-        this->battery_status = new char[25];
+        this->battery_status = new char[50];
         sprintf(this->battery_status, "OK");
 
         this->diagnostic_topic->name = "Monitor";
@@ -255,14 +261,14 @@ public:
         } else if (this->inst_bus_voltage < 44) {  // HVDC voltage below 44V
             sprintf(this->battery_status, "Low HVDC Voltage (%05.2fV)", this->inst_bus_voltage);
             this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
-        } else if (this->calculate_estimated_time_remaining() < 0.75) {
-            sprintf(this->battery_status, "Low ETR (%05.2fH)", this->calculate_estimated_time_remaining());
-            this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
-        } else if (this->battery_data.estimated_remaining_capacity < BATTERY_MIN_CAPACITY) {
-            sprintf(this->battery_status, "Low Estimated Capacity");
-            this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
+//        } else if (this->calculate_estimated_time_remaining() < 0.75) {
+//            sprintf(this->battery_status, "Low ETR (%05.2fH)", this->calculate_estimated_time_remaining());
+//            this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
+//        } else if (this->battery_data.estimated_remaining_capacity < BATTERY_MIN_CAPACITY) {
+//            sprintf(this->battery_status, "Low Estimated Capacity");
+//            this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
         } else {
-            sprintf(this->battery_status, "OK (%05.2fV | %05.2fA | %07.2fW/h)",
+            sprintf(this->battery_status, "OK (%05.2fV | %06.2fA | %07.2fW/h)",
                     this->inst_bus_voltage, this->inst_bus_current, this->battery_data.estimated_remaining_capacity);
             this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::OK;
         }
@@ -273,7 +279,7 @@ public:
         if (this->estop_controller->is_high_voltage_enabled()) {
             sprintf(this->diagnostic_topic->values[0].value, "%05.2f V", this->inst_bus_voltage);
         } else sprintf(this->diagnostic_topic->values[0].value, "Contactor Open");
-        sprintf(this->diagnostic_topic->values[1].value, "%010.6f A", this->inst_bus_current);
+        sprintf(this->diagnostic_topic->values[1].value, "%06.2f A", this->inst_bus_current);
         sprintf(this->diagnostic_topic->values[2].value, "%s",
                 this->estop_controller->is_high_voltage_enabled() ? "Closed*" : "Open");
         sprintf(this->diagnostic_topic->values[3].value, "%07.2f W/h (~%05.2f%%)",
@@ -283,6 +289,7 @@ public:
         sprintf(this->diagnostic_topic->values[5].value, "%010.2f W/h", this->battery_data.total_session_power_draw);
         sprintf(this->diagnostic_topic->values[6].value, "%010.2f W/h", this->battery_data.all_time_power_draw);
         this->save_data_flag = this->estop_controller->is_high_voltage_enabled();
+        this->save_data();
     }
 
     void subscribe(ros::NodeHandle *node_handle) override {

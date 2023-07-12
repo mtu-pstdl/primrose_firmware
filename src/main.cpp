@@ -43,7 +43,7 @@ uint32_t cpu_boost_time = 0;
 ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
 
-#define SYSTEM_DIAGNOSTICS_COUNT 14
+#define SYSTEM_DIAGNOSTICS_COUNT 15
 diagnostic_msgs::DiagnosticArray system_diagnostics;
 diagnostic_msgs::DiagnosticStatus* system_info;
 ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
@@ -217,7 +217,7 @@ void setup() {
                                   &system_diagnostics.status[11], load_cell_topics[1]->message,
                                   "Suspension", load_cells[0]->get_used_eeprom());
 
-    e_stop_controller = new EStopController();
+    e_stop_controller = new EStopController(&system_diagnostics.status[13]);
     hopper_door = new HopperDoor();
     battery_monitor = new BatteryMonitor(&system_diagnostics.status[12], e_stop_controller);
     accessory_power = new AccessoryPower();
@@ -317,19 +317,19 @@ void loop() {
     }
 
     // Calculate the bus voltage by averaging the voltages of all the ODrives
-//    float_t bus_voltage = 0;
-//    uint32_t odrive_count = 0;
-//    for (ODrivePro *odrive: odrives) {
-//        if (odrive == nullptr) continue;
-//        float_t voltage = odrive->get_vbus_voltage();
-//        if (isnanf(voltage)) continue;
-//        bus_voltage += voltage;
-//        odrive_count++;
-//    }
-//    if (odrive_count == 0) {
-//        bus_voltage = NAN;  // If there are no ODrives connected set the bus voltage to NAN
-//    } else bus_voltage /= odrive_count;
-//    battery_monitor->update_bus_voltage(bus_voltage);
+    float_t bus_voltage = 0;
+    uint32_t odrive_count = 0;
+    for (ODrivePro *odrive: odrives) {
+        if (odrive == nullptr) continue;
+        float_t voltage = odrive->get_vbus_voltage();
+        if (isnanf(voltage)) continue;
+        bus_voltage += voltage;
+        odrive_count++;
+    }
+    if (odrive_count == 0) {
+        bus_voltage = NAN;  // If there are no ODrives connected set the bus voltage to NAN
+    } else bus_voltage /= odrive_count;
+    battery_monitor->update_bus_voltage(bus_voltage);
 
     e_stop_controller->update();
 
@@ -370,7 +370,7 @@ void loop() {
             actuator_bus.total_messages_sent - actuator_bus.total_messages_received,
             actuator_bus.total_messages_received - actuator_bus.total_messages_processed);
 
-    while (actuator_bus.spin(micros() - loop_start > 45000)) {
+    while (actuator_bus.spin() && micros() - loop_start < 45000) {
         yield();  // Yield to other tasks
     }
 

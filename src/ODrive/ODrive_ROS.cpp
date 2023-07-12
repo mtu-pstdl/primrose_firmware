@@ -69,7 +69,7 @@ void ODrive_ROS::update_diagnostics_label(){
                     this->state_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
                     sprintf(status_string, "FAULT: %15s", this->odrive->get_disarm_reason_string());
                 } else if (this->odrive->get_procedure_results() == odrive::SUCCESS) {
-                    this->state_topic->level = diagnostic_msgs::DiagnosticStatus::IDLE;
+                    this->state_topic->level = diagnostic_msgs::DiagnosticStatus::OK;
                     sprintf(status_string, "Ready");
                 } else {
                     this->state_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
