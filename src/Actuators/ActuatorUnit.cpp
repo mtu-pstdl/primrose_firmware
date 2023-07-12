@@ -362,9 +362,9 @@ bool ActuatorUnit::tripped() {
     // 3. Main battery voltage too low
     // 4. Controller temperature has exceeded 80C
     if (!this->connected) return true;
-    if (this->get_logic_battery_voltage() < 9) return true;
-    if (this->get_main_battery_voltage() < 45) return true;
-    if (this->get_temperature() > 80) return true;
+//    if (this->get_logic_battery_voltage() < 9) return true;
+//    if (this->get_main_battery_voltage() < 45) return true;
+//    if (this->get_temperature() > 80) return true;
     return false;
 }
 

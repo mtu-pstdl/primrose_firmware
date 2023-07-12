@@ -35,7 +35,7 @@ private:
 
     String name;
 
-    char* strings[9]{};
+    char* strings[9]{nullptr};
     char* status_string = new char[25];
     char* pub_name = new char[50];
 
@@ -86,6 +86,7 @@ public:
 
         for (int i = 0; i < 9; i++) {
             this->diagnostic_topic->values[i].value = strings[i];
+            sprintf(this->diagnostic_topic->values[i].value, "Initializing");
         }
         this->command_sub.topic_ = this->pub_name;
         sprintf(pub_name, "/mciu/%s/actuators/input", disp_name.c_str());
@@ -106,7 +107,6 @@ public:
 
     void publish() override;
 
-    void begin_homing();
 };
 
 

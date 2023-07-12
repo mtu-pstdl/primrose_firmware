@@ -182,29 +182,29 @@ private:
 
     void calculate_power_draw(){
         this->inst_bus_current = analogRead(CURRENT_SENSOR_PIN) * CURRENT_SENSOR_SCALE_FACTOR;
-        if (!isnanf(this->inst_bus_voltage)) {
-            // Calculate power draw
-            this->inst_bus_power = this->inst_bus_voltage * this->inst_bus_current;
-            // Calculate total session power draw
-            this->battery_data.total_session_power_draw += this->inst_bus_voltage;
-            this->battery_data.all_time_power_draw += this->inst_bus_current;
-            this->battery_data.estimated_remaining_capacity -= this->inst_bus_power;
-            // Add to the average power draw
-            bus_power_average_buffer[this->average_buffer_index] = this->inst_bus_power;
-            this->average_buffer_index++;
-            if (this->average_buffer_index >= BATTERY_AVERAGE_BUFFER_SIZE) {  // Calculate average power draw
-                this->average_buffer_index = 0;
-                float_t sum = 0;
-                for (auto &i: bus_power_average_buffer) {
-                    sum += i;
-                }
-                this->bus_power_average = sum / BATTERY_AVERAGE_BUFFER_SIZE;
-            }
-        } else {
-            this->inst_bus_current = 0;
-            this->inst_bus_power = 0;
-            this->bus_power_average = 0;
-        }
+//        if (!isnanf(this->inst_bus_voltage)) {
+//            // Calculate power draw
+//            this->inst_bus_power = this->inst_bus_voltage * this->inst_bus_current;
+//            // Calculate total session power draw
+//            this->battery_data.total_session_power_draw += this->inst_bus_voltage;
+//            this->battery_data.all_time_power_draw += this->inst_bus_current;
+//            this->battery_data.estimated_remaining_capacity -= this->inst_bus_power;
+//            // Add to the average power draw
+//            bus_power_average_buffer[this->average_buffer_index] = this->inst_bus_power;
+//            this->average_buffer_index++;
+//            if (this->average_buffer_index >= BATTERY_AVERAGE_BUFFER_SIZE) {  // Calculate average power draw
+//                this->average_buffer_index = 0;
+//                float_t sum = 0;
+//                for (auto &i: bus_power_average_buffer) {
+//                    sum += i;
+//                }
+//                this->bus_power_average = sum / BATTERY_AVERAGE_BUFFER_SIZE;
+//            }
+//        } else {
+//            this->inst_bus_current = 0;
+//            this->inst_bus_power = 0;
+//            this->bus_power_average = 0;
+//        }
     }
 
 public:

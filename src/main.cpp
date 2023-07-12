@@ -317,19 +317,19 @@ void loop() {
     }
 
     // Calculate the bus voltage by averaging the voltages of all the ODrives
-    float_t bus_voltage = 0;
-    uint32_t odrive_count = 0;
-    for (ODrivePro *odrive: odrives) {
-        if (odrive == nullptr) continue;
-        float_t voltage = odrive->get_vbus_voltage();
-        if (isnanf(voltage)) continue;
-        bus_voltage += voltage;
-        odrive_count++;
-    }
-    if (odrive_count == 0) {
-        bus_voltage = NAN;  // If there are no ODrives connected set the bus voltage to NAN
-    } else bus_voltage /= odrive_count;
-    battery_monitor->update_bus_voltage(bus_voltage);
+//    float_t bus_voltage = 0;
+//    uint32_t odrive_count = 0;
+//    for (ODrivePro *odrive: odrives) {
+//        if (odrive == nullptr) continue;
+//        float_t voltage = odrive->get_vbus_voltage();
+//        if (isnanf(voltage)) continue;
+//        bus_voltage += voltage;
+//        odrive_count++;
+//    }
+//    if (odrive_count == 0) {
+//        bus_voltage = NAN;  // If there are no ODrives connected set the bus voltage to NAN
+//    } else bus_voltage /= odrive_count;
+//    battery_monitor->update_bus_voltage(bus_voltage);
 
     e_stop_controller->update();
 
@@ -370,7 +370,7 @@ void loop() {
             actuator_bus.total_messages_sent - actuator_bus.total_messages_received,
             actuator_bus.total_messages_received - actuator_bus.total_messages_processed);
 
-    while (actuator_bus.spin() && micros() - loop_start < 45000) {
+    while (actuator_bus.spin(micros() - loop_start > 45000)) {
         yield();  // Yield to other tasks
     }
 
