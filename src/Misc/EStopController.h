@@ -40,6 +40,8 @@ private:
     boolean         automatic_estop_enabled = true;
     boolean         automatic_estop_inhibited = false;
     EStopDevice*    tripped_device = nullptr;  // The device that tripped the E-Stop
+    char*           tripped_device_name = new char[20];
+    char*           tripped_device_message = new char[50];
 
     // E-Stop variables
     boolean  estop_triggered = false;
@@ -53,15 +55,15 @@ private:
         }
         for (auto & estop_device : estop_devices) {
             if (estop_device != nullptr) {
-                if (estop_device->tripped()) {
-                    this->trigger_estop();
+                if (estop_device->tripped(tripped_device_name, tripped_device_message)) {
+                    this->trigger_estop(true);
                     return;
                 }
             }
         }
     }
 
-    char* message_string = new char[20];
+    char* message_string = new char[50];
 
 public:
 
@@ -84,7 +86,7 @@ public:
 
         // Assign the strings
         for (int i = 0; i < this->diagnostic_topic->values_length; i++) {
-            this->diagnostic_topic->values[i].value = new char[20];
+            this->diagnostic_topic->values[i].value = new char[50];
             sprintf(this->diagnostic_topic->values[i].value, "Initializing");
         }
 
@@ -103,15 +105,19 @@ public:
     }
 
     bool is_high_voltage_enabled() {
-        return !this->estop_triggered;
-//        return digitalReadFast(MAIN_CONTACTOR_PIN);
+//        return !this->estop_triggered;
+        return !digitalReadFast(MAIN_CONTACTOR_PIN);
     }
 
-    void trigger_estop() {
+    void trigger_estop(boolean automatic = false) {
         for (auto & estop_device : estop_devices) {
             if (estop_device != nullptr) {
                 estop_device->estop();
             }
+        }
+        if (!automatic) {
+            sprintf(this->tripped_device_name, "Manual");
+            sprintf(this->tripped_device_message, "Manual E-Stop");
         }
         this->estop_triggered = true;
         this->estop_triggered_time = millis();
@@ -123,27 +129,15 @@ public:
         estop_triggered_time = 0;
         estop_resume_time = millis();
         this->automatic_estop_inhibited = true;
+        sprintf(this->tripped_device_name, "NULL");
+        sprintf(this->tripped_device_message, "NULL");
     }
 
     void subscribe(ros::NodeHandle *node_handle) override {
         node_handle->subscribe(estop_sub);
     }
 
-    void update_strings(){
-        if (this->estop_triggered) {
-            sprintf(this->diagnostic_topic->values[0].value, "True");
-            this->diagnostic_topic->level = 2;
-            sprintf(this->message_string, "E-Stop Triggered");
-        } else if (!this->automatic_estop_enabled) {
-            sprintf(this->diagnostic_topic->values[0].value, "False");
-            this->diagnostic_topic->level = 1;
-            sprintf(this->message_string, "Automatic E-Stop Disabled");
-        } else {
-            sprintf(this->diagnostic_topic->values[0].value, "False");
-            this->diagnostic_topic->level = 0;
-            sprintf(this->message_string, "OK");
-        }
-    }
+    void update_strings();
 
     void update() override {
         this->update_strings();

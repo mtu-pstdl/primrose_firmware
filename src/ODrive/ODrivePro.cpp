@@ -561,11 +561,19 @@ double_t ODrivePro::get_power_consumption() const {
     }
 }
 
-bool ODrivePro::tripped() {
+bool ODrivePro::tripped(char* name, char* reason) {
     // An ODrive will trip an estop if it ever exits closed loop control with an error as indicated in disarm_reason
     // The only trigger state is if we lose communication with the ODrive
-    if (!this->is_connected()) return true;
-    return this->DISARM_REASON != 0x00 && this->AXIS_STATE != odrive::axis_states::CLOSED_LOOP_CONTROL;
+    if (!this->is_connected()) {
+        sprintf(name, "ODrive: %d", this->can_id);
+        sprintf(reason, "Lost Connection");
+        return true;
+    }
+    if (this->DISARM_REASON != 0x00 && this->AXIS_STATE != odrive::axis_states::CLOSED_LOOP_CONTROL){
+        sprintf(name, "ODrive: %d", this->can_id);
+        odrive::sprintf_error_code(reason, this->DISARM_REASON);
+        return true;
+    }
 }
 
 void ODrivePro::estop() {

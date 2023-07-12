@@ -269,7 +269,7 @@ public:
 
     void estop() override;
 
-    bool tripped() override;
+    bool tripped(char* device_name, char* device_message) override;
 
     /**
      * Queues all telemetry messages that need to be sent during this cycle

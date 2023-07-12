@@ -355,16 +355,32 @@ void ActuatorUnit::estop() {
     this->set_duty_cycle(1, 0);
 }
 
-bool ActuatorUnit::tripped() {
+bool ActuatorUnit::tripped(char* device_name, char* device_message) {
     // The conditions that would trip an actuator unit are:
     // 1. Lost communication with the controller
     // 2. Logic battery voltage too low
     // 3. Main battery voltage too low
     // 4. Controller temperature has exceeded 80C
-    if (!this->connected) return true;
-//    if (this->get_logic_battery_voltage() < 9) return true;
-//    if (this->get_main_battery_voltage() < 45) return true;
-//    if (this->get_temperature() > 80) return true;
+    if (!this->connected) {
+        sprintf(device_name, "Actuator Unit: %d", this->id);
+        sprintf(device_message, "Lost communication");
+        return true;
+    }
+    if (this->logic_battery_voltage < 10) {
+        sprintf(device_name, "Actuator Unit: %d", this->id);
+        sprintf(device_message, "Logic battery voltage too low");
+        return true;
+    }
+    if (this->main_battery_voltage < 46) {
+        sprintf(device_name, "Actuator Unit: %d", this->id);
+        sprintf(device_message, "Main battery voltage too low");
+        return true;
+    }
+    if (this->controller_temperature > 80) {
+        sprintf(device_name, "Actuator Unit: %d", this->id);
+        sprintf(device_message, "Controller temperature too high");
+        return true;
+    }
     return false;
 }
 

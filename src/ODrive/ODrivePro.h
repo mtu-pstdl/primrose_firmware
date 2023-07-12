@@ -174,7 +174,7 @@ private:
 
 public:
 
-    bool tripped() override;
+    bool tripped(char* device_name, char* device_message) override;
 
     void estop() override;
 
