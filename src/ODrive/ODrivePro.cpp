@@ -574,6 +574,7 @@ bool ODrivePro::tripped(char* name, char* reason) {
         odrive::sprintf_error_code(reason, this->DISARM_REASON);
         return true;
     }
+    return false;
 }
 
 void ODrivePro::estop() {

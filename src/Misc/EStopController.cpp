@@ -30,6 +30,8 @@ void EStopController::update_strings(){
     } else if (!this->automatic_estop_enabled) {
         this->diagnostic_topic->level = 1;
         sprintf(this->message_string, "Automatic E-Stop Disabled");
+        sprintf(this->diagnostic_topic->values[2].value, "Not applicable");
+        sprintf(this->diagnostic_topic->values[3].value, "Not applicable");
     } else {
         sprintf(this->diagnostic_topic->values[0].value, "False");
         this->diagnostic_topic->level = 0;

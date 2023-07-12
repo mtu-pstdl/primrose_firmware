@@ -362,6 +362,7 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
     // 3. Main battery voltage too low
     // 4. Controller temperature has exceeded 80C
     if (!this->connected) {
+        return false;
         sprintf(device_name, "Actuator Unit: %d", this->id);
         sprintf(device_message, "Lost communication");
         return true;
@@ -376,7 +377,7 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
         sprintf(device_message, "Main battery voltage too low");
         return true;
     }
-    if (this->controller_temperature > 80) {
+    if (this->controller_temperature > 800) {
         sprintf(device_name, "Actuator Unit: %d", this->id);
         sprintf(device_message, "Controller temperature too high");
         return true;

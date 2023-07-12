@@ -40,7 +40,7 @@ private:
     boolean         automatic_estop_enabled = true;
     boolean         automatic_estop_inhibited = false;
     EStopDevice*    tripped_device = nullptr;  // The device that tripped the E-Stop
-    char*           tripped_device_name = new char[20];
+    char*           tripped_device_name = new char[30];
     char*           tripped_device_message = new char[50];
 
     // E-Stop variables
@@ -125,6 +125,11 @@ public:
 
     void resume() {
         digitalWrite(MAIN_CONTACTOR_PIN, LOW);
+        for (auto & estop_device : estop_devices) {
+            if (estop_device != nullptr) {
+                estop_device->resume();
+            }
+        }
         estop_triggered = false;
         estop_triggered_time = 0;
         estop_resume_time = millis();
