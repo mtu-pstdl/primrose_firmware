@@ -352,7 +352,7 @@ int32_t ActuatorUnit::get_target_position(uint8_t motor) {
 
 void ActuatorUnit::estop() {
     this->set_duty_cycle(0, 0);
-    this->set_duty_cycle(1, 0);
+    this->set_duty_cycle(0, 1);
 }
 
 bool ActuatorUnit::tripped(char* device_name, char* device_message) {

@@ -14,6 +14,7 @@
 #include "Misc/EStopController.h"
 #include <Arduino.h>
 #include <EEPROM.h>
+#include <ADC.h>
 #include "../../.pio/libdeps/teensy40/TLI4971-Current-Sensor/src/TLI4971.h"
 
 #define BATTERY_MONITOR_EEPROM_ADDRESS 3200
@@ -25,13 +26,14 @@
 
 // The scale factor is 40mv/A
 #define CURRENT_SENSOR_SCALE_FACTOR 0.04 // in V/A (40 mV/A)
+#define CURRENT_SENSOR_CAL_OFFSET 0.1 // What voltage is zero
 
 #define BATTERY_AVERAGE_BUFFER_SIZE 20
 
 #define AREF_PIN A0
 #define VREF_PIN A1
 
-#define CURRENT_SENSOR_PIN 14
+#define CURRENT_SENSOR_PIN 0
 
 class BatteryMonitor : public ROSNode {
 
@@ -87,6 +89,10 @@ private:
             }
         }
         return crc;
+    }
+
+    float_t analog_read_to_voltage(uint8_t pin, uint8_t resolution = 12) {
+        return (float_t) analogRead(pin) * (3.3 / (float_t) pow(2, resolution));
     }
 
     void load_data(){
@@ -184,7 +190,10 @@ private:
     }
 
     void calculate_power_draw(){
-        this->inst_bus_current = analogRead(CURRENT_SENSOR_PIN) * CURRENT_SENSOR_SCALE_FACTOR;
+        this->inst_bus_current =
+                (analog_read_to_voltage(CURRENT_SENSOR_PIN) - CURRENT_SENSOR_CAL_OFFSET)
+                / CURRENT_SENSOR_SCALE_FACTOR;
+        if (this->inst_bus_current < 0) this->inst_bus_current = 0;
         if (!isnanf(this->inst_bus_voltage)) {
             // Calculate power draw
             this->inst_bus_power = this->inst_bus_voltage * this->inst_bus_current;
@@ -240,7 +249,8 @@ public:
             sprintf(this->diagnostic_topic->values[i].value, "");
         }
         load_data();
-        pinMode(CURRENT_SENSOR_PIN, INPUT);
+        analogReadResolution(12);
+
     }
 
     void update_bus_voltage(float_t voltage){
@@ -261,12 +271,12 @@ public:
         } else if (this->inst_bus_voltage < 44) {  // HVDC voltage below 44V
             sprintf(this->battery_status, "Low HVDC Voltage (%05.2fV)", this->inst_bus_voltage);
             this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
-//        } else if (this->calculate_estimated_time_remaining() < 0.75) {
-//            sprintf(this->battery_status, "Low ETR (%05.2fH)", this->calculate_estimated_time_remaining());
-//            this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
-//        } else if (this->battery_data.estimated_remaining_capacity < BATTERY_MIN_CAPACITY) {
-//            sprintf(this->battery_status, "Low Estimated Capacity");
-//            this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
+        } else if (this->calculate_estimated_time_remaining() < 0.75) {
+            sprintf(this->battery_status, "Low ETR (%05.2fH)", this->calculate_estimated_time_remaining());
+            this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
+        } else if (this->battery_data.estimated_remaining_capacity < BATTERY_MIN_CAPACITY) {
+            sprintf(this->battery_status, "Low Estimated Capacity");
+            this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
         } else {
             sprintf(this->battery_status, "OK (%05.2fV | %06.2fA | %07.2fW/h)",
                     this->inst_bus_voltage, this->inst_bus_current, this->battery_data.estimated_remaining_capacity);
@@ -279,7 +289,8 @@ public:
         if (this->estop_controller->is_high_voltage_enabled()) {
             sprintf(this->diagnostic_topic->values[0].value, "%05.2f V", this->inst_bus_voltage);
         } else sprintf(this->diagnostic_topic->values[0].value, "Contactor Open");
-        sprintf(this->diagnostic_topic->values[1].value, "%06.2f A", this->inst_bus_current);
+        sprintf(this->diagnostic_topic->values[1].value, "%06.2f A %fv", this->inst_bus_current,
+                analog_read_to_voltage(14));
         sprintf(this->diagnostic_topic->values[2].value, "%s",
                 this->estop_controller->is_high_voltage_enabled() ? "Closed*" : "Open");
         sprintf(this->diagnostic_topic->values[3].value, "%07.2f W/h (~%05.2f%%)",

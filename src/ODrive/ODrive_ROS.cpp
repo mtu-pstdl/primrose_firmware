@@ -68,7 +68,8 @@ void ODrive_ROS::update_diagnostics_label(){
                 } else if (this->odrive->get_disarm_reason() != 0) {
                     this->state_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
                     sprintf(status_string, "FAULT: %15s", this->odrive->get_disarm_reason_string());
-                } else if (this->odrive->get_procedure_results() == odrive::SUCCESS) {
+                } else if (this->odrive->get_procedure_results() == odrive::SUCCESS  ||
+                           this->odrive->get_procedure_results() == odrive::CANCELED) {
                     this->state_topic->level = diagnostic_msgs::DiagnosticStatus::OK;
                     sprintf(status_string, "Ready");
                 } else {

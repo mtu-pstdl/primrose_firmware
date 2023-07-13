@@ -41,4 +41,5 @@ void EStopController::update_strings(){
     }
     sprintf(this->diagnostic_topic->values[0].value, "%s", this->estop_triggered ? "True" : "False");
     sprintf(this->diagnostic_topic->values[1].value, "%s", this->automatic_estop_enabled ? "True" : "False");
+    sprintf(this->diagnostic_topic->values[4].value, "%d", this->number_of_tripped_devices);
 }

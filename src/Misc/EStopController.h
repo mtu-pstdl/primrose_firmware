@@ -39,7 +39,8 @@ private:
     // Automatic E-Stop variables
     boolean         automatic_estop_enabled = true;
     boolean         automatic_estop_inhibited = false;
-    EStopDevice*    tripped_device = nullptr;  // The device that tripped the E-Stop
+    boolean         should_trigger_estop = false;
+    uint32_t        number_of_tripped_devices = 0;
     char*           tripped_device_name = new char[30];
     char*           tripped_device_message = new char[50];
 
@@ -53,14 +54,18 @@ private:
         if (!automatic_estop_enabled || automatic_estop_inhibited) {
             return;
         }
+        this->should_trigger_estop = false;
+        this->number_of_tripped_devices = 0;
         for (auto & estop_device : estop_devices) {
             if (estop_device != nullptr) {
                 if (estop_device->tripped(tripped_device_name, tripped_device_message)) {
-                    this->trigger_estop(true);
-                    return;
+                    this->should_trigger_estop = true;
+                    this->number_of_tripped_devices++;
                 }
             }
         }
+        if (this->should_trigger_estop) this->trigger_estop(true);
+
     }
 
     char* message_string = new char[50];
@@ -77,12 +82,13 @@ public:
         this->diagnostic_topic->message = message_string;
         sprintf(this->diagnostic_topic->message, "Initializing");
 
-        this->diagnostic_topic->values_length = 4;
-        this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[4];
+        this->diagnostic_topic->values_length = 5;
+        this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[5];
         this->diagnostic_topic->values[0].key = "E-Stop Active";
         this->diagnostic_topic->values[1].key = "Auto E-Stop Enabled";
         this->diagnostic_topic->values[2].key = "Triggering Device";
         this->diagnostic_topic->values[3].key = "Reason";
+        this->diagnostic_topic->values[4].key = "Number of Tripped Devices";
 
         // Assign the strings
         for (int i = 0; i < this->diagnostic_topic->values_length; i++) {
