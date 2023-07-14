@@ -13,25 +13,25 @@ void ActuatorUnit::build_telemetry_messages() {
     reocurring_messages[1] = *build_message(
             Actuators::serial_commands::read_encoder_count_m2,
             50, 5, &ActuatorUnit::encoder_count_callback);
+//    reocurring_messages[2] = *build_message(
+//            Actuators::serial_commands::read_encoder_speed_m1,
+//            60, 5, &ActuatorUnit::encoder_speed_callback);
+//    reocurring_messages[3] = *build_message(
+//            Actuators::serial_commands::read_encoder_speed_m2,
+//            60, 5, &ActuatorUnit::encoder_speed_callback);
     reocurring_messages[2] = *build_message(
-            Actuators::serial_commands::read_encoder_speed_m1,
-            60, 5, &ActuatorUnit::encoder_speed_callback);
-    reocurring_messages[3] = *build_message(
-            Actuators::serial_commands::read_encoder_speed_m2,
-            60, 5, &ActuatorUnit::encoder_speed_callback);
-    reocurring_messages[4] = *build_message(
             Actuators::serial_commands::read_main_battery_voltage,
             350, 2, &ActuatorUnit::main_battery_voltage_callback);
-    reocurring_messages[5] = *build_message(
+    reocurring_messages[3] = *build_message(
             Actuators::serial_commands::read_logic_battery_voltage,
             900, 2, &ActuatorUnit::logic_battery_voltage_callback);
-    reocurring_messages[6] = *build_message(
+    reocurring_messages[4] = *build_message(
             Actuators::serial_commands::read_motor_currents,
             75, 4, &ActuatorUnit::motor_currents_callback);
-    reocurring_messages[7] = *build_message(
+    reocurring_messages[5] = *build_message(
             Actuators::serial_commands::read_temperature,
             750, 2, &ActuatorUnit::controller_temp_callback);
-    reocurring_messages[8] = *build_message(
+    reocurring_messages[6] = *build_message(
             Actuators::serial_commands::read_status,
             1000, 1, &ActuatorUnit::controller_status_callback);
 
@@ -72,6 +72,7 @@ void ActuatorUnit::update_duty_cycle_command(float_t duty_cycle, uint8_t motor,
     // Cap the duty cycle at the maximum allowable value
     if (duty_cycle > this->motors[motor].max_duty_cycle) duty_cycle = this->motors[motor].max_duty_cycle;
     else if (duty_cycle < -this->motors[motor].max_duty_cycle) duty_cycle = -this->motors[motor].max_duty_cycle;
+    this->motors[motor].current_duty_cycle = duty_cycle;
 
     auto duty_cycle_int = (int16_t) (duty_cycle * INT16_MAX); // Convert to signed 16 bit integer
     if (motor == 0) {
@@ -137,7 +138,7 @@ void ActuatorUnit::queue_telemetry_messages() {
             command_messages[i].last_send_time = millis();
         }
     }
-    for (int i = 0; i < 9; i++) {  // Queue telemetry messages last so they get sent if there is space
+    for (int i = 0; i < 7; i++) {  // Queue telemetry messages last so they get sent if there is space
         if (millis() - reocurring_messages[i].last_send_time > reocurring_messages[i].send_interval) {
             if (!command_bus->space_available()) return;
             command_bus->queue_message(this->reocurring_messages[i].msg);

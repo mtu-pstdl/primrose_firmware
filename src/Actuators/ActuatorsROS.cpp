@@ -47,10 +47,10 @@ void ActuatorsROS::update_diagnostics_topic(){
         sprintf(strings[1], "%24s", this->actuator->get_motor_fault_string(1));
         if (this->actuator->get_position(0) == INT32_MIN) {
             sprintf(strings[2], "NULL Ticks");
-        } else sprintf(strings[2], "%07ld Ticks", this->actuator->get_position(0));
+        } else sprintf(strings[2], "%04ld Ticks", this->actuator->get_position(0));
         if (this->actuator->get_position(1) == INT32_MIN) {
             sprintf(strings[3], "NULL Ticks");
-        } else sprintf(strings[3], "%07ld Ticks", this->actuator->get_position(1));
+        } else sprintf(strings[3], "%04ld Ticks", this->actuator->get_position(1));
         if (this->actuator->get_velocity(0) == INT32_MIN) {
             sprintf(strings[4], "NULL Ticks/s");
         } else sprintf(strings[4], "%07ld Ticks/s", this->actuator->get_velocity(0));

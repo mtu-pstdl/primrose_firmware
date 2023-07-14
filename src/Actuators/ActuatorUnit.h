@@ -64,6 +64,7 @@ public:
         float_t i_gain              = 0.05;      // The integral gain of the motor
         float_t i_term              = 0;         // The integral term of the motor
         float_t max_duty_cycle      = 0.5;       // The maximum duty cycle of the motor
+        float_t current_duty_cycle  = 0;         // The current duty cycle of the motor
         int32_t current_speed       = 0;         // The current velocity of the motor in ticks per second
         int16_t current_current     = 7;         // The current current draw of the motor in ma
         int16_t warning_current     = 500;       // The current current draw of the motor in ma
@@ -80,7 +81,8 @@ public:
         actuator_unit->message_dropped_count = 0;
         actuator_unit->connected = true;
         uint32_t raw_position = (msg->data[0] << 24) | (msg->data[1] << 16) | (msg->data[2] << 8) | msg->data[3];
-        bool negative = msg->data[4] & 0b00000010;
+//        bool negative = msg->data[4] & 0b00000010;
+        bool negative = false;
         if (msg->command == Actuators::serial_commands::read_encoder_count_m1){
             // Trim the position value to a 32 bit signed integer
             if (negative) {
@@ -251,7 +253,7 @@ public:
         this->id = id;
 
         // Setup all the required messages for gathering information from the object
-        this->reocurring_messages = new telemetry_message[9];
+        this->reocurring_messages = new telemetry_message[7];
         this->command_messages = new telemetry_message[2];
         this->command_messages[0].msg = new Actuators::serial_message();
         this->command_messages[1].msg = new Actuators::serial_message();
