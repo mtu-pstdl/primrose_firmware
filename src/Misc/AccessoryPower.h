@@ -10,12 +10,14 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/subscriber.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32MultiArray.h"
 
-#define LASER_PIN 14
+#define LASER_PIN 2
+#define CAMERA_PIN 3
 
 class AccessoryPower : public ROSNode {
 
     enum accessory_ids {
-        LASERS = 0
+        LASERS = 0,
+        CAMERAS = 1,
     };
 
 private:
@@ -24,6 +26,9 @@ private:
             switch (msg.data[0]) {
                 case LASERS:
                     digitalWriteFast(LASER_PIN, msg.data[1] ? HIGH : LOW);
+                    break;
+                case CAMERAS:
+                    digitalWriteFast(CAMERA_PIN, msg.data[1] ? HIGH : LOW);
                     break;
             }
         }
@@ -37,6 +42,7 @@ public:
         accessory_power_sub("/mciu/accessory_power",
                             &AccessoryPower::accessory_power_callback, this) {
         pinMode(LASER_PIN, OUTPUT);
+        pinMode(CAMERA_PIN, OUTPUT);
     }
 
     void subscribe(ros::NodeHandle* node_handle) override {

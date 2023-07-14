@@ -181,6 +181,12 @@ void Actuators::queue_message(Actuators::serial_message *message) {
         if (message->free_after_callback) delete message;
         return;
     }
+    // Check if the pointer to this message is already in the queue
+    for (auto & i : this->message_queue){
+        if (i == message){
+            return; // If it is, then don't add it again because its the exact same serial_message
+        }
+    }
     this->message_queue_enqueue_position++;
     if (this->message_queue_enqueue_position >= MESSAGE_QUEUE_SIZE){
         this->message_queue_enqueue_position = 0;

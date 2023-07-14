@@ -54,23 +54,26 @@ public:
     };
 
     struct motor_info{
-        char*    name                = nullptr; // The name of the motor
-        int32_t target_position     = 0; // The target position of the motor in analog value
-        int32_t current_position    = 0; // The current position of the motor in analog value
-        int32_t max_position        = 0; // The maximum position of the motor in analog value
-        int32_t min_position        = 0; // The minimum position of the motor in analog value
-        int32_t current_speed       = 0; // The current velocity of the motor in ticks per second
-        int16_t current_current     = 7; // The current current draw of the motor in ma
-        int16_t warning_current     = 500; // The current current draw of the motor in ma
-        control_modes control_mode   = E_STOPPED; // The current control mode of the motor
-        boolean  homed               = true; // Whether or not the motor has been homed
-        boolean  fault               = false; // Whether or not the motor has a fault
-        boolean  warn                = false; // Whether or not the motor has a warning
-        char*    status_string       = nullptr; // A string describing the diagnostics_topic of the motor
+        char*   name                = nullptr;   // The name of the motor
+        int32_t target_position     = 0;         // The target position of the motor in analog value
+        int32_t current_position    = 0;         // The current position of the motor in analog value
+        int32_t max_position        = 0;         // The maximum position of the motor in analog value
+        int32_t min_position        = 0;         // The minimum position of the motor in analog value
+        int32_t position_tolerance  = 0;         // The deadband of the motor in analog value
+        float_t p_gain              = 0.1;       // The proportional gain of the motor
+        float_t i_gain              = 0.05;      // The integral gain of the motor
+        float_t i_term              = 0;         // The integral term of the motor
+        float_t max_duty_cycle      = 0.5;       // The maximum duty cycle of the motor
+        int32_t current_speed       = 0;         // The current velocity of the motor in ticks per second
+        int16_t current_current     = 7;         // The current current draw of the motor in ma
+        int16_t warning_current     = 500;       // The current current draw of the motor in ma
+        control_modes control_mode  = E_STOPPED; // The current control mode of the motor
+        boolean  fault              = false;     // Whether or not the motor has a fault
+        boolean  warn               = false;     // Whether or not the motor has a warning
+        char*    status_string      = nullptr;   // A string describing the diagnostics_topic of the motor
     };
 
-    // Welcome to pointer hell
-
+    // Welcome to pointer and reference hell
     static void encoder_count_callback(void *actuator, Actuators::serial_message *msg) {
         // Cast the void pointer to an ActuatorUnit pointer
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
@@ -238,7 +241,7 @@ private:
 
     void build_telemetry_messages();
 
-    void send_target_position(uint8_t motor);
+    void update_duty_cycle_command(float_t duty_cycle, uint8_t motor, boolean send_immediately = false);
 
 public:
 
@@ -312,7 +315,6 @@ public:
 
     void position_control_callback(uint8_t motor);
 
-    void update_duty_cycle_command(float_t duty_cycle, uint8_t motor, boolean send_immediately = false);
 };
 
 

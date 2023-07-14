@@ -63,11 +63,17 @@ void ActuatorUnit::set_duty_cycle(float_t duty_cycle, uint8_t motor) {
     if (this->motors[motor].control_mode == control_modes::E_STOPPED) {
         duty_cycle = 0; // If the motor is e-stopped, all commands are ignored
     } else this->motors[motor].control_mode = control_modes::DUTY_CYCLE;
-    this->update_duty_cycle_command(duty_cycle, motor);
+    this->update_duty_cycle_command(duty_cycle, motor, false);
 }
 
-void ActuatorUnit::update_duty_cycle_command(float_t duty_cycle, uint8_t motor, boolean send_immediately = false) {
-    auto duty_cycle_int = (int16_t) (duty_cycle * INT16_MAX);
+void ActuatorUnit::update_duty_cycle_command(float_t duty_cycle, uint8_t motor,
+                                             boolean send_immediately = false) {
+
+    // Cap the duty cycle at the maximum allowable value
+    if (duty_cycle > this->motors[motor].max_duty_cycle) duty_cycle = this->motors[motor].max_duty_cycle;
+    else if (duty_cycle < -this->motors[motor].max_duty_cycle) duty_cycle = -this->motors[motor].max_duty_cycle;
+
+    auto duty_cycle_int = (int16_t) (duty_cycle * INT16_MAX); // Convert to signed 16 bit integer
     if (motor == 0) {
         this->command_messages[0].msg->command = Actuators::serial_commands::drive_m1_duty_cycle;
         this->command_messages[0].msg->data[0] = duty_cycle_int >> 8;
@@ -104,7 +110,22 @@ void ActuatorUnit::set_target_position(int32_t position, uint8_t motor) {
 }
 
 void ActuatorUnit::position_control_callback(uint8_t motor){
-
+    // Get the current position
+    int32_t current_position = this->motors[motor].current_position;
+    int32_t target_position = this->motors[motor].target_position;
+    int32_t position_error = target_position - current_position;
+    if (abs(position_error) < this->motors[motor].position_tolerance) {
+        // If the position error is within the tolerance, stop the motor
+        this->update_duty_cycle_command(0, motor, true);
+        // Clear the I term to prevent windup
+        this->motors[motor].i_term = 0;
+    } else {
+        // Otherwise, calculate the target duty cycle using a PI controller
+        float_t p_term = this->motors[motor].p_gain * position_error;
+        this->motors[motor].i_term += this->motors[motor].i_gain * position_error;
+        // Set the duty cycle to the sum of the P and I terms
+        this->update_duty_cycle_command(p_term + this->motors[motor].i_term, motor, true);
+    }
 }
 
 void ActuatorUnit::queue_telemetry_messages() {

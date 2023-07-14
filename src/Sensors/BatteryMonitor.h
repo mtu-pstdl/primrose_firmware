@@ -33,7 +33,7 @@
 #define AREF_PIN A0
 #define VREF_PIN A1
 
-#define CURRENT_SENSOR_PIN 0
+#define CURRENT_SENSOR_PIN 14
 
 class BatteryMonitor : public ROSNode {
 
