@@ -86,16 +86,13 @@ void ActuatorUnit::update_duty_cycle_command(float_t duty_cycle, uint8_t motor,
         this->command_messages[1].msg->data[1] = duty_cycle_int & 0xFF;
         this->command_messages[1].msg->data_length = 2;
     }
-    if (send_immediately) {
-        this->command_bus->queue_message(this->command_messages[motor].msg);
-    }
+    if (send_immediately) this->command_bus->queue_message(this->command_messages[motor].msg);
 }
 
 void ActuatorUnit::set_target_position(int32_t position, uint8_t motor) {
     if (motor == 0) {
         if (this->motors[0].control_mode != control_modes::E_STOPPED)
             this->motors[0].control_mode = control_modes::POSITION;
-        this->motors[0].target_position = position;
         // Check if the position is within the allowable range
         if (position > this->motors[0].max_position) position = this->motors[0].max_position;
         else if (position < this->motors[0].min_position) position = this->motors[0].min_position;
@@ -124,9 +121,9 @@ void ActuatorUnit::position_control_callback(uint8_t motor){
         // Otherwise, calculate the target duty cycle using a PI controller
         float_t p_term = this->motors[motor].p_gain * position_error;
         this->motors[motor].i_term += this->motors[motor].i_gain * position_error;
-        if (abs(this->motors[motor].i_term) > 0.3) {
+        if (abs(this->motors[motor].i_term) > 0.25) {
             // Cap the I term to prevent windup
-            this->motors[motor].i_term = 0.3 * this->motors[motor].i_term / abs(this->motors[motor].i_term);
+            this->motors[motor].i_term = 0.25f * this->motors[motor].i_term / abs(this->motors[motor].i_term);
         }
         // Set the duty cycle to the sum of the P and I terms
         this->update_duty_cycle_command(p_term + this->motors[motor].i_term, motor, true);
@@ -137,6 +134,8 @@ void ActuatorUnit::queue_telemetry_messages() {
     for (int i = 0; i < 2; i++) {  // Queue command messages first so they get priority
         if (millis() - command_messages[i].last_send_time > command_messages[i].send_interval) {
             if (!command_bus->space_available()) return;
+            // When in position control mode, the actuator sends its command message immediately after
+            // receiving a position control message. This keeps command messages in sync with the current state
             if (this->motors[i].control_mode == control_modes::POSITION) continue;
             command_bus->queue_message(this->command_messages[i].msg);
             command_messages[i].last_send_time = millis();
