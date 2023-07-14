@@ -327,7 +327,7 @@ void loop() {
         odrive_count++;
     }
     if (odrive_count == 0) {
-        bus_voltage = NAN;  // If there are no ODrives stable_connection set the bus voltage to NAN
+        bus_voltage = NAN;  // If there are no ODrives connected set the bus voltage to NAN
     } else bus_voltage /= odrive_count;
     battery_monitor->update_bus_voltage(bus_voltage);
 

@@ -148,7 +148,7 @@ void ActuatorUnit::queue_telemetry_messages() {
 }
 
 void ActuatorUnit::update() {
-    if (this->stable_connection) {
+    if (this->connected) {
         this->queue_telemetry_messages();
     } else {
         this->check_connection();
@@ -156,8 +156,8 @@ void ActuatorUnit::update() {
 }
 
 void ActuatorUnit::check_connection() {
-    // Queue a telemetry serial_message to check if the actuator unit is stable_connection
-    if (!this->stable_connection) {
+    // Queue a telemetry serial_message to check if the actuator unit is connected
+    if (!this->connected) {
         if (millis() - reocurring_messages[1].last_send_time > 100) {
             this->command_bus->queue_message(reocurring_messages[2].msg);
             reocurring_messages[1].last_send_time = millis();
@@ -302,7 +302,7 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
     // 2. Logic battery voltage too low
     // 3. Main battery voltage too low
     // 4. Controller temperature has exceeded 80C
-    if (!this->stable_connection) {
+    if (!this->connected) {
         return false;
         sprintf(device_name, "Actuator Unit: %d", this->id);
         sprintf(device_message, "Lost communication");

@@ -23,7 +23,7 @@ void ActuatorsROS::control_callback(const std_msgs::Int32MultiArray &msg) {
 }
 
 void ActuatorsROS::update_status_message(){
-    if (this->actuator->stable_connection) {
+    if (this->actuator->connected) {
         if (this->actuator->get_temperature() > 80) {
             this->diagnostic_topic->level = 2;
             sprintf(this->status_string, "TEMP_CRITICAL: %3.1fC", this->actuator->get_temperature());
@@ -42,7 +42,7 @@ void ActuatorsROS::update_status_message(){
 
 void ActuatorsROS::update_diagnostics_topic(){
 
-    if (this->actuator->stable_connection) {
+    if (this->actuator->connected) {
         sprintf(strings[0], "%24s", this->actuator->get_motor_fault_string(0));
         sprintf(strings[1], "%24s", this->actuator->get_motor_fault_string(1));
         if (this->actuator->get_position(0) == INT32_MIN) {
