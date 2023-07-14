@@ -124,6 +124,10 @@ void ActuatorUnit::position_control_callback(uint8_t motor){
         // Otherwise, calculate the target duty cycle using a PI controller
         float_t p_term = this->motors[motor].p_gain * position_error;
         this->motors[motor].i_term += this->motors[motor].i_gain * position_error;
+        if (abs(this->motors[motor].i_term) > 0.3) {
+            // Cap the I term to prevent windup
+            this->motors[motor].i_term = 0.3 * this->motors[motor].i_term / abs(this->motors[motor].i_term);
+        }
         // Set the duty cycle to the sum of the P and I terms
         this->update_duty_cycle_command(p_term + this->motors[motor].i_term, motor, true);
     }
@@ -328,6 +332,11 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
 
 float_t ActuatorUnit::get_duty_cycle(uint8_t motor) {
     return this->motors[motor].current_duty_cycle;
+}
+
+void ActuatorUnit::resume() {
+    this->motors[0].control_mode = DUTY_CYCLE;
+    this->motors[1].control_mode = DUTY_CYCLE;
 }
 
 

@@ -60,9 +60,9 @@ public:
         int32_t current_position    = 0;         // The current position of the motor in analog value
         int32_t max_position        = 0;         // The maximum position of the motor in analog value
         int32_t min_position        = 0;         // The minimum position of the motor in analog value
-        int32_t position_tolerance  = 0;         // The deadband of the motor in analog value
-        float_t p_gain              = 0.1;       // The proportional gain of the motor
-        float_t i_gain              = 0.05;      // The integral gain of the motor
+        int32_t position_tolerance  = 50;        // The deadband of the motor in analog value
+        float_t p_gain              = 0.001;     // The proportional gain of the motor
+        float_t i_gain              = 0.00005;   // The integral gain of the motor
         float_t i_term              = 0;         // The integral term of the motor
         float_t max_duty_cycle      = 0.5;       // The maximum duty cycle of the motor
         float_t current_duty_cycle  = 0;         // The current duty cycle of the motor
@@ -98,7 +98,7 @@ public:
             if (negative) {
                 actuator_unit->motors[1].current_position = - (int32_t) raw_position;
             } else actuator_unit->motors[1].current_position = (int32_t) raw_position;
-            if (actuator_unit->motors[0].control_mode == POSITION) {
+            if (actuator_unit->motors[1].control_mode == POSITION) {
                 actuator_unit->position_control_callback(1);
             }
             actuator_unit->data_flags |= M2_POS_MASK;
@@ -286,6 +286,8 @@ public:
     void update();
 
     void estop() override;
+
+    void resume() override;
 
     bool tripped(char* device_name, char* device_message) override;
 
