@@ -9,7 +9,7 @@ void ActuatorsROS::control_callback(const std_msgs::Int32MultiArray &msg) {
     switch (msg.data[0]) {
         case STOP:
 //            if (msg.data_length != 2) return;
-            this->actuator->set_control_mode(ActuatorUnit::control_modes::stopped, msg.data[1]);
+            this->actuator->set_control_mode(ActuatorUnit::control_modes::E_STOPPED, msg.data[1]);
             break;
         case SET_POSITION:
 //            if (msg.data_length != 3) return;

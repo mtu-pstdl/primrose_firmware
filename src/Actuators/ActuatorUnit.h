@@ -48,28 +48,26 @@ public:
     };
 
     enum control_modes {
-        stopped  = 0,
-        position = 1,
-        velocity = 2,
-        homing   = 3
+        E_STOPPED  = 0,
+        DUTY_CYCLE = 1,
+        POSITION = 2,
     };
 
     struct motor_info{
         char*    name                = nullptr; // The name of the motor
-        int32_t target_position     = 0; // The target position of the motor ticks
-        int32_t current_position    = 0; // The current position of the motor in ticks
-        int32_t max_position        = 0; // The maximum position of the motor in ticks
+        int32_t target_position     = 0; // The target position of the motor in analog value
+        int32_t current_position    = 0; // The current position of the motor in analog value
+        int32_t max_position        = 0; // The maximum position of the motor in analog value
+        int32_t min_position        = 0; // The minimum position of the motor in analog value
         int32_t current_speed       = 0; // The current velocity of the motor in ticks per second
         int16_t current_current     = 7; // The current current draw of the motor in ma
         int16_t warning_current     = 500; // The current current draw of the motor in ma
-        control_modes control_mode   = stopped; // The current control mode of the motor
+        control_modes control_mode   = E_STOPPED; // The current control mode of the motor
         boolean  homed               = true; // Whether or not the motor has been homed
         boolean  fault               = false; // Whether or not the motor has a fault
         boolean  warn                = false; // Whether or not the motor has a warning
         char*    status_string       = nullptr; // A string describing the diagnostics_topic of the motor
     };
-
-    static void detailed_encoder_count_callback(void* actuator, Actuators::serial_message* msg);
 
     // Welcome to pointer hell
 
@@ -85,11 +83,17 @@ public:
             if (negative) {
                 actuator_unit->motors[0].current_position = - (int32_t) raw_position;
             } else actuator_unit->motors[0].current_position = (int32_t) raw_position;
+            if (actuator_unit->motors[0].control_mode == POSITION) {
+                actuator_unit->position_control_callback(0);
+            }
             actuator_unit->data_flags |= M1_POS_MASK;
         } else if (msg->command == Actuators::serial_commands::read_encoder_count_m2){
             if (negative) {
                 actuator_unit->motors[1].current_position = - (int32_t) raw_position;
             } else actuator_unit->motors[1].current_position = (int32_t) raw_position;
+            if (actuator_unit->motors[0].control_mode == POSITION) {
+                actuator_unit->position_control_callback(1);
+            }
             actuator_unit->data_flags |= M2_POS_MASK;
         }
     }
@@ -305,6 +309,10 @@ public:
     float_t get_logic_battery_voltage() const;
 
     void check_connection();
+
+    void position_control_callback(uint8_t motor);
+
+    void update_duty_cycle_command(float_t duty_cycle, uint8_t motor, boolean send_immediately = false);
 };
 
 

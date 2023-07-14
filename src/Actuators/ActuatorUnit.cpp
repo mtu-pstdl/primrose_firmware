@@ -60,53 +60,50 @@ ActuatorUnit::build_message(Actuators::serial_commands command, uint32_t send_in
 
 void ActuatorUnit::set_duty_cycle(float_t duty_cycle, uint8_t motor) {
     // Convert duty cycle to signed 16 bit integer
+    if (this->motors[motor].control_mode == control_modes::E_STOPPED) {
+        duty_cycle = 0; // If the motor is e-stopped, all commands are ignored
+    } else this->motors[motor].control_mode = control_modes::DUTY_CYCLE;
+    this->update_duty_cycle_command(duty_cycle, motor);
+}
+
+void ActuatorUnit::update_duty_cycle_command(float_t duty_cycle, uint8_t motor, boolean send_immediately = false) {
     auto duty_cycle_int = (int16_t) (duty_cycle * INT16_MAX);
-//    auto duty_cycle_int = INT16_MAX;
-    // The controller is big endian but the teensy is little endian
     if (motor == 0) {
         this->command_messages[0].msg->command = Actuators::serial_commands::drive_m1_duty_cycle;
         this->command_messages[0].msg->data[0] = duty_cycle_int >> 8;
         this->command_messages[0].msg->data[1] = duty_cycle_int & 0xFF;
         this->command_messages[0].msg->data_length = 2;
-        this->motors[0].control_mode = control_modes::velocity;
     } else {
         this->command_messages[1].msg->command = Actuators::serial_commands::drive_m2_duty_cycle;
         this->command_messages[1].msg->data[0] = duty_cycle_int >> 8;
         this->command_messages[1].msg->data[1] = duty_cycle_int & 0xFF;
         this->command_messages[1].msg->data_length = 2;
-        this->motors[1].control_mode = control_modes::velocity;
     }
-//    this->command_bus->queue_message(this->command_messages[motor].msg);
+    if (send_immediately) {
+        this->command_bus->queue_message(this->command_messages[motor].msg);
+    }
 }
 
-//void ActuatorUnit::set_pid_gains(float_t p, float_t i, float_t d, uint8_t motor) {
-//    if (motor == 0) {
-//        this->command_messages[0].msg->command = Actuators::serial_commands::set_velocity_pid_gains_m1;
-//    } else {
-//        this->command_messages[1].msg->command = Actuators::serial_commands::set_velocity_pid_gains_m2;
-//    }
-//    int32_t
-//    int32_t p_int = (int32_t) (p * 1000000);
-//    int32_t i_int = (int32_t) (i * 1000000);
-//    int32_t d_int = (int32_t) (d * 1000000);
-//    this->command_messages[motor].msg->data_length = 12;
-//}
-
 void ActuatorUnit::set_target_position(int32_t position, uint8_t motor) {
-    int32_t acceleration = 200;
-    int32_t deceleration = 200;
-    int32_t max_speed    = 500;
     if (motor == 0) {
-        this->command_messages[0].msg->command = Actuators::serial_commands::set_position_m1;
+        if (this->motors[0].control_mode != control_modes::E_STOPPED)
+            this->motors[0].control_mode = control_modes::POSITION;
+        this->motors[0].target_position = position;
+        // Check if the position is within the allowable range
+        if (position > this->motors[0].max_position) position = this->motors[0].max_position;
+        else if (position < this->motors[0].min_position) position = this->motors[0].min_position;
+        this->motors[0].target_position = position;
     } else {
-        this->command_messages[1].msg->command = Actuators::serial_commands::set_position_m2;
+        if (this->motors[1].control_mode != control_modes::E_STOPPED)
+            this->motors[1].control_mode = control_modes::POSITION;
+        // Check if the position is within the allowable range
+        if (position > this->motors[1].max_position) position = this->motors[1].max_position;
+        else if (position < this->motors[1].min_position) position = this->motors[1].min_position;
+        this->motors[1].target_position = position;
     }
-    this->motors[motor].control_mode = control_modes::position;
-    memcpy(this->command_messages[motor].msg->data + 0,  &acceleration, 4);
-    memcpy(this->command_messages[motor].msg->data + 4,  &max_speed, 4);
-    memcpy(this->command_messages[motor].msg->data + 8,  &deceleration, 4);
-    memcpy(this->command_messages[motor].msg->data + 12, &position, 4);
-    this->command_messages[motor].msg->data[16] = 1;
+}
+
+void ActuatorUnit::position_control_callback(uint8_t motor){
 
 }
 
@@ -114,6 +111,7 @@ void ActuatorUnit::queue_telemetry_messages() {
     for (int i = 0; i < 2; i++) {  // Queue command messages first so they get priority
         if (millis() - command_messages[i].last_send_time > command_messages[i].send_interval) {
             if (!command_bus->space_available()) return;
+            if (this->motors[i].control_mode == control_modes::POSITION) continue;
             command_bus->queue_message(this->command_messages[i].msg);
             command_messages[i].last_send_time = millis();
         }
@@ -128,27 +126,15 @@ void ActuatorUnit::queue_telemetry_messages() {
 }
 
 void ActuatorUnit::emergency_stop() {
-    this->set_control_mode(control_modes::stopped, 0);
-    this->set_control_mode(control_modes::stopped, 1);
+    this->set_control_mode(control_modes::E_STOPPED, 0);
+    this->set_control_mode(control_modes::E_STOPPED, 1);
+    this->set_duty_cycle(0, 0);
+    this->set_duty_cycle(0, 1);
 }
 
 
 void ActuatorUnit::update() {
     if (this->connected) {
-//        int16_t max_speed = 0x7FFF;
-//        int16_t stopped = 0;
-        this->queue_telemetry_messages();
-        for (int i = 0; i < 2; i++) {
-            auto &motor = motors[i];
-            switch (motor.control_mode) {
-                case control_modes::position:
-                case control_modes::velocity:
-                case control_modes::stopped:
-                    break;
-                case control_modes::homing:
-                    break;
-            }
-        }
     } else {
         this->check_connection();
     }
@@ -156,33 +142,7 @@ void ActuatorUnit::update() {
 
 
 void ActuatorUnit::set_control_mode(control_modes mode, uint8_t motor) {
-//    switch (mode) {
-//        case control_modes::position:
-//        case control_modes::velocity:
-//        case control_modes::stopped:
-//        case control_modes::homing:
-//    }
 
-}
-
-void ActuatorUnit::send_target_position(uint8_t motor) {
-    auto* msg = new Actuators::serial_message;
-    if (motor == 0) {
-        msg->command = Actuators::serial_commands::set_position_m1;
-    } else msg->command = Actuators::serial_commands::set_position_m2;
-    msg->data_length = 17;
-    int32_t accel = ACTUATOR_ACCEL;
-    int32_t decel = ACTUATOR_DECEL;
-    int32_t speed = ACTUATOR_SPEED;
-    int32_t position = this->motors[motor].target_position;
-    memcpy(msg->data, &accel, 4);
-    memcpy(msg->data + 4, &decel, 4);
-    memcpy(msg->data + 8, &speed, 4);
-    memcpy(msg->data + 12, &position, 4);
-    msg->data[16] = 1;
-    msg->free_after_callback = true;
-    msg->expect_response = false;
-    command_bus->queue_message(msg);
 }
 
 void ActuatorUnit::check_connection() {
@@ -194,35 +154,6 @@ void ActuatorUnit::check_connection() {
         }
     }
 }
-
-void ActuatorUnit::detailed_encoder_count_callback(void *actuator, Actuators::serial_message *msg) {
-    auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-    uint32_t raw_position;
-    bool negative;
-    switch(msg->command){
-        case Actuators::serial_commands::read_encoder_count_m1:
-            raw_position = (msg->data[3] << 24) | (msg->data[2] << 16) | (msg->data[1] << 8) | msg->data[0];
-            // Trim the position value to a 32 bit signed integer
-            negative = msg->data[4] & 0b00000010;
-            if (negative) {
-                actuator_unit->motors[0].current_position = - (int32_t) raw_position;
-            } else actuator_unit->motors[0].current_position = (int32_t) raw_position;
-            break;
-        case Actuators::serial_commands::read_encoder_count_m2:
-            raw_position = (msg->data[3] << 24) | (msg->data[2] << 16) | (msg->data[1] << 8) | msg->data[0];
-            // Trim the position value to a 32 bit signed integer
-            negative = msg->data[4] & 0b00000010;
-            if (negative) {
-                actuator_unit->motors[1].current_position = - (int32_t) raw_position;
-            } else actuator_unit->motors[1].current_position = (int32_t) raw_position;
-            break;
-        default:
-            break;
-    }
-    actuator_unit->message_dropped_count = 0;
-    actuator_unit->connected = true;
-}
-
 
 int32_t ActuatorUnit::get_position(uint8_t motor) {
     if (!(this->data_flags & M1_POS_MASK) && motor == 0) return INT32_MIN;
@@ -237,7 +168,7 @@ int32_t ActuatorUnit::get_velocity(uint8_t motor) {
 }
 
 float_t ActuatorUnit::get_current(uint8_t motor) {
-    if (!(this->data_flags & CURENT_MASK)) return INT32_MIN;
+    if (!(this->data_flags & CURENT_MASK)) return FP_NAN;
     return (float_t) this->motors[motor].current_current / 100;
 }
 
@@ -246,12 +177,12 @@ float_t ActuatorUnit::get_temperature() const {
 }
 
 float_t ActuatorUnit::get_main_battery_voltage() const {
-    if (!(this->data_flags & MN_BAT_MASK)) return INT32_MIN;
+    if (!(this->data_flags & MN_BAT_MASK)) return FP_NAN;
     return (float_t) this->main_battery_voltage / 10;
 }
 
 float_t ActuatorUnit::get_logic_battery_voltage() const {
-    if (!(this->data_flags & LG_BAT_MASK)) return INT32_MIN;
+    if (!(this->data_flags & LG_BAT_MASK)) return FP_NAN;
     return (float_t) this->logic_battery_voltage / 10;
 }
 
@@ -263,8 +194,6 @@ char* ActuatorUnit::get_motor_fault_string(uint8_t motor) {
     this->motors[motor].fault = false;
     this->motors[motor].warn = false;
     sprintf(this->motors[motor].status_string, "");
-    if (!motors[motor].homed && motors[motor].control_mode != homing)
-        sprintf(this->motors[motor].status_string, "%s%s_NOT_HOMED ", motors[motor].status_string, motors[motor].name);
     if (motors[motor].current_current > motors[motor].warning_current) {
         sprintf(this->status_string, "%s%s_HIGH_CURRENT ", motors[motor].status_string, motors[motor].name);
         motors[motor].warn = true;
@@ -296,15 +225,14 @@ char* ActuatorUnit::get_motor_fault_string(uint8_t motor) {
     }
     if (strlen(motors[motor].status_string) == 0) {
         switch (motors[motor].control_mode){
-            case stopped:
-                sprintf(motors[motor].status_string, "%s%s_STOPPED ", motors[motor].status_string, motors[motor].name);
+            case E_STOPPED:
+                sprintf(motors[motor].status_string, "%s%sESTOPPED ", motors[motor].status_string, motors[motor].name);
                 break;
-            case position:
-            case velocity:
-                sprintf(motors[motor].status_string, "%s%s_ACTIVE", motors[motor].status_string, motors[motor].name);
+            case POSITION:
+                sprintf(motors[motor].status_string, "%s%s_POSITION ", motors[motor].status_string, motors[motor].name);
                 break;
-            case homing:
-                sprintf(motors[motor].status_string, "%s%s_HOMING", motors[motor].status_string, motors[motor].name);
+            case DUTY_CYCLE:
+                sprintf(motors[motor].status_string, "%s%s_MANUAL", motors[motor].status_string, motors[motor].name);
                 break;
         }
     }
@@ -351,6 +279,8 @@ int32_t ActuatorUnit::get_target_position(uint8_t motor) {
 }
 
 void ActuatorUnit::estop() {
+    this->motors[0].control_mode = E_STOPPED;
+    this->motors[1].control_mode = E_STOPPED;
     this->set_duty_cycle(0, 0);
     this->set_duty_cycle(0, 1);
 }
