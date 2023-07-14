@@ -148,7 +148,7 @@ void ActuatorUnit::queue_telemetry_messages() {
 }
 
 void ActuatorUnit::update() {
-    if (this->connected) {
+    if (this->stable_connection) {
         this->queue_telemetry_messages();
     } else {
         this->check_connection();
@@ -156,8 +156,8 @@ void ActuatorUnit::update() {
 }
 
 void ActuatorUnit::check_connection() {
-    // Queue a telemetry serial_message to check if the actuator unit is connected
-    if (!this->connected) {
+    // Queue a telemetry serial_message to check if the actuator unit is stable_connection
+    if (!this->stable_connection) {
         if (millis() - reocurring_messages[1].last_send_time > 100) {
             this->command_bus->queue_message(reocurring_messages[2].msg);
             reocurring_messages[1].last_send_time = millis();
@@ -172,7 +172,7 @@ int32_t ActuatorUnit::get_position(uint8_t motor) {
 }
 
 int32_t ActuatorUnit::get_velocity(uint8_t motor) {
-    if (!(this->data_flags & M1_VEL_MASK) && motor == 0) return INT32_MIN;
+//    if (!(this->data_flags & M1_VEL_MASK) && motor == 0) return INT32_MIN;
     if (!(this->data_flags & M2_VEL_MASK) && motor == 1) return INT32_MIN;
     return this->motors[motor].current_speed;
 }
@@ -183,6 +183,7 @@ float_t ActuatorUnit::get_current(uint8_t motor) {
 }
 
 float_t ActuatorUnit::get_temperature() const {
+    if (!(this->data_flags & CTTEMP_MASK)) return FP_NAN;
     return (float_t) this->controller_temperature / 10;
 }
 
@@ -301,7 +302,7 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
     // 2. Logic battery voltage too low
     // 3. Main battery voltage too low
     // 4. Controller temperature has exceeded 80C
-    if (!this->connected) {
+    if (!this->stable_connection) {
         return false;
         sprintf(device_name, "Actuator Unit: %d", this->id);
         sprintf(device_message, "Lost communication");
@@ -323,6 +324,10 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
         return true;
     }
     return false;
+}
+
+float_t ActuatorUnit::get_duty_cycle(uint8_t motor) {
+    return this->motors[motor].current_duty_cycle;
 }
 
 

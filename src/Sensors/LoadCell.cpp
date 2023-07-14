@@ -54,7 +54,7 @@ void LoadCells::update() {
         }
     }
     this->averaging_position = 0;
-    // If more than 1 load cell is connected, calculate the total weight by extrapolating the weight on
+    // If more than 1 load cell is stable_connection, calculate the total weight by extrapolating the weight on
     // the missing load cells
     if (online_load_cells() > 1) {
         total_weight = 0;

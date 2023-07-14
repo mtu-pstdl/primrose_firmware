@@ -23,7 +23,7 @@ void ActuatorsROS::control_callback(const std_msgs::Int32MultiArray &msg) {
 }
 
 void ActuatorsROS::update_status_message(){
-    if (this->actuator->connected) {
+    if (this->actuator->stable_connection) {
         if (this->actuator->get_temperature() > 80) {
             this->diagnostic_topic->level = 2;
             sprintf(this->status_string, "TEMP_CRITICAL: %3.1fC", this->actuator->get_temperature());
@@ -42,7 +42,7 @@ void ActuatorsROS::update_status_message(){
 
 void ActuatorsROS::update_diagnostics_topic(){
 
-    if (this->actuator->connected) {
+    if (this->actuator->stable_connection) {
         sprintf(strings[0], "%24s", this->actuator->get_motor_fault_string(0));
         sprintf(strings[1], "%24s", this->actuator->get_motor_fault_string(1));
         if (this->actuator->get_position(0) == INT32_MIN) {
@@ -51,19 +51,17 @@ void ActuatorsROS::update_diagnostics_topic(){
         if (this->actuator->get_position(1) == INT32_MIN) {
             sprintf(strings[3], "NULL Ticks");
         } else sprintf(strings[3], "%04ld Ticks", this->actuator->get_position(1));
-        if (this->actuator->get_velocity(0) == INT32_MIN) {
-            sprintf(strings[4], "NULL Ticks/s");
-        } else sprintf(strings[4], "%07ld Ticks/s", this->actuator->get_velocity(0));
-        if (this->actuator->get_velocity(1) == INT32_MIN) {
-            sprintf(strings[5], "NULL Ticks/s");
-        } else sprintf(strings[5], "%07ld Ticks/s", this->actuator->get_velocity(1));
-        sprintf(strings[6], "%04.1f C", this->actuator->get_temperature());
-        if (this->actuator->get_current(0) == INT32_MIN) {
+        sprintf(strings[4], "%06.2f%%", this->actuator->get_duty_cycle(0));
+        sprintf(strings[5], "%06.2f%%", this->actuator->get_duty_cycle(1));
+        if (this->actuator->get_temperature() == FP_NAN) {
+            sprintf(strings[6], "NULL C");
+        } else sprintf(strings[6], "%04.1f C", this->actuator->get_temperature());
+        if (this->actuator->get_current(0) == FP_NAN) {
             sprintf(strings[7], "M1:   NULL | M2:    NULL");
         } else sprintf(strings[7], "M1:   %05.2fA | M2:    %05.2fA",
                        this->actuator->get_current(0), this->actuator->get_current(1));
-        if (this->actuator->get_main_battery_voltage() == INT32_MIN ||
-            this->actuator->get_logic_battery_voltage() == INT32_MIN) {
+        if (this->actuator->get_main_battery_voltage() == FP_NAN ||
+            this->actuator->get_logic_battery_voltage() == FP_NAN) {
             sprintf(strings[8], "Main:   NULL | Logic:   NULL");
         } else sprintf(strings[8], "Main: %04.1fV | Logic: %04.1fV",
                        this->actuator->get_main_battery_voltage(), this->actuator->get_logic_battery_voltage());
