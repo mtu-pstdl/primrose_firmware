@@ -146,32 +146,20 @@ void ActuatorUnit::queue_telemetry_messages() {
     }
 }
 
-void ActuatorUnit::emergency_stop() {
-    this->set_control_mode(control_modes::E_STOPPED, 0);
-    this->set_control_mode(control_modes::E_STOPPED, 1);
-    this->set_duty_cycle(0, 0);
-    this->set_duty_cycle(0, 1);
-}
-
-
 void ActuatorUnit::update() {
     if (this->connected) {
+        this->queue_telemetry_messages();
     } else {
         this->check_connection();
     }
 }
 
-
-void ActuatorUnit::set_control_mode(control_modes mode, uint8_t motor) {
-
-}
-
 void ActuatorUnit::check_connection() {
     // Queue a telemetry serial_message to check if the actuator unit is connected
     if (!this->connected) {
-        if (millis() - reocurring_messages[2].last_send_time > 100) {
+        if (millis() - reocurring_messages[1].last_send_time > 100) {
             this->command_bus->queue_message(reocurring_messages[2].msg);
-            reocurring_messages[2].last_send_time = millis();
+            reocurring_messages[1].last_send_time = millis();
         }
     }
 }

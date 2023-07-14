@@ -24,9 +24,9 @@
 #define BATTERY_NORM_CAPACITY 4600 // in W/h
 #define BATTERY_MIN_CAPACITY  600 // in W/h
 
-// The scale factor is 40mv/A
-#define CURRENT_SENSOR_SCALE_FACTOR 0.04 // in V/A (40 mV/A)
-#define CURRENT_SENSOR_CAL_OFFSET 0.1 // What voltage is zero
+// The scale factor is 10mv/A
+#define CURRENT_SENSOR_SCALE_FACTOR 0.01 // in V/A (10 mV/A)
+#define CURRENT_SENSOR_CAL_OFFSET 1.623 // What voltage is zero
 
 #define BATTERY_AVERAGE_BUFFER_SIZE 20
 
@@ -192,8 +192,8 @@ private:
     void calculate_power_draw(){
         this->inst_bus_current =
                 (analog_read_to_voltage(CURRENT_SENSOR_PIN) - CURRENT_SENSOR_CAL_OFFSET)
-                / CURRENT_SENSOR_SCALE_FACTOR;
-        if (this->inst_bus_current < 0) this->inst_bus_current = 0;
+                / CURRENT_SENSOR_SCALE_FACTOR * -1;
+//        if (this->inst_bus_current < 0) this->inst_bus_current = 0;
         if (!isnanf(this->inst_bus_voltage)) {
             // Calculate power draw
             this->inst_bus_power = this->inst_bus_voltage * this->inst_bus_current;
@@ -235,22 +235,23 @@ public:
         this->diagnostic_topic->name = "Monitor";
         this->diagnostic_topic->message = this->battery_status;
         this->diagnostic_topic->hardware_id = "HVDC Bus";
-        this->diagnostic_topic->values_length = 7;
-        this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[7];
+        this->diagnostic_topic->values_length = 8;
+        this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[8];
         this->diagnostic_topic->values[0].key = "Main Bus Voltage";
         this->diagnostic_topic->values[1].key = "Main Bus Current";
-        this->diagnostic_topic->values[2].key = "High Voltage Contactor";
-        this->diagnostic_topic->values[3].key = "Estimated Remaining Capacity";
-        this->diagnostic_topic->values[4].key = "Estimated Time Remaining";
-        this->diagnostic_topic->values[5].key = "Total Session Power Draw";
-        this->diagnostic_topic->values[6].key = "All Time Power Draw";
+        this->diagnostic_topic->values[2].key = "Main Bus Power";
+        this->diagnostic_topic->values[3].key = "High Voltage Contactor";
+        this->diagnostic_topic->values[4].key = "Estimated Remaining Capacity";
+        this->diagnostic_topic->values[5].key = "Estimated Time Remaining";
+        this->diagnostic_topic->values[6].key = "Total Session Power Draw";
+        this->diagnostic_topic->values[7].key = "All Time Power Draw";
         for (int i = 0; i < this->diagnostic_topic->values_length; i++){
             this->diagnostic_topic->values[i].value = new char[20];
             sprintf(this->diagnostic_topic->values[i].value, "");
         }
         load_data();
-        analogReadResolution(12);
-
+        analogReadResolution(16);
+        analogReadAveraging(16); // Set averaging to 16 samples
     }
 
     void update_bus_voltage(float_t voltage){
@@ -291,14 +292,15 @@ public:
         } else sprintf(this->diagnostic_topic->values[0].value, "Contactor Open");
         sprintf(this->diagnostic_topic->values[1].value, "%06.2f A %fv", this->inst_bus_current,
                 analog_read_to_voltage(14));
-        sprintf(this->diagnostic_topic->values[2].value, "%s",
+        sprintf(this->diagnostic_topic->values[2].value, "%07.2f W", this->bus_power_average);
+        sprintf(this->diagnostic_topic->values[3].value, "%s",
                 this->estop_controller->is_high_voltage_enabled() ? "Closed*" : "Open");
-        sprintf(this->diagnostic_topic->values[3].value, "%07.2f W/h (~%05.2f%%)",
+        sprintf(this->diagnostic_topic->values[4].value, "%07.2f W/h (~%05.2f%%)",
                 this->battery_data.estimated_remaining_capacity,
                 (this->battery_data.estimated_remaining_capacity / BATTERY_NORM_CAPACITY) * 100);
-        this->write_estimated_time_remaining(this->diagnostic_topic->values[4].value);
-        sprintf(this->diagnostic_topic->values[5].value, "%010.2f W/h", this->battery_data.total_session_power_draw);
-        sprintf(this->diagnostic_topic->values[6].value, "%010.2f W/h", this->battery_data.all_time_power_draw);
+        this->write_estimated_time_remaining(this->diagnostic_topic->values[5].value);
+        sprintf(this->diagnostic_topic->values[6].value, "%010.2f W/h", this->battery_data.total_session_power_draw);
+        sprintf(this->diagnostic_topic->values[7].value, "%010.2f W/h", this->battery_data.all_time_power_draw);
         this->save_data_flag = this->estop_controller->is_high_voltage_enabled();
         this->save_data();
     }

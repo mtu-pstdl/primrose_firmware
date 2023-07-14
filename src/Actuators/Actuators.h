@@ -102,7 +102,7 @@ public:
     uint16_t calc_crc = 0;
 
     Actuators(){
-        Serial2.begin(57600);
+        Serial2.begin(100000);
         // Yellow to brown
         // Green to purple
         Serial2.addMemoryForWrite(write_buffer, 128);

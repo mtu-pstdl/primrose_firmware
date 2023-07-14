@@ -283,15 +283,11 @@ public:
      */
     void queue_telemetry_messages();
 
-    void set_control_mode(control_modes mode, uint8_t motor);
-
     void set_target_position(int32_t position, uint8_t motor);
 
     void set_duty_cycle(float_t duty_cycle, uint8_t motor);
 
     int32_t get_target_position(uint8_t motor);
-
-    void emergency_stop();
 
     uint16_t get_status() const;
 
