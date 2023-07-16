@@ -54,24 +54,32 @@ public:
         POSITION = 2,
     };
 
-    struct motor_info{
+    struct odometer_value {  // stores odometer data in RAM
+        bool     changed;     // Indicates whether odometer data has changed since last save
+        uint32_t sequence_id; // Sequence ID (used to determine which odometer data is most recent)
+        uint32_t odometer;    // Unit: 100th of a turn or encoder counts (depending on encoder type)
+        uint32_t used_power;  // Unit: milliwatt-hours
+    };
+
+    struct motor_data {
         char*   name                = nullptr;   // The name of the motor
         int32_t target_position     = 0;         // The target position of the motor in analog value
         int32_t current_position    = 0;         // The current position of the motor in analog value
         int32_t max_position        = 0;         // The maximum position of the motor in analog value
         int32_t min_position        = 0;         // The minimum position of the motor in analog value
         int32_t position_tolerance  = 50;        // The deadband of the motor in analog value
-        float_t p_gain              = 0.001;     // The proportional gain of the motor
+        float_t p_gain              = 0.0005;     // The proportional gain of the motor
         float_t i_gain              = 0.00005;   // The integral gain of the motor
         float_t i_term              = 0;         // The integral term of the motor
         float_t max_duty_cycle      = 0.5;       // The maximum duty cycle of the motor
         float_t current_duty_cycle  = 0;         // The current duty cycle of the motor
         int32_t current_speed       = 0;         // The current velocity of the motor in ticks per second
-        int16_t current_current     = 7;         // The current current draw of the motor in ma
+        int16_t current_current     = INT16_MIN; // The current current draw of the motor in ma
         int16_t warning_current     = 500;       // The current current draw of the motor in ma
         control_modes control_mode  = E_STOPPED; // The current control mode of the motor
         boolean  fault              = false;     // Whether or not the motor has a fault
         boolean  warn               = false;     // Whether or not the motor has a warning
+        odometer_value* odometer    = nullptr;   // The odometer data of the motor
         char*    status_string      = nullptr;   // A string describing the diagnostics_topic of the motor
     };
 
@@ -84,20 +92,15 @@ public:
         actuator_unit->last_response = millis();
         uint32_t raw_position = (msg->data[0] << 24) | (msg->data[1] << 16) | (msg->data[2] << 8) | msg->data[3];
 //        bool negative = msg->data[4] & 0b00000010;
-        bool negative = false;
         if (msg->command == Actuators::serial_commands::read_encoder_count_m1){
             // Trim the position value to a 32 bit signed integer
-            if (negative) {
-                actuator_unit->motors[0].current_position = - (int32_t) raw_position;
-            } else actuator_unit->motors[0].current_position = (int32_t) raw_position;
+            actuator_unit->motors[0].current_position = (int32_t) raw_position;
             if (actuator_unit->motors[0].control_mode == POSITION) {
                 actuator_unit->position_control_callback(0);
             }
             actuator_unit->data_flags |= M1_POS_MASK;
         } else if (msg->command == Actuators::serial_commands::read_encoder_count_m2){
-            if (negative) {
-                actuator_unit->motors[1].current_position = - (int32_t) raw_position;
-            } else actuator_unit->motors[1].current_position = (int32_t) raw_position;
+            actuator_unit->motors[1].current_position = (int32_t) raw_position;
             if (actuator_unit->motors[1].control_mode == POSITION) {
                 actuator_unit->position_control_callback(1);
             }
@@ -132,8 +135,11 @@ public:
         actuator_unit->last_response = millis();
         actuator_unit->motors[0].current_current =
                 static_cast<int16_t>((msg->data[0] << 8) | msg->data[1]);
+        // Because the current sensors don't seem to zero properly, we ignore anything below less than 0
+        if (actuator_unit->motors[0].current_current < 0) actuator_unit->motors[0].current_current = 0;
         actuator_unit->motors[1].current_current =
                 static_cast<int16_t>((msg->data[2] << 8) | msg->data[3]);
+        if (actuator_unit->motors[1].current_current < 0) actuator_unit->motors[1].current_current = 0;
         actuator_unit->data_flags |= CURENT_MASK;
     }
 
@@ -214,21 +220,23 @@ private:
     uint16_t message_failure_count = 0;
     const uint16_t message_failure_threshold = 20;
 
+
+
     char* status_string = nullptr;
 
     void allocate_strings(){
         this->status_string = new char[100];
         this->motors[0].name = new char[5];
         this->motors[1].name = new char[5];
-        sprintf(this->motors[0].name, "M1");
-        sprintf(this->motors[1].name, "M2");
+        sprintf(this->motors[0].name, "SUSP");
+        sprintf(this->motors[1].name, "TURN");
         this->motors[0].status_string = new char[256];
         this->motors[1].status_string = new char[256];
     }
 
-    motor_info motors[2]{
-            motor_info(),
-            motor_info()
+    motor_data motors[2]{
+            motor_data(),
+            motor_data()
     };
 
     struct telemetry_message{
@@ -245,7 +253,7 @@ private:
     uint16_t main_battery_voltage   = 0;
     uint16_t logic_battery_voltage  = 0;
     uint16_t status = 0;
-    uint8_t  data_flags = 0;  // A bitmask of the data that has been received from the motor
+    uint16_t data_flags = 0;  // A bitmask of the data that has been received from the motor
 
     telemetry_message* build_message(Actuators::serial_commands command, uint32_t send_interval, uint8_t data_length,
                                      void (*callback)(void *, Actuators::serial_message*));
@@ -290,6 +298,8 @@ public:
     void resume() override;
 
     bool tripped(char* device_name, char* device_message) override;
+
+    void pass_odometer(odometer_value* odometer, uint8_t motor);
 
     /**
      * Queues all telemetry messages that need to be sent during this cycle

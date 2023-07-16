@@ -13,31 +13,23 @@ void ActuatorUnit::build_telemetry_messages() {
     reocurring_messages[1] = *build_message(
             Actuators::serial_commands::read_encoder_count_m2,
             50, 5, &ActuatorUnit::encoder_count_callback);
-//    reocurring_messages[2] = *build_message(
-//            Actuators::serial_commands::read_encoder_speed_m1,
-//            60, 5, &ActuatorUnit::encoder_speed_callback);
-//    reocurring_messages[3] = *build_message(
-//            Actuators::serial_commands::read_encoder_speed_m2,
-//            60, 5, &ActuatorUnit::encoder_speed_callback);
     reocurring_messages[2] = *build_message(
             Actuators::serial_commands::read_main_battery_voltage,
-            350, 2, &ActuatorUnit::main_battery_voltage_callback);
+            100, 2, &ActuatorUnit::main_battery_voltage_callback);
     reocurring_messages[3] = *build_message(
             Actuators::serial_commands::read_logic_battery_voltage,
-            900, 2, &ActuatorUnit::logic_battery_voltage_callback);
+            500, 2, &ActuatorUnit::logic_battery_voltage_callback);
     reocurring_messages[4] = *build_message(
             Actuators::serial_commands::read_motor_currents,
-            75, 4, &ActuatorUnit::motor_currents_callback);
+            100, 4, &ActuatorUnit::motor_currents_callback);
     reocurring_messages[5] = *build_message(
             Actuators::serial_commands::read_temperature,
-            750, 2, &ActuatorUnit::controller_temp_callback);
+            500, 2, &ActuatorUnit::controller_temp_callback);
     reocurring_messages[6] = *build_message(
             Actuators::serial_commands::read_status,
-            1000, 1, &ActuatorUnit::controller_status_callback);
+            1000, 2, &ActuatorUnit::controller_status_callback);
 
 }
-
-
 
 ActuatorUnit::telemetry_message*
 ActuatorUnit::build_message(Actuators::serial_commands command, uint32_t send_interval, uint8_t data_length,
@@ -67,11 +59,12 @@ void ActuatorUnit::set_duty_cycle(float_t duty_cycle, uint8_t motor) {
 }
 
 void ActuatorUnit::update_duty_cycle_command(float_t duty_cycle, uint8_t motor,
-                                             boolean send_immediately = false) {
+                                             boolean send_immediately) {
 
     // Cap the duty cycle at the maximum allowable value
-    if (duty_cycle > this->motors[motor].max_duty_cycle) duty_cycle = this->motors[motor].max_duty_cycle;
-    else if (duty_cycle < -this->motors[motor].max_duty_cycle) duty_cycle = -this->motors[motor].max_duty_cycle;
+    if (duty_cycle > 1) duty_cycle = 1;
+    else if (duty_cycle < -1) duty_cycle = -1;
+    duty_cycle = duty_cycle * this->motors[motor].max_duty_cycle; // Scale the duty cycle to the maximum allowable value
     this->motors[motor].current_duty_cycle = duty_cycle;
 
     auto duty_cycle_int = (int16_t) (duty_cycle * INT16_MAX); // Convert to signed 16 bit integer
@@ -240,7 +233,7 @@ char* ActuatorUnit::get_motor_fault_string(uint8_t motor) {
     if (strlen(motors[motor].status_string) == 0) {
         switch (motors[motor].control_mode){
             case E_STOPPED:
-                sprintf(motors[motor].status_string, "%s%sESTOPPED ", motors[motor].status_string, motors[motor].name);
+                sprintf(motors[motor].status_string, "%s%sSTOPPED ", motors[motor].status_string, motors[motor].name);
                 break;
             case POSITION:
                 sprintf(motors[motor].status_string, "%s%s_POSITION ", motors[motor].status_string, motors[motor].name);
@@ -311,19 +304,19 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
         sprintf(device_message, "Lost communication");
         return true;
     }
-    if (this->logic_battery_voltage < 10) {
+    if (this->get_logic_battery_voltage() < 10) {
         sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(device_message, "Logic battery voltage too low");
+        sprintf(device_message, "Logic battery voltage too low: %0.1fV", this->get_logic_battery_voltage());
         return true;
     }
-    if (this->main_battery_voltage < 46) {
+    if (this->get_main_battery_voltage() < 46) {
         sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(device_message, "Main battery voltage too low");
+        sprintf(device_message, "Main battery voltage too low: %0.1fV", this->get_main_battery_voltage());
         return true;
     }
-    if (this->controller_temperature > 800) {
+    if (this->get_temperature() > 80) {
         sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(device_message, "Controller temperature too high");
+        sprintf(device_message, "Controller temperature too high: %0.2fC", this->get_temperature());
         return true;
     }
     return false;
@@ -336,6 +329,10 @@ float_t ActuatorUnit::get_duty_cycle(uint8_t motor) {
 void ActuatorUnit::resume() {
     this->motors[0].control_mode = DUTY_CYCLE;
     this->motors[1].control_mode = DUTY_CYCLE;
+}
+
+void ActuatorUnit::pass_odometer(ActuatorUnit::odometer_value *odometer, uint8_t motor) {
+    this->motors[motor].odometer = odometer;
 }
 
 

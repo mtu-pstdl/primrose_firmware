@@ -54,8 +54,8 @@ void ActuatorsROS::update_diagnostics_topic(){
         if (this->actuator->get_position(1) == INT32_MIN) {
             sprintf(strings[3], "NULL Ticks");
         } else sprintf(strings[3], "%04ld Ticks", this->actuator->get_position(1));
-        sprintf(strings[4], "%06.2f%%", this->actuator->get_duty_cycle(0) * 200);
-        sprintf(strings[5], "%06.2f%%", this->actuator->get_duty_cycle(1) * 200);
+        sprintf(strings[4], "%06.2f%%", this->actuator->get_duty_cycle(0) * 100);
+        sprintf(strings[5], "%06.2f%%", this->actuator->get_duty_cycle(1) * 100);
         if (this->actuator->get_temperature() == FP_NAN) {
             sprintf(strings[6], "NULL C");
         } else sprintf(strings[6], "%04.1f C", this->actuator->get_temperature());
