@@ -21,12 +21,12 @@
 #define BATTERY_SAVE_DATA_INTERVAL 30000 // in ms (30 seconds)
 
 #define BATTERY_MAX_CAPACITY  5120 // in W/h
-#define BATTERY_NORM_CAPACITY 4600 // in W/h
-#define BATTERY_MIN_CAPACITY  600 // in W/h
+#define BATTERY_NORM_CAPACITY 5120 // in W/h
+#define BATTERY_MIN_CAPACITY  850 // in W/h
 
 // The scale factor is 10mv/A
 #define CURRENT_SENSOR_SCALE_FACTOR 0.01 // in V/A (10 mV/A)
-#define CURRENT_SENSOR_CAL_OFFSET 1.623 // What voltage is zero
+#define CURRENT_SENSOR_CAL_OFFSET 1.627 // What voltage is zero
 
 #define BATTERY_AVERAGE_BUFFER_SIZE 20
 
@@ -189,36 +189,32 @@ private:
         }
     }
 
-    void calculate_power_draw(){
+    void calculate_power_draw(float_t bus_voltage){
         this->inst_bus_current =
                 (analog_read_to_voltage(CURRENT_SENSOR_PIN) - CURRENT_SENSOR_CAL_OFFSET)
                 / CURRENT_SENSOR_SCALE_FACTOR * -1;
 //        if (this->inst_bus_current < 0) this->inst_bus_current = 0;
-        if (!isnanf(this->inst_bus_voltage)) {
-            // Calculate power draw
-            this->inst_bus_power = this->inst_bus_voltage * this->inst_bus_current;
-            // Convert bus power to watt/hours so we can add it to the total power draw
-            // Use the time since the last loop to calculate the watt/hours so that the reading is time based
-            float_t consumption_rate = this->inst_bus_power * ((millis() - this->last_update_time) / 3600000.0f);
-            this->last_update_time = millis();
-            this->battery_data.total_session_power_draw += consumption_rate;
-            this->battery_data.all_time_power_draw += consumption_rate;
-            this->battery_data.estimated_remaining_capacity -= consumption_rate;
-            // Add to the average power draw
-            bus_power_average_buffer[this->average_buffer_index] = this->inst_bus_power;
-            this->average_buffer_index++;
-            if (this->average_buffer_index >= BATTERY_AVERAGE_BUFFER_SIZE) {  // Calculate average power draw
-                this->average_buffer_index = 0;
-                float_t sum = 0;
-                for (auto &i: bus_power_average_buffer) {
-                    sum += i;
-                }
-                this->bus_power_average = sum / BATTERY_AVERAGE_BUFFER_SIZE;
+        if(isnanf(bus_voltage)) bus_voltage = 51.2f;
+        if(bus_voltage < 6) bus_voltage = 51.2f;
+        // Calculate power draw
+        this->inst_bus_power = bus_voltage * this->inst_bus_current;
+        // Convert bus power to watt/hours so we can add it to the total power draw
+        // Use the time since the last loop to calculate the watt/hours so that the reading is time based
+        float_t consumption_rate = this->inst_bus_power * ((millis() - this->last_update_time) / 3600000.0f);
+        this->last_update_time = millis();
+        this->battery_data.total_session_power_draw += consumption_rate;
+        this->battery_data.all_time_power_draw += consumption_rate;
+        this->battery_data.estimated_remaining_capacity -= consumption_rate;
+        // Add to the average power draw
+        bus_power_average_buffer[this->average_buffer_index] = this->inst_bus_power;
+        this->average_buffer_index++;
+        if (this->average_buffer_index >= BATTERY_AVERAGE_BUFFER_SIZE) {  // Calculate average power draw
+            this->average_buffer_index = 0;
+            float_t sum = 0;
+            for (auto &i: bus_power_average_buffer) {
+                sum += i;
             }
-        } else {
-            this->inst_bus_current = 0;
-            this->inst_bus_power = 0;
-            this->bus_power_average = 0;
+            this->bus_power_average = sum / BATTERY_AVERAGE_BUFFER_SIZE;
         }
     }
 
@@ -256,7 +252,7 @@ public:
 
     void update_bus_voltage(float_t voltage){
         this->inst_bus_voltage = voltage;
-        this->calculate_power_draw();
+        this->calculate_power_draw(voltage);
     }
 
     void update_status(){

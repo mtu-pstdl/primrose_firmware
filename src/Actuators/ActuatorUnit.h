@@ -63,24 +63,26 @@ public:
 
     struct motor_data {
         char*   name                = nullptr;   // The name of the motor
+        // Working variables
         int32_t target_position     = 0;         // The target position of the motor in analog value
         int32_t current_position    = 0;         // The current position of the motor in analog value
-        int32_t max_position        = 0;         // The maximum position of the motor in analog value
-        int32_t min_position        = 0;         // The minimum position of the motor in analog value
-        int32_t position_tolerance  = 50;        // The deadband of the motor in analog value
-        float_t p_gain              = 0.0005;     // The proportional gain of the motor
-        float_t i_gain              = 0.00005;   // The integral gain of the motor
         float_t i_term              = 0;         // The integral term of the motor
-        float_t max_duty_cycle      = 0.5;       // The maximum duty cycle of the motor
+        float_t duty_cycle_limit    = 0;         // The maximum duty cycle of the motor based the current power draw
         float_t current_duty_cycle  = 0;         // The current duty cycle of the motor
         int32_t current_speed       = 0;         // The current velocity of the motor in ticks per second
         int16_t current_current     = INT16_MIN; // The current current draw of the motor in ma
-        int16_t warning_current     = 500;       // The current current draw of the motor in ma
         control_modes control_mode  = E_STOPPED; // The current control mode of the motor
-        boolean  fault              = false;     // Whether or not the motor has a fault
-        boolean  warn               = false;     // Whether or not the motor has a warning
         odometer_value* odometer    = nullptr;   // The odometer data of the motor
-        char*    status_string      = nullptr;   // A string describing the diagnostics_topic of the motor
+
+        // Configuration variables
+        float_t p_gain              = 0.0005;    // The proportional gain of the motor
+        float_t i_gain              = 0.00005;   // The integral gain of the motor
+        int32_t max_position        = 2048;      // The maximum position of the motor in analog value
+        int32_t min_position        = -1900;     // The minimum position of the motor in analog value
+        float_t max_duty_cycle      = 0.5;       // The maximum duty cycle of the motor
+        int32_t position_tolerance  = 25;        // The deadband of the motor in analog value
+        int16_t current_limit       = 500;       // The current current draw of the motor in ma
+        char*   status_string       = nullptr;   // A string describing the diagnostics_topic of the motor
     };
 
     // Welcome to pointer and reference hell
@@ -140,6 +142,8 @@ public:
         actuator_unit->motors[1].current_current =
                 static_cast<int16_t>((msg->data[2] << 8) | msg->data[3]);
         if (actuator_unit->motors[1].current_current < 0) actuator_unit->motors[1].current_current = 0;
+        actuator_unit->current_limit_check(0);
+        actuator_unit->current_limit_check(1);
         actuator_unit->data_flags |= CURENT_MASK;
     }
 
@@ -331,6 +335,12 @@ public:
     float_t get_main_battery_voltage() const;
 
     float_t get_logic_battery_voltage() const;
+
+    void update_odometer(uint8_t motor);
+
+    void update_power_consumption(uint8_t motor);
+
+    void current_limit_check(uint8_t motor);
 
     void check_connection();
 

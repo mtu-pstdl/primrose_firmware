@@ -21,7 +21,7 @@ void ActuatorUnit::build_telemetry_messages() {
             500, 2, &ActuatorUnit::logic_battery_voltage_callback);
     reocurring_messages[4] = *build_message(
             Actuators::serial_commands::read_motor_currents,
-            100, 4, &ActuatorUnit::motor_currents_callback);
+            50, 4, &ActuatorUnit::motor_currents_callback);
     reocurring_messages[5] = *build_message(
             Actuators::serial_commands::read_temperature,
             500, 2, &ActuatorUnit::controller_temp_callback);
@@ -64,7 +64,7 @@ void ActuatorUnit::update_duty_cycle_command(float_t duty_cycle, uint8_t motor,
     // Cap the duty cycle at the maximum allowable value
     if (duty_cycle > 1) duty_cycle = 1;
     else if (duty_cycle < -1) duty_cycle = -1;
-    duty_cycle = duty_cycle * this->motors[motor].max_duty_cycle; // Scale the duty cycle to the maximum allowable value
+    duty_cycle = duty_cycle * this->motors[motor].duty_cycle_limit; // Scale the duty cycle to the maximum duty cycle
     this->motors[motor].current_duty_cycle = duty_cycle;
 
     auto duty_cycle_int = (int16_t) (duty_cycle * INT16_MAX); // Convert to signed 16 bit integer
@@ -198,85 +198,27 @@ uint16_t ActuatorUnit::get_status() const {
 }
 
 char* ActuatorUnit::get_motor_fault_string(uint8_t motor) {
-    this->motors[motor].fault = false;
-    this->motors[motor].warn = false;
     sprintf(this->motors[motor].status_string, "");
-    if (motors[motor].current_current > motors[motor].warning_current) {
-        sprintf(this->status_string, "%s%s_HIGH_CURRENT ", motors[motor].status_string, motors[motor].name);
-        motors[motor].warn = true;
-    }
-
-    switch (motor){
-        case 0:
-            if (status & controller_status_bitmask::m1_over_current) {
-                sprintf(motors[motor].status_string, "%sM1_OVER_CURRENT ", this->status_string);
-                motors[motor].fault = true;
-            }
-            if (status & controller_status_bitmask::m1_driver_fault) {
-                sprintf(motors[motor].status_string, "%sM1_DRIVER_FAULT ", this->status_string);
-                motors[motor].fault = true;
-            }
+    // Indicate the control mode
+    switch (this->motors[motor].control_mode) {
+        case control_modes::DUTY_CYCLE:
+            sprintf(this->motors[motor].status_string, "DUTY_CYCLE");
             break;
-        case 1:
-            if (status & controller_status_bitmask::m2_over_current) {
-                sprintf(motors[motor].status_string, "%sM2_OVER_CURRENT ", this->status_string);
-                motors[motor].fault = true;
-            }
-            if (status & controller_status_bitmask::m2_driver_fault) {
-                sprintf(motors[motor].status_string, "%sM2_DRIVER_FAULT ", this->status_string);
-                motors[motor].fault = true;
-            }
+        case control_modes::POSITION:
+            sprintf(this->motors[motor].status_string, "POSITION");
+            break;
+        case control_modes::E_STOPPED:
+            sprintf(this->motors[motor].status_string, "E_STOPPED");
             break;
         default:
+            sprintf(this->motors[motor].status_string, "UNKNOWN");
             break;
-    }
-    if (strlen(motors[motor].status_string) == 0) {
-        switch (motors[motor].control_mode){
-            case E_STOPPED:
-                sprintf(motors[motor].status_string, "%s%sSTOPPED ", motors[motor].status_string, motors[motor].name);
-                break;
-            case POSITION:
-                sprintf(motors[motor].status_string, "%s%s_POSITION ", motors[motor].status_string, motors[motor].name);
-                break;
-            case DUTY_CYCLE:
-                sprintf(motors[motor].status_string, "%s%s_MANUAL", motors[motor].status_string, motors[motor].name);
-                break;
-        }
     }
     return motors[motor].status_string;
 }
 
 char* ActuatorUnit::get_status_string() {
     sprintf(this->status_string, "");
-    if (status == 0 || status >= controller_status_bitmask::main_battery_high_warn) {
-        if (!this->motors[0].fault && !this->motors[1].fault && !this->motors[0].warn && !this->motors[1].warn) {
-            sprintf(this->status_string, "OK");
-        }
-    } else {
-        sprintf(this->status_string, "");
-        if (this->message_failure_count > 0)
-            sprintf(this->status_string, "%sMESSAGE_FAILURE ", this->status_string);
-        if (status & controller_status_bitmask::e_stop)
-            sprintf(this->status_string, "%sDVR_E_STOP ", this->status_string);
-        if (status & controller_status_bitmask::high_temperature_fault)
-            sprintf(this->status_string, "%sHI_TEMP_FAULT ", this->status_string);
-        if (status & controller_status_bitmask::main_battery_high_fault)
-            sprintf(this->status_string, "%sMN_BAT_HI_FAULT ", this->status_string);
-        if (status & controller_status_bitmask::logic_battery_high_fault)
-            sprintf(this->status_string, "%sLG_BAT_HI_FAULT ", this->status_string);
-        if (status & controller_status_bitmask::logic_battery_low_fault)
-            sprintf(this->status_string, "%sLG_BAT_LW_FAULT ", this->status_string);
-    }
-    if (motors[0].fault) {
-        sprintf(this->status_string, "%sM1_FLT ", this->status_string);
-    } else if (motors[0].warn) {
-        sprintf(this->status_string, "%sM1_WRN ", this->status_string);
-    }
-    if (motors[1].fault) {
-        sprintf(this->status_string, "%sM2_FLT ", this->status_string);
-    } else if (motors[1].warn) {
-        sprintf(this->status_string, "%sM2_WRN ", this->status_string);
-    }
     return this->status_string;
 }
 
@@ -323,7 +265,7 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
 }
 
 float_t ActuatorUnit::get_duty_cycle(uint8_t motor) {
-    return this->motors[motor].current_duty_cycle;
+    return this->motors[motor].current_duty_cycle * 2;
 }
 
 void ActuatorUnit::resume() {
@@ -333,6 +275,30 @@ void ActuatorUnit::resume() {
 
 void ActuatorUnit::pass_odometer(ActuatorUnit::odometer_value *odometer, uint8_t motor) {
     this->motors[motor].odometer = odometer;
+}
+
+void ActuatorUnit::update_odometer(uint8_t motor) {
+
+}
+
+void ActuatorUnit::update_power_consumption(uint8_t motor) {
+    // Update the power consumption of the motor
+    // Power = Voltage * Current
+    float_t power_consumption = this->get_main_battery_voltage() * this->get_current(motor);
+}
+
+
+void ActuatorUnit::current_limit_check(uint8_t motor) {
+    // Check if the motor is exceeding the current limit and if slowly reduce duty_cycle_limit
+    // If the motor is below the current limit, slowly increase duty_cycle_limit back to max_duty_cycle
+    if (this->motors[motor].current_current > this->motors[motor].current_limit) {
+        this->motors[motor].duty_cycle_limit -= 0.01;
+        if (this->motors[motor].duty_cycle_limit < 0) this->motors[motor].duty_cycle_limit = 0;
+    } else {
+        this->motors[motor].duty_cycle_limit += 0.01;
+        if (this->motors[motor].duty_cycle_limit > this->motors[motor].max_duty_cycle)
+            this->motors[motor].duty_cycle_limit = this->motors[motor].max_duty_cycle;
+    }
 }
 
 

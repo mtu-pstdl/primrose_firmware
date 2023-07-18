@@ -36,7 +36,7 @@ class LoadCells : public ROSNode {
     bool tare_flag = false;
 
     uint32_t  last_read_time = 0;
-    int32_t  averaging_position = 0;  // position in the averaging buffer
+    int32_t   averaging_position = 0;  // position in the averaging buffer
     int32_t** averaging_buffer;        // store the last 10 readings from each load cell
 
     HX711** load_cells;

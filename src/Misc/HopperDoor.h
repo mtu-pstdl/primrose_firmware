@@ -40,6 +40,11 @@ public:
         node_handle->subscribe(hopper_door_sub);
     }
 
+    void estop() override {
+        analogWrite(PWM_PIN, 0);
+        digitalWrite(DIRECTION_PIN, LOW);
+    }
+
 };
 
 
