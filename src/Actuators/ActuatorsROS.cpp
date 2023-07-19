@@ -34,7 +34,7 @@ void ActuatorsROS::update_status_message(){
             this->diagnostic_topic->level = 1;
             sprintf(this->status_string, "HVDC_LOW: %3.1fV", this->actuator->get_main_battery_voltage());
         } else {
-            sprintf(this->status_string, "%24s", this->actuator->get_status_string());
+            sprintf(this->status_string, "OK");
             this->diagnostic_topic->level = 0;
         }
     } else {

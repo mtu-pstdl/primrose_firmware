@@ -265,7 +265,7 @@ public:
         } else if (this->inst_bus_voltage > 56) {  // HVDC voltage above 56V
             sprintf(this->battery_status, "High HVDC Voltage (%05.2fV)", this->inst_bus_voltage);
             this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
-        } else if (this->inst_bus_voltage < 44) {  // HVDC voltage below 44V
+        } else if (this->inst_bus_voltage < 50) {  // HVDC voltage below 50V
             sprintf(this->battery_status, "Low HVDC Voltage (%05.2fV)", this->inst_bus_voltage);
             this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
         } else if (this->calculate_estimated_time_remaining() < 0.75) {
