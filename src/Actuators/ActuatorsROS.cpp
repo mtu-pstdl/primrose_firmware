@@ -59,10 +59,8 @@ void ActuatorsROS::update_diagnostics_topic(){
         if (this->actuator->get_temperature() == FP_NAN) {
             sprintf(strings[6], "NULL C");
         } else sprintf(strings[6], "%04.1f C", this->actuator->get_temperature());
-        if (this->actuator->get_current(0) == FP_NAN) {
-            sprintf(strings[7], "M1:   NULL | M2:    NULL");
-        } else sprintf(strings[7], "M1:   %05.2fA | M2:    %05.2fA",
-                       this->actuator->get_current(0), this->actuator->get_current(1));
+        sprintf(strings[7], "M1:   %05.2fA | M2:    %05.2fA",
+                this->actuator->get_current(0), this->actuator->get_current(1));
         if (this->actuator->get_main_battery_voltage() == FP_NAN ||
             this->actuator->get_logic_battery_voltage() == FP_NAN) {
             sprintf(strings[8], "Main:   NULL | Logic:   NULL");

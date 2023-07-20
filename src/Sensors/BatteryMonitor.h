@@ -272,7 +272,8 @@ public:
             sprintf(this->battery_status, "Low ETR (%05.2fH)", this->calculate_estimated_time_remaining());
             this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
         } else if (this->battery_data.estimated_remaining_capacity < BATTERY_MIN_CAPACITY) {
-            sprintf(this->battery_status, "Low Estimated Capacity");
+            sprintf(this->battery_status, "Low Estimated Capacity (%05.2fW/h)",
+                    this->battery_data.estimated_remaining_capacity);
             this->diagnostic_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
         } else {
             sprintf(this->battery_status, "OK (%05.2fV | %06.2fA | %07.2fW/h)",

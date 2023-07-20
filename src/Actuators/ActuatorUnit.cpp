@@ -105,21 +105,31 @@ void ActuatorUnit::position_control_callback(uint8_t motor){
     int32_t current_position = this->motors[motor].current_position;
     int32_t target_position = this->motors[motor].target_position;
     int32_t position_error = target_position - current_position;
-    if (abs(position_error) < this->motors[motor].position_tolerance) {
-        // If the position error is within the tolerance, stop the motor
-        this->update_duty_cycle_command(0, motor, true);
-        // Clear the I term to prevent windup
-        this->motors[motor].i_term = 0;
-    } else {
-        // Otherwise, calculate the target duty cycle using a PI controller
-        float_t p_term = this->motors[motor].p_gain * position_error;
-        this->motors[motor].i_term += this->motors[motor].i_gain * position_error;
-        if (abs(this->motors[motor].i_term) > 0.25) {
-            // Cap the I term to prevent windup
-            this->motors[motor].i_term = 0.25f * this->motors[motor].i_term / abs(this->motors[motor].i_term);
+    if (this->motors[motor].achieved_position) {
+        // Check if the position is outside the activation tolerance
+        if (abs(position_error) > this->motors[motor].activation_tolerance) {
+            // If it is, set the achieved position flag to false
+            this->motors[motor].achieved_position = false;
         }
-        // Set the duty cycle to the sum of the P and I terms
-        this->update_duty_cycle_command(p_term + this->motors[motor].i_term, motor, true);
+    } else {
+        if (abs(position_error) < this->motors[motor].position_tolerance) {
+            // If the position error is within the tolerance, stop the motor
+            this->update_duty_cycle_command(0, motor, true);
+            // Clear the I term to prevent windup
+            this->motors[motor].i_term = 0;
+            // Set the achieved position flag to true
+            this->motors[motor].achieved_position = true;
+        } else {
+            // Otherwise, calculate the target duty cycle using a PI controller
+            float_t p_term = this->motors[motor].p_gain * position_error;
+            this->motors[motor].i_term += this->motors[motor].i_gain * position_error;
+            if (abs(this->motors[motor].i_term) > 0.25) {
+                // Cap the I term to prevent windup
+                this->motors[motor].i_term = 0.25f * this->motors[motor].i_term / abs(this->motors[motor].i_term);
+            }
+            // Set the duty cycle to the sum of the P and I terms
+            this->update_duty_cycle_command(p_term + this->motors[motor].i_term, motor, true);
+        }
     }
 }
 

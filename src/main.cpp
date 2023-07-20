@@ -202,15 +202,15 @@ void setup() {
     actuators_ros[3] = new ActuatorsROS(actuators[3], actuator_encoder_topics[3]->message,
                                         &system_diagnostics.status[9], "Rear_Right");
 
-    auto* load_cell_clk_pins =     new int[4] {25, 26, 27, 28};
-    auto* load_cell_data_pins =    new int[4] {29, 30, 31, 32};
+    auto* load_cell_clk_pins =     new int[4] {5, 9, 11, 24};
+    auto* load_cell_data_pins =    new int[4] {6, 10, 12, 25};
     auto* load_cell_calibrations = new float[4] {1.0, 1.0, 1.0, 1.0};
     load_cells[0] = new LoadCells(4, load_cell_clk_pins, load_cell_data_pins,
                                   load_cell_calibrations,
                                   &system_diagnostics.status[10], load_cell_topics[0]->message,
                                   "Hopper", 2048);
-    auto* load_cell_clk_pins_2 =     new int[4] {34, 35, 36, 37};
-    auto* load_cell_data_pins_2 =    new int[4] {38, 39, 40, 41};
+    auto* load_cell_clk_pins_2 =     new int[4] {26, 28, 30, 32};
+    auto* load_cell_data_pins_2 =    new int[4] {27, 29, 31, 33};
     auto* load_cell_calibrations_2 = new float[4] {1.0, 1.0, 1.0, 1.0};
     load_cells[1] = new LoadCells(4, load_cell_clk_pins_2, load_cell_data_pins_2,
                                   load_cell_calibrations_2,
@@ -307,6 +307,10 @@ void loop() {
     }
     starting_actuator = (starting_actuator + 1) % 4;
 
+    load_cells[0]->update();
+    load_cells[0]->publish();
+    load_cells[1]->update();
+    load_cells[1]->publish();
 
     if (node_handle.connected()) {
         for (ROSNode *node: ros_nodes) {
