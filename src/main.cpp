@@ -189,15 +189,15 @@ void setup() {
                                    odrive_encoder_topics[5]->message, "Conveyor");
 
     actuators[0] = new ActuatorUnit(&actuator_bus, 128); // Slot 3L
-    actuators[0]->set_limits(0,-530, 2400);
+    actuators[0]->set_limits(0,-512, 2000, true);
+//    actuators[0]->set_inverted(true,0);
     actuators[1] = new ActuatorUnit(&actuator_bus, 129); // Slot 1L
-    actuators[1]->set_limits(0, -2000, -820);
-    actuators[1]->set_inverted(true,1);
+    actuators[1]->set_limits(0, -820, 2000, true);
     actuators[2] = new ActuatorUnit(&actuator_bus, 130); // Slot 2L
-    actuators[2]->set_limits(0, -2000, 22);
+    actuators[2]->set_limits(0, -2000, 25);
     actuators[2]->set_inverted(true,1);
     actuators[3] = new ActuatorUnit(&actuator_bus, 131); // Slot 1R
-    actuators[3]->set_limits(0, -2000, 820);
+    actuators[3]->set_limits(0, -2000, -830);
 
     actuators_ros[0] = new ActuatorsROS(actuators[0], actuator_encoder_topics[0]->message,
                                         &system_diagnostics.status[6], "Front_Left");

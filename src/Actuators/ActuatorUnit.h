@@ -85,6 +85,7 @@ public:
         int32_t activation_tolerance = 10;       // The current current draw of the motor in ma
         int16_t current_limit        = 200;       // The current current draw of the motor in ma
         boolean reversed             = false;     // Whether the motor is reversed
+        boolean reverse_limits       = false;     // Whether the motor limits are reversed
         char*   status_string        = nullptr;   // A string describing the diagnostics_topic of the motor
     };
 
@@ -302,7 +303,7 @@ public:
 
     void set_inverted(bool inverted, uint8_t motor);
 
-    void set_limits(uint8_t motor, int32_t lower_limit, int32_t upper_limit);
+    void set_limits(uint8_t motor, int32_t lower_limit, int32_t upper_limit, boolean reverse_limits = false);
 
     void estop() override;
 

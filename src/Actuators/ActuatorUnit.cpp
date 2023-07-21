@@ -60,9 +60,22 @@ void ActuatorUnit::set_duty_cycle(float_t duty_cycle, uint8_t motor) {
 
 void ActuatorUnit::update_duty_cycle_command(float_t duty_cycle, uint8_t motor,
                                              boolean send_immediately) {
-
+    // Validate that we have not exceeded the position limits in any control mode
+    if (this->motors[motor].reversed) duty_cycle = -duty_cycle; // Reverse the duty cycle if the motor is reversed
+    if (this->motors[motor].reverse_limits) {
+        if (this->motors[motor].current_position > this->motors[motor].max_position &&
+            duty_cycle > 0)
+            duty_cycle = 0;
+        else if (this->motors[motor].current_position < this->motors[motor].min_position &&
+                 duty_cycle < 0) duty_cycle = 0;
+    } else {
+        if (this->motors[motor].current_position > this->motors[motor].max_position &&
+            duty_cycle < 0)
+            duty_cycle = 0;
+        else if (this->motors[motor].current_position < this->motors[motor].min_position &&
+                 duty_cycle > 0) duty_cycle = 0;
+    }
     // Cap the duty cycle at the maximum allowable value
-    if (this->motors[motor].reversed) duty_cycle = -duty_cycle;
     if (duty_cycle > 1) duty_cycle = 1;
     else if (duty_cycle < -1) duty_cycle = -1;
     duty_cycle = duty_cycle * this->motors[motor].duty_cycle_limit; // Scale the duty cycle to the maximum duty cycle
@@ -319,7 +332,7 @@ void ActuatorUnit::set_inverted(bool inverted, uint8_t motor) {
     this->motors[motor].reversed = inverted;
 }
 
-void ActuatorUnit::set_limits(uint8_t motor, int32_t lower_limit, int32_t upper_limit) {
+void ActuatorUnit::set_limits(uint8_t motor, int32_t lower_limit, int32_t upper_limit, boolean reverse_limits) {
     this->motors[motor].min_position = lower_limit;
     this->motors[motor].max_position = upper_limit;
 }
