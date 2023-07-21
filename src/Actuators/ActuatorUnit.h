@@ -84,6 +84,7 @@ public:
         int32_t position_tolerance   = 2;        // The deadband of the motor in analog value
         int32_t activation_tolerance = 10;       // The current current draw of the motor in ma
         int16_t current_limit        = 200;       // The current current draw of the motor in ma
+        boolean reversed             = false;     // Whether the motor is reversed
         char*   status_string        = nullptr;   // A string describing the diagnostics_topic of the motor
     };
 
@@ -299,6 +300,10 @@ public:
 
     void update();
 
+    void set_inverted(bool inverted, uint8_t motor);
+
+    void set_limits(uint8_t motor, int32_t lower_limit, int32_t upper_limit);
+
     void estop() override;
 
     void resume() override;
@@ -348,6 +353,7 @@ public:
 
     void position_control_callback(uint8_t motor);
 
+    boolean on_target(uint8_t motor);
 };
 
 

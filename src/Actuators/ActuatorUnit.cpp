@@ -62,6 +62,7 @@ void ActuatorUnit::update_duty_cycle_command(float_t duty_cycle, uint8_t motor,
                                              boolean send_immediately) {
 
     // Cap the duty cycle at the maximum allowable value
+    if (this->motors[motor].reversed) duty_cycle = -duty_cycle;
     if (duty_cycle > 1) duty_cycle = 1;
     else if (duty_cycle < -1) duty_cycle = -1;
     duty_cycle = duty_cycle * this->motors[motor].duty_cycle_limit; // Scale the duty cycle to the maximum duty cycle
@@ -177,6 +178,10 @@ int32_t ActuatorUnit::get_position(uint8_t motor) {
     return this->motors[motor].current_position;
 }
 
+boolean ActuatorUnit::on_target(uint8_t motor){
+    return this->motors[motor].achieved_position;
+}
+
 int32_t ActuatorUnit::get_velocity(uint8_t motor) {
 //    if (!(this->data_flags & M1_VEL_MASK) && motor == 0) return INT32_MIN;
     if (!(this->data_flags & M2_VEL_MASK) && motor == 1) return INT32_MIN;
@@ -251,7 +256,6 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
     // 3. Main battery voltage too low
     // 4. Controller temperature has exceeded 80C
     if (!this->connected) {
-        return false;
         sprintf(device_name, "Actuator Unit: %d", this->id);
         sprintf(device_message, "Lost communication");
         return true;
@@ -309,6 +313,15 @@ void ActuatorUnit::current_limit_check(uint8_t motor) {
         if (this->motors[motor].duty_cycle_limit > this->motors[motor].max_duty_cycle)
             this->motors[motor].duty_cycle_limit = this->motors[motor].max_duty_cycle;
     }
+}
+
+void ActuatorUnit::set_inverted(bool inverted, uint8_t motor) {
+    this->motors[motor].reversed = inverted;
+}
+
+void ActuatorUnit::set_limits(uint8_t motor, int32_t lower_limit, int32_t upper_limit) {
+    this->motors[motor].min_position = lower_limit;
+    this->motors[motor].max_position = upper_limit;
 }
 
 
