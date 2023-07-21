@@ -211,7 +211,7 @@ namespace odrive {
                 sprintf(buffer, "TUNING");
                 break;
             default:
-                sprintf(buffer, "UNKNOWN_INPUT_MODE");
+                sprintf(buffer, "UNKNOWN_INPUT_MODE: 0x%2X", input_mode);
                 break;
         }
     }

@@ -420,8 +420,9 @@ uint32_t ODrivePro::get_last_update() const {
 
 void ODrivePro::set_control_mode(odrive::control_modes new_control_mode, odrive::input_modes new_input_mode) {
     this->control_mode = new_control_mode;
+    this->input_mode = new_input_mode;
     this->send_command(odrive::Set_Controller_Mode, new_control_mode, new_input_mode);
-    this->send_command(odrive::Set_Axis_State, odrive::axis_states::CLOSED_LOOP_CONTROL);
+    this->set_axis_state(odrive::axis_states::CLOSED_LOOP_CONTROL);
 }
 
 char *ODrivePro::get_setpoint_string() {

@@ -273,6 +273,16 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
         sprintf(device_message, "Lost communication");
         return true;
     }
+    if (this->motors[0].current_position < -2000) {
+        sprintf(device_name, "Actuator Unit: %d", this->id);
+        sprintf(device_message, "Suspension position lost");
+        return true;
+    }
+    if (this->motors[1].current_position < -2000) {
+        sprintf(device_name, "Actuator Unit: %d", this->id);
+        sprintf(device_message, "Steering position lost");
+        return true;
+    }
     if (this->get_logic_battery_voltage() < 10) {
         sprintf(device_name, "Actuator Unit: %d", this->id);
         sprintf(device_message, "Logic battery voltage too low: %0.1fV", this->get_logic_battery_voltage());

@@ -192,7 +192,8 @@ void setup() {
     actuators[0]->set_limits(0,-512, 2000, true);
 //    actuators[0]->set_inverted(true,0);
     actuators[1] = new ActuatorUnit(&actuator_bus, 129); // Slot 1L
-    actuators[1]->set_limits(0, -820, 2000, true);
+    actuators[1]->set_inverted(true,1);
+//    actuators[1]->set_limits(0, -880, -2000, true);
     actuators[2] = new ActuatorUnit(&actuator_bus, 130); // Slot 2L
     actuators[2]->set_limits(0, -2000, 25);
     actuators[2]->set_inverted(true,1);
@@ -313,8 +314,10 @@ void loop() {
     }
     starting_actuator = (starting_actuator + 1) % 4;
 
+    load_cells[0]->read();
     load_cells[0]->update();
     load_cells[0]->publish();
+    load_cells[1]->read();
     load_cells[1]->update();
     load_cells[1]->publish();
 

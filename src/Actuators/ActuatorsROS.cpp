@@ -50,10 +50,12 @@ void ActuatorsROS::update_diagnostics_topic(){
         sprintf(strings[1], "%24s", this->actuator->get_motor_fault_string(1));
         if (this->actuator->get_position(0) == INT32_MIN) {
             sprintf(strings[2], "NULL Ticks");
-        } else sprintf(strings[2], "%04ld Ticks", this->actuator->get_position(0));
+        } else sprintf(strings[2], "%04ld | %04ld",
+                       this->actuator->get_position(0), this->actuator->get_target_position(0));
         if (this->actuator->get_position(1) == INT32_MIN) {
             sprintf(strings[3], "NULL Ticks");
-        } else sprintf(strings[3], "%04ld Ticks", this->actuator->get_position(1));
+        } else sprintf(strings[3], "%04ld | %04ld",
+                       this->actuator->get_position(1), this->actuator->get_target_position(1));
         sprintf(strings[4], "%06.2f%%", this->actuator->get_duty_cycle(0) * 100);
         sprintf(strings[5], "%06.2f%%", this->actuator->get_duty_cycle(1) * 100);
         if (this->actuator->get_temperature() == FP_NAN) {

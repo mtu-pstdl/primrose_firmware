@@ -32,12 +32,9 @@ void ODrive_ROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
             break;
         case SET_CLOSED_LOOP:
             // Check if we are already in the desired mode to avoid unnecessary can messages
-            if (this->odrive->get_control_mode() != static_cast<odrive::control_modes>(msg.data[1]) ||
-                this->odrive->get_input_mode() != static_cast<odrive::input_modes>(msg.data[2])) {
-                this->odrive->set_control_mode(
-                        static_cast<odrive::control_modes>(msg.data[1]),
-                        static_cast<odrive::input_modes>(msg.data[2]));
-            }
+            this->odrive->set_control_mode(
+                    static_cast<odrive::control_modes>(msg.data[1]),
+                    static_cast<odrive::input_modes>(msg.data[2]));
             break;
         case SET_POINT:
             this->odrive->set_setpoint(ODrive_ROS::from_fixed_point(msg.data[1], POS_UNIT_SCALE));
