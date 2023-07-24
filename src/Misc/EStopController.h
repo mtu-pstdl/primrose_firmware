@@ -52,6 +52,11 @@ private:
 
     void check_for_faults() {
         if (!automatic_estop_enabled || automatic_estop_inhibited) {
+            for (auto & estop_device : estop_devices) {
+                if (estop_device != nullptr)
+                // still check for faults as this is used by modules to detect internal faults
+                estop_device->tripped(tripped_device_name, tripped_device_message);
+            }
             return;
         }
         this->should_trigger_estop = false;

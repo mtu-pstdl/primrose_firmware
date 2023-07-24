@@ -78,14 +78,14 @@ public:
         // Configuration variables
         float_t p_gain               = -0.005;    // The proportional gain of the motor
         float_t i_gain               = -0.0005;   // The integral gain of the motor
-        int32_t max_position         = 2048;      // The maximum position of the motor in analog value
-        int32_t min_position         = -1900;     // The minimum position of the motor in analog value
         float_t max_duty_cycle       = 0.5;       // The maximum duty cycle of the motor
         int32_t position_tolerance   = 2;        // The deadband of the motor in analog value
         int32_t activation_tolerance = 10;       // The current current draw of the motor in ma
         int16_t current_limit        = 200;       // The current current draw of the motor in ma
+        int32_t max_extension        = 0;         // The maximum extension of the motor in analog value
         boolean reversed             = false;     // Whether the motor is reversed
-        boolean reverse_limits       = false;     // Whether the motor limits are reversed
+        boolean limit_direction      = false;     // Which direction the limit should apply from
+        boolean limit_action_dir     = false;     // Which direction the limit action should apply from
         char*   status_string        = nullptr;   // A string describing the diagnostics_topic of the motor
     };
 
@@ -303,7 +303,7 @@ public:
 
     void set_inverted(bool inverted, uint8_t motor);
 
-    void set_limits(uint8_t motor, int32_t lower_limit, int32_t upper_limit, boolean reverse_limits = false);
+    void set_limits(uint8_t motor, int32_t limit, boolean direction, boolean action_direction);
 
     void estop() override;
 

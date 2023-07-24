@@ -62,18 +62,16 @@ void ActuatorUnit::update_duty_cycle_command(float_t duty_cycle, uint8_t motor,
                                              boolean send_immediately) {
     // Validate that we have not exceeded the position limits in any control mode
     if (this->motors[motor].reversed) duty_cycle = -duty_cycle; // Reverse the duty cycle if the motor is reversed
-    if (this->motors[motor].reverse_limits) {
-        if (this->motors[motor].current_position > this->motors[motor].max_position &&
-            duty_cycle > 0)
-            duty_cycle = 0;
-        else if (this->motors[motor].current_position < this->motors[motor].min_position &&
-                 duty_cycle < 0) duty_cycle = 0;
+    if (this->motors[motor].limit_direction){
+        if (this->motors[motor].current_position > this->motors[motor].max_extension) {
+            if (this->motors[motor].limit_action_dir && duty_cycle > 0) duty_cycle = 0;
+            else if (!this->motors[motor].limit_action_dir && duty_cycle < 0) duty_cycle = 0;
+        }
     } else {
-        if (this->motors[motor].current_position > this->motors[motor].max_position &&
-            duty_cycle < 0)
-            duty_cycle = 0;
-        else if (this->motors[motor].current_position < this->motors[motor].min_position &&
-                 duty_cycle > 0) duty_cycle = 0;
+        if (this->motors[motor].current_position < this->motors[motor].max_extension) {
+            if (this->motors[motor].limit_action_dir && duty_cycle < 0) duty_cycle = 0;
+            else if (!this->motors[motor].limit_action_dir && duty_cycle > 0) duty_cycle = 0;
+        }
     }
     // Cap the duty cycle at the maximum allowable value
     if (duty_cycle > 1) duty_cycle = 1;
@@ -101,15 +99,11 @@ void ActuatorUnit::set_target_position(int32_t position, uint8_t motor) {
         if (this->motors[0].control_mode != control_modes::E_STOPPED)
             this->motors[0].control_mode = control_modes::POSITION;
         // Check if the position is within the allowable range
-        if (position > this->motors[0].max_position) position = this->motors[0].max_position;
-        else if (position < this->motors[0].min_position) position = this->motors[0].min_position;
         this->motors[0].target_position = position;
     } else {
         if (this->motors[1].control_mode != control_modes::E_STOPPED)
             this->motors[1].control_mode = control_modes::POSITION;
         // Check if the position is within the allowable range
-        if (position > this->motors[1].max_position) position = this->motors[1].max_position;
-        else if (position < this->motors[1].min_position) position = this->motors[1].min_position;
         this->motors[1].target_position = position;
     }
 }
@@ -275,12 +269,26 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
     }
     if (this->motors[0].current_position < -2000) {
         sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(device_message, "Suspension position lost");
+        sprintf(device_message, "Suspension encoder disconnected");
+        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
         return true;
     }
     if (this->motors[1].current_position < -2000) {
         sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(device_message, "Steering position lost");
+        sprintf(device_message, "Steering encoder disconnected");
+        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
+        return true;
+    }
+    if (this->motors[0].current_position > 1000) {
+        sprintf(device_name, "Actuator Unit: %d", this->id);
+        sprintf(device_message, "Suspension encoder dead short");
+        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
+        return true;
+    }
+    if (this->motors[1].current_position > 1000) {
+        sprintf(device_name, "Actuator Unit: %d", this->id);
+        sprintf(device_message, "Steering encoder dead short");
+        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
         return true;
     }
     if (this->get_logic_battery_voltage() < 10) {
