@@ -84,6 +84,7 @@ public:
         int16_t current_limit        = 200;       // The current current draw of the motor in ma
         int32_t max_extension        = 0;         // The maximum extension of the motor in analog value
         boolean reversed             = false;     // Whether the motor is reversed
+        boolean has_limit            = false;     // Whether the motor has a limit
         boolean limit_direction      = false;     // Which direction the limit should apply from
         boolean limit_action_dir     = false;     // Which direction the limit action should apply from
         char*   status_string        = nullptr;   // A string describing the diagnostics_topic of the motor

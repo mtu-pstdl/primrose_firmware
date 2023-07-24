@@ -7,68 +7,33 @@
 
 void LoadCells::publish() {
 
-    for (int i = 0; i < total_load_cells; i++) {
-        output_topic->data[i + 1] = data[i];
-    }
-
-    if (online_load_cells() == 0){
-        sprintf(value_strings[0], "Unavailable");
-    } else sprintf(value_strings[0], "%ld", this->total_weight);
-
-    for (int i = 2; i < total_load_cells + 2; i++) {
-        if (connected[i-2]) {
-            sprintf(value_strings[i], "%ld kg", data[i - 2]);
-        } else {
-            sprintf(value_strings[i], "Unavailable");
-        }
-    }
+//    for (int i = 0; i < total_load_cells; i++) {
+//        output_topic->data[i + 1] = d
+//    }
+//
+//    if (online_load_cells() == 0){
+//        sprintf(value_strings[0], "Unavailable");
+//    } else sprintf(value_strings[0], "%ld", this->total_weight);
+//
+//    for (int i = 2; i < total_load_cells + 2; i++) {
+//        if (connected[i-2]) {
+//            sprintf(value_strings[i], "%ld kg", data[i - 2]);
+//        } else {
+//            sprintf(value_strings[i], "Unavailable");
+//        }
+//    }
 
 }
 
+
 void LoadCells::read() {
-    if (this->averaging_position == AVERAGING_BUFFER_SIZE || millis() - this->last_read_time > MINIMUM_READ_INTERVAL) {
-        return;  // If the averaging buffer is full or the minimum read interval has not passed, do not read
-    }
-    for (int i = 0; i < total_load_cells; i++) {
-        if (connected[i]) {
-            this->averaging_buffer[i][this->averaging_position] = load_cells[i]->read();
-        } else {
-            this->averaging_buffer[i][this->averaging_position] = INT32_MIN;
-        }
-    }
-    this->averaging_position++;
-    this->last_read_time = millis();
+
 }
 
 void LoadCells::update() {
     // Read the average of the last 10 readings from each load cell and store it in the data array
-    for (int i = 0; i < total_load_cells; i++) {
-        if (connected[i]) {
-            data[i] = 0;
-            for (int j = 0; j < this->averaging_position; j++) {
-                data[i] += averaging_buffer[i][j];
-            }
-            data[i] /= this->averaging_position;
-        } else {
-            data[i] = INT32_MIN;
-        }
-    }
-    this->averaging_position = 0;
-    // If more than 1 load cell is connected, calculate the total weight by extrapolating the weight on
-    // the missing load cells
-    if (online_load_cells() > 1) {
-        total_weight = 0;
-        for (int i = 0; i < total_load_cells; i++) {
-            if (connected[i]) {
-                total_weight += data[i];
-            }
-        }
-        output_topic->data[0] = total_weight;
-        // Update diagnostic topic
-    } else {
-        output_topic->data[0] = 0;
-        // Update diagnostic topic
-    }
+
+
 
 }
 

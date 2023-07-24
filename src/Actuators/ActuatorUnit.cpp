@@ -62,15 +62,17 @@ void ActuatorUnit::update_duty_cycle_command(float_t duty_cycle, uint8_t motor,
                                              boolean send_immediately) {
     // Validate that we have not exceeded the position limits in any control mode
     if (this->motors[motor].reversed) duty_cycle = -duty_cycle; // Reverse the duty cycle if the motor is reversed
-    if (this->motors[motor].limit_direction){
-        if (this->motors[motor].current_position > this->motors[motor].max_extension) {
-            if (this->motors[motor].limit_action_dir && duty_cycle > 0) duty_cycle = 0;
-            else if (!this->motors[motor].limit_action_dir && duty_cycle < 0) duty_cycle = 0;
-        }
-    } else {
-        if (this->motors[motor].current_position < this->motors[motor].max_extension) {
-            if (this->motors[motor].limit_action_dir && duty_cycle < 0) duty_cycle = 0;
-            else if (!this->motors[motor].limit_action_dir && duty_cycle > 0) duty_cycle = 0;
+    if (this->motors[motor].has_limit) {
+        if (this->motors[motor].limit_direction) {
+            if (this->motors[motor].current_position > this->motors[motor].max_extension) {
+                if (this->motors[motor].limit_action_dir && duty_cycle > 0) duty_cycle = 0;
+                else if (!this->motors[motor].limit_action_dir && duty_cycle < 0) duty_cycle = 0;
+            }
+        } else {
+            if (this->motors[motor].current_position < this->motors[motor].max_extension) {
+                if (this->motors[motor].limit_action_dir && duty_cycle < 0) duty_cycle = 0;
+                else if (!this->motors[motor].limit_action_dir && duty_cycle > 0) duty_cycle = 0;
+            }
         }
     }
     // Cap the duty cycle at the maximum allowable value
@@ -350,9 +352,11 @@ void ActuatorUnit::set_inverted(bool inverted, uint8_t motor) {
     this->motors[motor].reversed = inverted;
 }
 
-void ActuatorUnit::set_limits(uint8_t motor, int32_t lower_limit, int32_t upper_limit, boolean reverse_limits) {
-    this->motors[motor].min_position = lower_limit;
-    this->motors[motor].max_position = upper_limit;
+void ActuatorUnit::set_limits(uint8_t motor, int32_t limit, boolean direction, boolean action_dir) {
+    this->motors[motor].max_extension = limit;
+    this->motors[motor].limit_direction = direction;
+    this->motors[motor].limit_action_dir = action_dir;
+    this->motors[motor].has_limit = true;
 }
 
 
