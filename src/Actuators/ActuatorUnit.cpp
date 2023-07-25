@@ -61,7 +61,6 @@ void ActuatorUnit::set_duty_cycle(float_t duty_cycle, uint8_t motor) {
 void ActuatorUnit::update_duty_cycle_command(float_t duty_cycle, uint8_t motor,
                                              boolean send_immediately) {
     // Validate that we have not exceeded the position limits in any control mode
-    if (this->motors[motor].reversed) duty_cycle = -duty_cycle; // Reverse the duty cycle if the motor is reversed
     if (this->motors[motor].has_limit) {
         if (this->motors[motor].limit_direction) {
             if (this->motors[motor].current_position > this->motors[motor].max_extension) {
@@ -137,8 +136,13 @@ void ActuatorUnit::position_control_callback(uint8_t motor){
                 // Cap the I term to prevent windup
                 this->motors[motor].i_term = 0.25f * this->motors[motor].i_term / abs(this->motors[motor].i_term);
             }
+            if (this->motors[motor].reversed) {
+                this->update_duty_cycle_command(-(p_term + this->motors[motor].i_term), motor, true);
+            } else {
+                this->update_duty_cycle_command(p_term + this->motors[motor].i_term, motor, true);
+            }
+
             // Set the duty cycle to the sum of the P and I terms
-            this->update_duty_cycle_command(p_term + this->motors[motor].i_term, motor, true);
         }
     }
 }

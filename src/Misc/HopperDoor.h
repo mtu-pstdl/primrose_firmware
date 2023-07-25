@@ -11,8 +11,9 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32.h"
 #include "EStopDevice.h"
 
-#define PWM_PIN 4
-#define DIRECTION_PIN 3
+//#define PWM_PIN
+#define IN1_PIN 4
+#define IN2_PIN 3
 
 class HopperDoor : public ROSNode, public EStopDevice {
 
@@ -32,8 +33,11 @@ public:
 
     HopperDoor() :
         hopper_door_sub("/mciu/Hopper/door", &HopperDoor::hopper_door_callback, this) {
-        pinMode(PWM_PIN, OUTPUT);
-        pinMode(DIRECTION_PIN, OUTPUT);
+//        pinMode(PWM_PIN, OUTPUT);
+        pinMode(IN1_PIN, OUTPUT);
+        pinMode(IN2_PIN, OUTPUT);
+        digitalWrite(IN1_PIN, HIGH);
+        digitalWrite(IN2_PIN, LOW);
     }
 
     void subscribe(ros::NodeHandle* node_handle) override {
@@ -41,8 +45,9 @@ public:
     }
 
     void estop() override {
-        analogWrite(PWM_PIN, 0);
-        digitalWrite(DIRECTION_PIN, LOW);
+//        analogWrite(PWM_PIN, 0);
+//        digitalWrite(IN1_PIN, LOW);
+//        digitalWrite(IN2_PIN, LOW);
     }
 
 };

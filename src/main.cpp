@@ -193,6 +193,7 @@ void setup() {
 //    actuators[0]->set_inverted(true,0);
 
     actuators[1] = new ActuatorUnit(&actuator_bus, 129); // Slot 1L
+    actuators[1]->set_inverted(true,0); // Set the motor to run in the opposite direction (for the conveyor
     actuators[1]->set_inverted(true,1);
     actuators[1]->set_limits(0, -835, true, true);
 
