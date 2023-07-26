@@ -82,8 +82,8 @@ void ActuatorsROS::update() {
     this->output_topic->data[5] = 0; // Power usage placeholder
     this->output_topic->data[6] = this->actuator->get_position(1);
     this->output_topic->data[7] = this->actuator->get_target_position(1);
-    this->output_topic->data[8] =
-    this->output_topic->data[9] = 0; // Placeholder for current control mode
+    this->output_topic->data[8] = (int32_t) (this->actuator->get_duty_cycle(1) * 1000);
+    this->output_topic->data[9] = this->actuator->on_target(1);
     this->output_topic->data[10] = 0; // Odometry placeholder
     this->output_topic->data[11] = 0; // Power usage placeholder
     update_diagnostics_topic();
