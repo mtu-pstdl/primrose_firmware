@@ -116,6 +116,7 @@ void read_load_cells() {
     load_cells[1]->read();
 }
 
+
 void can_recieve(const CAN_message_t &msg) {
     // Check node ID (Upper 6 bits of CAN ID)
     uint8_t node_id = msg.id >> 5;
@@ -422,6 +423,11 @@ void loop() {
     // Update the uptime
     sprintf(system_info_strings[8], "%.2luh %.2lum %.2lus",
             millis() / 3600000, (millis() / 60000) % 60, (millis() / 1000) % 60);
+
+    if (can1.getTXQueueCount() > 5){
+        set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::WARN);
+        sprintf(system_status_messages[system_message_count++], "CAN BUS Saturation");
+    }
 
     uint32_t loop_time = micros() - loop_start;
     if (loop_time > 50000) {

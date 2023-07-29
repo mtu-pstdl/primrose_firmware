@@ -144,6 +144,7 @@ private:
         switch (msg.data[0]){
             case SET_FUllY_CHARGED:
                 this->battery_data.estimated_remaining_capacity = BATTERY_NORM_CAPACITY;
+                this->battery_data.total_session_power_draw = 0;
                 this->save_data(true);
                 break;
             case INCREASE_CHARGE:

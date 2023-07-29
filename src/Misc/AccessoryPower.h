@@ -11,7 +11,7 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32MultiArray.h"
 
 #define LASER_PIN 2
-#define CAMERA_PIN 3
+#define CAMERA_PIN 0
 
 class AccessoryPower : public ROSNode {
 
