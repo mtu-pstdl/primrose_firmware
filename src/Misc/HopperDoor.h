@@ -37,7 +37,7 @@ public:
         pinMode(IN1_PIN, OUTPUT);
         pinMode(IN2_PIN, OUTPUT);
         digitalWrite(IN1_PIN, LOW);
-        digitalWrite(IN2_PIN, HIGH);
+        digitalWrite(IN2_PIN, LOW);
     }
 
     void subscribe(ros::NodeHandle* node_handle) override {
