@@ -141,6 +141,37 @@ void check_temp(){
     } else set_arm_clock(cpu_freq);  // 600 MHz (default)
 }
 
+uint8_t odometer_reset_sequence = 0;
+
+/**
+ * @brief Callback for the odometer reset subscriber
+ * In order to prevent accidental resets of the odometer the user will need to send the values
+ * 0x0FF1CE and 0x0DD1CE to the topic /odometer_reset in succession to reset the odometer
+ * @param msg
+ */
+void odometer_reset_callback(const std_msgs::Int32& msg) {
+    switch (odometer_reset_sequence) {
+        case 0:
+            if (msg.data == 0x0FF1CE) odometer_reset_sequence++;
+            break;
+        case 1:
+            if (msg.data == 0x0DD1CE) {
+                odometer_reset_sequence = 0;
+                for (int i = 0; i < 14; i++){
+                    odometers.reset_odometer(i);
+                }
+                battery_monitor->reset_data();
+            }
+            break;
+        default:
+            odometer_reset_sequence = 0;
+            break;
+    }
+}
+
+// Setup ros subscriber for odometer reset it is an int32 message
+ros::Subscriber<std_msgs::Int32> odometer_reset_sub("/odometer_reset", odometer_reset_callback);
+
 uint32_t spin_time = 0;
 
 void setup() {
@@ -160,6 +191,9 @@ void setup() {
 
     can1.enableFIFO();
     can1.enableFIFOInterrupt();
+
+    // Setup the odometer reset subscriber
+    node_handle.subscribe(odometer_reset_sub);
 
     for (int i = 0; i < 6; i++) {
         odrives[i] = new ODrivePro(i, &can1, &node_handle);
@@ -320,13 +354,6 @@ void loop() {
         actuators[actuator_index]->update();
     }
     starting_actuator = (starting_actuator + 1) % 4;
-
-//    load_cells[0]->read();
-//    load_cells[0]->update();
-//    load_cells[0]->publish();
-//    load_cells[1]->read();
-//    load_cells[1]->update();
-//    load_cells[1]->publish();
 
     if (node_handle.connected()) {
         for (ROSNode *node: ros_nodes) {

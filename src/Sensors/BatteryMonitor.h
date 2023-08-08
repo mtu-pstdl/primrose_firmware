@@ -26,7 +26,7 @@
 
 // The scale factor is 10mv/A
 #define CURRENT_SENSOR_SCALE_FACTOR 0.01 // in V/A (10 mV/A)
-#define CURRENT_SENSOR_CAL_OFFSET 1.627 // What voltage is zero
+#define CURRENT_SENSOR_CAL_OFFSET 1.6331 // What voltage is zero
 
 #define BATTERY_AVERAGE_BUFFER_SIZE 20
 
@@ -250,6 +250,13 @@ public:
         analogReadResolution(16);
         analogReadAveraging(16); // Set averaging to 16 samples
     }
+
+    void reset_data(){
+        this->battery_data.estimated_remaining_capacity = BATTERY_NORM_CAPACITY;
+        this->battery_data.total_session_power_draw = 0;
+        this->battery_data.all_time_power_draw = 0;
+        this->save_data(true);
+     }
 
     void update_bus_voltage(float_t voltage){
         this->inst_bus_voltage = voltage;

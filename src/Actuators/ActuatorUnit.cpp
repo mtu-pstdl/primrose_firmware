@@ -273,30 +273,30 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
         sprintf(device_message, "Lost communication");
         return true;
     }
-    if (this->motors[0].current_position < -2000) {
-        sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(device_message, "Suspension encoder disconnected");
-        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
-        return true;
-    }
-    if (this->motors[1].current_position < -2000) {
-        sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(device_message, "Steering encoder disconnected");
-        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
-        return true;
-    }
-    if (this->motors[0].current_position > 1000) {
-        sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(device_message, "Suspension encoder dead short");
-        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
-        return true;
-    }
-    if (this->motors[1].current_position > 1000) {
-        sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(device_message, "Steering encoder dead short");
-        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
-        return true;
-    }
+//    if (this->motors[0].current_position < -2000) {
+//        sprintf(device_name, "Actuator Unit: %d", this->id);
+//        sprintf(device_message, "Suspension encoder disconnected");
+//        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
+//        return true;
+//    }
+//    if (this->motors[1].current_position < -2000) {
+//        sprintf(device_name, "Actuator Unit: %d", this->id);
+//        sprintf(device_message, "Steering encoder disconnected");
+//        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
+//        return true;
+//    }
+//    if (this->motors[0].current_position > 1000) {
+//        sprintf(device_name, "Actuator Unit: %d", this->id);
+//        sprintf(device_message, "Suspension encoder dead short");
+//        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
+//        return true;
+//    }
+//    if (this->motors[1].current_position > 1000) {
+//        sprintf(device_name, "Actuator Unit: %d", this->id);
+//        sprintf(device_message, "Steering encoder dead short");
+//        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
+//        return true;
+//    }
     if (this->get_logic_battery_voltage() < 10) {
         sprintf(device_name, "Actuator Unit: %d", this->id);
         sprintf(device_message, "Logic battery voltage too low: %0.1fV", this->get_logic_battery_voltage());
