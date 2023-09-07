@@ -570,6 +570,12 @@ bool ODrivePro::tripped(char* name, char* reason) {
         sprintf(reason, "Lost Connection");
         return true;
     }
+    // If an odrive reports a SPINOUT error, then it should be ignored and closed loop control should be resumed
+    if (this->DISARM_REASON == SPINOUT_DETECTED || this->AXIS_ERROR == SPINOUT_DETECTED) {
+        this->send_command(odrive::Clear_Errors);
+        this->send_command(odrive::Set_Axis_State, odrive::axis_states::CLOSED_LOOP_CONTROL);
+        return false;
+    }
     if (this->DISARM_REASON != 0x00 && this->AXIS_STATE != odrive::axis_states::CLOSED_LOOP_CONTROL){
         sprintf(name, "ODrive: %d", this->can_id);
         odrive::sprintf_error_code(reason, this->DISARM_REASON);

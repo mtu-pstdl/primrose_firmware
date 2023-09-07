@@ -143,6 +143,7 @@ void check_temp(){
 
 uint8_t odometer_reset_sequence = 0;
 
+
 /**
  * @brief Callback for the odometer reset subscriber
  * In order to prevent accidental resets of the odometer the user will need to send the values
