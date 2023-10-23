@@ -33,8 +33,6 @@ void LoadCells::read() {
 void LoadCells::update() {
     // Read the average of the last 10 readings from each load cell and store it in the data array
 
-
-
 }
 
 void LoadCells::subscribe(ros::NodeHandle *node_handle) {

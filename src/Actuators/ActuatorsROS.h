@@ -22,10 +22,10 @@ class ActuatorsROS : public ROSNode {
 
 private:
 
-    enum ros_commands {
+    enum ROS_COMMANDS {
         STOP = 0,
-        SET_DUTY_CYCLE  = 1,
-        SET_POSITION    = 2,
+        SET_POSITION = 1,
+        SET_DUTY_CYCLE = 2,
     };
 
     ros::Subscriber<std_msgs::Int32MultiArray, ActuatorsROS> command_sub;
