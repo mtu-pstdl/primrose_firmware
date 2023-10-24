@@ -43,7 +43,7 @@ class BatteryMonitor : public ROSNode {
 
 private:
 
-    sensor_msgs::BatteryState* battery_state_topic;
+    sensor_msgs::BatteryState* battery_state_msg;
 
 //    TLI4971 CurrentSensor = TLI4971(AREF_PIN, VREF_PIN, 120, 5, 0, 0, 0, false);
 
@@ -196,18 +196,18 @@ private:
 
 public:
 
-    explicit BatteryMonitor(EStopController* estop_controller, sensor_msgs::BatteryState* battery_state_topic) :
+    explicit BatteryMonitor(EStopController* estop_controller, sensor_msgs::BatteryState* battery_state_msg) :
             battery_sub("/mciu/battery_monitor", &BatteryMonitor::battery_callback, this) {
 
         this->estop_controller = estop_controller;
-        this->battery_state_topic = battery_state_topic;
+        this->battery_state_msg = battery_state_msg;
 
         // Setup battery state topic
-        this->battery_state_topic->design_capacity = BATTERY_NORM_CAPACITY;
-        this->battery_state_topic->power_supply_technology = sensor_msgs::BatteryState::POWER_SUPPLY_TECHNOLOGY_LIFE;
-        this->battery_state_topic->power_supply_status = sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_UNKNOWN;
-        this->battery_state_topic->power_supply_health = sensor_msgs::BatteryState::POWER_SUPPLY_HEALTH_UNKNOWN;
-        this->battery_state_topic->present = false;  // Until we get our first update from the BMS there is no battery
+        this->battery_state_msg->design_capacity = BATTERY_NORM_CAPACITY;
+        this->battery_state_msg->power_supply_technology = sensor_msgs::BatteryState::POWER_SUPPLY_TECHNOLOGY_LIFE;
+        this->battery_state_msg->power_supply_status = sensor_msgs::BatteryState::POWER_SUPPLY_STATUS_UNKNOWN;
+        this->battery_state_msg->power_supply_health = sensor_msgs::BatteryState::POWER_SUPPLY_HEALTH_UNKNOWN;
+        this->battery_state_msg->present = false;  // Until we get our first update from the BMS there is no battery
 
 
 

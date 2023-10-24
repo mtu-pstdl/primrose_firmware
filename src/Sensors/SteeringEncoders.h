@@ -1,0 +1,14 @@
+//
+// Created by Jay on 10/24/2023.
+//
+
+#ifndef PRIMROSE_MCIU_STEERINGENCODERS_H
+#define PRIMROSE_MCIU_STEERINGENCODERS_H
+
+
+class SteeringEncoders {
+
+};
+
+
+#endif //PRIMROSE_MCIU_STEERINGENCODERS_H

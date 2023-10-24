@@ -21,6 +21,7 @@
 #include "Odometers.h"
 #include "Misc/HopperDoor.h"
 #include "Misc/AccessoryPower.h"
+#include "Sensors/IMU.h"
 
 // Motor configurations
 feedforward_struct trencher_ff = {
@@ -57,10 +58,8 @@ ActuatorUnit* actuators[4];
 ActuatorsROS* actuators_ros[4];
 Actuators actuator_bus;
 
-LoadCells* load_cells[2];
-
 BatteryMonitor* battery_monitor;
-sensor_msgs::BatteryState* battery_state_topic;
+IMU* imu;
 
 ROSNode* ros_nodes[16];
 
@@ -111,12 +110,6 @@ void set_mciu_level_max(int8_t level) {
         system_diagnostics.status[SYSTEM_DIAGNOSTICS_COUNT - 1].level = level;
     }
 }
-
-void read_load_cells() {
-    load_cells[0]->read();
-    load_cells[1]->read();
-}
-
 
 void can_recieve(const CAN_message_t &msg) {
     // Check node ID (Upper 6 bits of CAN ID)
@@ -212,12 +205,24 @@ void setup() {
     system_diagnostics.status_length = SYSTEM_DIAGNOSTICS_COUNT;
     system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[SYSTEM_DIAGNOSTICS_COUNT];
 
-    odrive_ros[0] = new ODrive_ROS(odrives[0], odrive_encoder_topics[0]->message, "Front_Left");
-    odrive_ros[1] = new ODrive_ROS(odrives[1], odrive_encoder_topics[1]->message, "Front_Right");
-    odrive_ros[2] = new ODrive_ROS(odrives[2], odrive_encoder_topics[2]->message, "Rear_Left");
-    odrive_ros[3] = new ODrive_ROS(odrives[3], odrive_encoder_topics[3]->message, "Rear_Right");
-    odrive_ros[4] = new ODrive_ROS(odrives[5], odrive_encoder_topics[4]->message, "Trencher");
-    odrive_ros[5] = new ODrive_ROS(odrives[4], odrive_encoder_topics[5]->message, "Conveyor");
+    odrive_ros[0] = new ODrive_ROS(odrives[0],
+                                   static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[0]->message),
+                                   "Front_Left");
+    odrive_ros[1] = new ODrive_ROS(odrives[1],
+                                   static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[1]->message),
+                                   "Front_Right");
+    odrive_ros[2] = new ODrive_ROS(odrives[2],
+                                   static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[2]->message),
+                                   "Rear_Left");
+    odrive_ros[3] = new ODrive_ROS(odrives[3],
+                                   static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[3]->message),
+                                   "Rear_Right");
+    odrive_ros[4] = new ODrive_ROS(odrives[4],
+                                   static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[4]->message),
+                                      "Trencher");
+    odrive_ros[5] = new ODrive_ROS(odrives[5],
+                                   static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[5]->message),
+                                   "Conveyor");
 
     actuators[0] = new ActuatorUnit(&actuator_bus, 128); // Slot 3L
 
@@ -232,16 +237,25 @@ void setup() {
     actuators[3] = new ActuatorUnit(&actuator_bus, 131); // Slot 1R
     actuators[3]->set_inverted(true,0);
 
-    actuators_ros[0] = new ActuatorsROS(actuators[0], actuator_encoder_topics[0]->message, "Front_Left");
-    actuators_ros[1] = new ActuatorsROS(actuators[1], actuator_encoder_topics[1]->message, "Front_Right");
-    actuators_ros[2] = new ActuatorsROS(actuators[2], actuator_encoder_topics[2]->message, "Rear_Left");
-    actuators_ros[3] = new ActuatorsROS(actuators[3], actuator_encoder_topics[3]->message, "Rear_Right");
+    actuators_ros[0] = new ActuatorsROS(actuators[0],
+                                        static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[0]->message),
+                                        "Front_Left");
+    actuators_ros[1] = new ActuatorsROS(actuators[1],
+                                        static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[1]->message),
+                                        "Front_Right");
+    actuators_ros[2] = new ActuatorsROS(actuators[2],
+                                        static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[2]->message),
+                                        "Rear_Left");
+    actuators_ros[3] = new ActuatorsROS(actuators[3],
+                                        static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[3]->message),
+                                        "Rear_Right");
 
     e_stop_controller = new EStopController(&system_diagnostics.status[13]);
     hopper_door = new HopperDoor();
 
-    battery_state_topic = new sensor_msgs::BatteryState();
-    battery_monitor = new BatteryMonitor(e_stop_controller, battery_state_topic);
+    battery_monitor = new BatteryMonitor(e_stop_controller,
+                                         static_cast<sensor_msgs::BatteryState*>(all_topics[BATTERY_TOPIC_NUM]->message));
+    imu = new IMU(static_cast<sensor_msgs::Imu*>(all_topics[IMU_TOPIC_NUM]->message));
 
     accessory_power = new AccessoryPower();
 
@@ -252,7 +266,6 @@ void setup() {
     int ros_node_count = 0;
     for (auto & odrive_ro : odrive_ros) ros_nodes[ros_node_count++] = odrive_ro;
     for (auto & actuator_ro : actuators_ros) ros_nodes[ros_node_count++] = actuator_ro;
-    for (auto & load_cell : load_cells) ros_nodes[ros_node_count++] = load_cell;
     ros_nodes[ros_node_count++] = e_stop_controller;
     ros_nodes[ros_node_count++] = hopper_door;
     ros_nodes[ros_node_count++] = battery_monitor;
