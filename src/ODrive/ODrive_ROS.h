@@ -55,74 +55,17 @@ private:
     char* status_string = new char[25];
     char* setpoint_topic_name = new char[25];
 
-//    void update_diagnostics_keys(bool error_mode){
-//        if (error_mode){
-//            state_topic->values[1].key = "AXIS_ERROR";        // Or CONTROL_MODE
-//            state_topic->values[2].key = "ACTIVE_ERRORS";     // Or INPUT_MODE
-//            state_topic->values[3].key = "DISARM_REASON";     // Or SETPOINT
-//            state_topic->values[4].key = "PROCEDURE_RESULT";  // Or TORQUE_ESTIMATE
-//            state_topic->values[5].key = "CONTROL_MODE";      // Or VEL_ESTIMATE
-//        } else {
-//            state_topic->values[1].key = "CONTROL_MODE";      // Or AXIS_ERROR
-//            state_topic->values[2].key = "INPUT_MODE";        // Or DISARM_REASON
-//            state_topic->values[3].key = "SETPOINT";          // Or ACTIVE_ERRORS
-//            state_topic->values[4].key = "TORQUE_ESTIMATE";   // Or PROCEDURE_RESULT
-//            state_topic->values[5].key = "VEL_ESTIMATE";      // Or CONTROL_MODE
-//        }
-//    }
-    void update_diagnostics_label();
-
-//    void allocate_strings() {
-//        for (auto & string : strings) {
-//            string = new char[50];
-//            sprintf(string, "%s", "Unknown");
-//        }
-//    }
-    /**
-     * Updates the main diagnostics_topic string and the condition numbers
-     */
-    void update_diagnostics();
-
-
-    void configure_diagnostics_topic(){
-//        this->state_topic->values_length = NUM_CONDITIONS;
-//        this->state_topic->values = new diagnostic_msgs::KeyValue[NUM_CONDITIONS];
-//        state_topic->values[0].key  = "AXIS_STATE";
-//        state_topic->values[1].key  = "AXIS_ERROR";        // Or CONTROL_MODE
-//        state_topic->values[2].key  = "ACTIVE_ERRORS";     // Or INPUT_MODE
-//        state_topic->values[3].key  = "DISARM_REASON";     // Or SETPOINT
-//        state_topic->values[4].key  = "PROCEDURE_RESULT";  // Or TORQUE_ESTIMATE
-//        state_topic->values[5].key  = "CONTROL_MODE";      // Or VEL_ESTIMATE
-//        state_topic->values[6].key  = "POS_ESTIMATE";
-//        state_topic->values[7].key  = "FET_TEMP";
-//        state_topic->values[8].key  = "MTR_TEMP";
-//        state_topic->values[9].key  = "BUS_VOLTAGE";
-//        state_topic->values[10].key = "BUS_CURRENT";
-//        state_topic->values[11].key = "MTR_CURRENT";       // AKA IQ_MEASURED
-//        state_topic->values[12].key = "ODOMETER";
-//        state_topic->name = "ODrive";
-//        state_topic->message = status_string;
-//        sprintf(status_string, "Initialising");
-//        state_topic->level = 0;
-//        state_topic->hardware_id = this->name.c_str();
-//        allocate_strings();
-//        for (int i = 0; i < NUM_CONDITIONS; i++) {
-//            this->state_topic->values[i].value = strings[i];
-//        }
-    }
-
 public:
 
 
     ODrive_ROS(ODrivePro* odrive,
-               diagnostic_msgs::DiagnosticStatus* status,
                std_msgs::Int32MultiArray* encoder_topic,
                String disp_name) :
             setpoint_sub("template1", &ODrive_ROS::setpoint_callback, this) {
         this->odrive = odrive;
         this->output_topic = encoder_topic;
-        this->output_topic->data_length = 11;
-        this->output_topic->data = new int32_t[11];
+        this->output_topic->data_length = 20;
+        this->output_topic->data = new int32_t[20];
         this->output_topic->data[0]  = this->odrive->can_id;  // CAN ID (is static)
         this->output_topic->data[1]  = 0;  // POS_ESTIMATE
         this->output_topic->data[2]  = 0;  // VEL_ESTIMATE
@@ -134,9 +77,13 @@ public:
         this->output_topic->data[8]  = 0;  // DISARM_REASON
         this->output_topic->data[9]  = 0;  // PROCEDURE_RESULT
         this->output_topic->data[10] = 0;  // TORQUE_ESTIMATE
-        this->state_topic = status;
+        this->output_topic->data[11] = 0;  // VBUS_VOLTAGE
+        this->output_topic->data[12] = 0;  // VBUS_CURRENT
+        this->output_topic->data[13] = 0;  // ODOMETER_DISTANCE
+        this->output_topic->data[14] = 0;  // ODOMETER_POWER
+        this->output_topic->data[15] = 0;  // IQ_MEASURED
+        this->output_topic->data[16] = 0;  // IQ_SETPOINT
         this->name = disp_name.c_str();
-        this->configure_diagnostics_topic();
         this->setpoint_sub.topic_ = setpoint_topic_name;
         sprintf(setpoint_topic_name, "/mciu/%s/odrive/input", disp_name.c_str());
     }
@@ -153,6 +100,8 @@ public:
     static int32_t to_fixed_point(float value, float scale);
 
     static float from_fixed_point(int32_t value, float scale);
+
+    static int32_t to_fixed_point(double_t value, float scale);
 };
 
 

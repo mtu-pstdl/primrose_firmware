@@ -44,95 +44,8 @@ void ODrive_ROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
     }
 }
 
-void ODrive_ROS::update_diagnostics_label(){
-//    if (this->odrive->is_connected()){
-//        switch(this->odrive->get_axis_state()) {
-//            case odrive::CLOSED_LOOP_CONTROL:
-//                this->state_topic->level = diagnostic_msgs::DiagnosticStatus::OK;
-//                sprintf(status_string, "Running: %10s", this->odrive->get_control_mode_string());
-//                break;
-//            case odrive::UNDEFINED:
-//            case odrive::IDLE:
-//                if (this->odrive->get_axis_error() != 0) {
-//                    this->state_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
-//                    sprintf(status_string, "ERROR: %15s", this->odrive->get_axis_error_string());
-//                } else if (this->odrive->get_active_errors() != 0) {
-//                    this->state_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
-//                    sprintf(status_string, "ERROR: %15s", this->odrive->get_active_errors_string());
-//                } else if (this->odrive->get_disarm_reason() != 0) {
-//                    this->state_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
-//                    sprintf(status_string, "FAULT: %15s", this->odrive->get_disarm_reason_string());
-//                } else if (this->odrive->get_procedure_results() == odrive::SUCCESS  ||
-//                           this->odrive->get_procedure_results() == odrive::CANCELED) {
-//                    this->state_topic->level = diagnostic_msgs::DiagnosticStatus::OK;
-//                    sprintf(status_string, "Ready");
-//                } else {
-//                    this->state_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
-//                    sprintf(status_string, "FAILED CALIB: %15s", this->odrive->get_procedure_results_string());
-//                }
-//                break;
-//            case odrive::STARTUP_SEQUENCE:
-//                this->state_topic->level = diagnostic_msgs::DiagnosticStatus::WARN;
-//                sprintf(status_string, "Starting");
-//                break;
-//            case odrive::FULL_CALIBRATION_SEQUENCE:
-//            case odrive::ENCODER_HALL_POLARITY_CALIBRATION:
-//            case odrive::ENCODER_INDEX_SEARCH:
-//            case odrive::ENCODER_OFFSET_CALIBRATION:
-//            case odrive::ENCODER_HALL_PHASE_CALIBRATION:
-//            case odrive::MOTOR_CALIBRATION:
-//                this->state_topic->level = diagnostic_msgs::DiagnosticStatus::OK;
-////                sprintf(status_string, "%s", this->odrive->get_axis_state_string());
-//                break;
-//            default:
-//                this->state_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
-////                sprintf(status_string, "ERROR: %15s", this->odrive->get_axis_state_string());
-//                break;
-//        }
-//    } else {
-//        this->state_topic->level = diagnostic_msgs::DiagnosticStatus::ERROR;
-////        sprintf(status_string, "No Connection");
-//    }
-}
-
-void ODrive_ROS::update_diagnostics() {
-//    update_diagnostics_label();
-//    if (this->odrive->is_connected()) {
-//        if (this->odrive->get_axis_state() != odrive::CLOSED_LOOP_CONTROL) {
-//            update_diagnostics_keys(true);
-//            sprintf(strings[0], "%24s", this->odrive->get_axis_state_string());         // Axis State
-//            sprintf(strings[1], "%24s", this->odrive->get_axis_error_string());         // Axis Error
-//            sprintf(strings[2], "%24s", this->odrive->get_active_errors_string());      // Active Errors
-//            sprintf(strings[3], "%24s", this->odrive->get_disarm_reason_string());      // Disarm Reason
-//            sprintf(strings[4], "%24s", this->odrive->get_procedure_results_string());  // Procedure Results
-//            sprintf(strings[5], "%24s", this->odrive->get_control_mode_string());       // Control Mode
-//        } else {  // CLOSED_LOOP_CONTROL
-//            update_diagnostics_keys(false);
-//            sprintf(strings[0], "%24s",     this->odrive->get_axis_state_string());
-//            sprintf(strings[1], "%24s",     this->odrive->get_control_mode_string());
-//            sprintf(strings[2], "%24s",     this->odrive->get_input_mode_string());
-//            sprintf(strings[3], "%24s",     this->odrive->get_setpoint_string());
-//            sprintf(strings[4], "%.2f N/m", this->odrive->get_torque_estimate());
-//            sprintf(strings[5], "%.2f %s",  this->odrive->get_vel_estimate(), this->odrive->vel_unit_string);
-//        }
-//        // Print the fet temp in hex
-//        sprintf(strings[6], "%07.2f %s", this->odrive->get_pos_estimate(), this->odrive->pos_unit_string);
-//        sprintf(strings[7], "%05.2f C",  this->odrive->get_fet_temp());
-//        sprintf(strings[8], "%05.2f C",  this->odrive->get_motor_temp());
-//        sprintf(strings[9], "%05.2f V",  this->odrive->get_vbus_voltage());
-//        sprintf(strings[10], "%05.2f A", this->odrive->get_vbus_current());
-//        sprintf(strings[11], "%05.2f A", this->odrive->get_Iq_setpoint());
-//        // Show the binary representation of the inflight bitmask
-////        for (int i = 0; i < 8; i++) {
-////            if (this->odrive->get_inflight_bitmask() & (1 << i)) {
-////                strings[12][i] = '1';
-////            } else {
-////                strings[12][i] = '0';
-////            }
-////        }
-//    }
-//    sprintf(strings[12], "%010.2fKRevs %010.2fW/h",
-//            this->odrive->get_odometer() / 1000, this->odrive->get_power_consumption());
+int32_t ODrive_ROS::to_fixed_point(double_t value, float scale) {
+    return (int32_t)(value * scale);
 }
 
 int32_t ODrive_ROS::to_fixed_point(float value, float scale) {
@@ -155,7 +68,12 @@ void ODrive_ROS::update() {
     this->output_topic->data[8] =  static_cast<int32_t>(this->odrive->get_disarm_reason());
     this->output_topic->data[9] =  static_cast<int32_t>(this->odrive->get_procedure_results());
     this->output_topic->data[10] = this->to_fixed_point(this->odrive->get_torque_estimate(), UNIT_SCALE);
-    update_diagnostics();
+    this->output_topic->data[11] = this->to_fixed_point(this->odrive->get_vbus_voltage(), UNIT_SCALE);
+    this->output_topic->data[12] = this->to_fixed_point(this->odrive->get_vbus_current(), UNIT_SCALE);
+    this->output_topic->data[13] = this->to_fixed_point(this->odrive->get_odometer(), UNIT_SCALE);
+    this->output_topic->data[14] = this->to_fixed_point(this->odrive->get_power_consumption(), UNIT_SCALE);
+    this->output_topic->data[15] = this->to_fixed_point(this->odrive->get_Iq_measured(), UNIT_SCALE);
+    this->output_topic->data[16] = this->to_fixed_point(this->odrive->get_Iq_setpoint(), UNIT_SCALE);
 
     if (odrive->get_axis_state() == odrive::axis_states::CLOSED_LOOP_CONTROL &&
        this->last_ros_command < millis() - 2500) {

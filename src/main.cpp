@@ -211,17 +211,17 @@ void setup() {
     system_diagnostics.status_length = SYSTEM_DIAGNOSTICS_COUNT;
     system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[SYSTEM_DIAGNOSTICS_COUNT];
 
-    odrive_ros[0] = new ODrive_ROS(odrives[0], &system_diagnostics.status[0],
+    odrive_ros[0] = new ODrive_ROS(odrives[0],
                                    odrive_encoder_topics[0]->message, "Front_Left");
-    odrive_ros[1] = new ODrive_ROS(odrives[1], &system_diagnostics.status[1],
+    odrive_ros[1] = new ODrive_ROS(odrives[1],
                                    odrive_encoder_topics[1]->message, "Front_Right");
-    odrive_ros[2] = new ODrive_ROS(odrives[2], &system_diagnostics.status[2],
+    odrive_ros[2] = new ODrive_ROS(odrives[2],
                                    odrive_encoder_topics[2]->message, "Rear_Left");
-    odrive_ros[3] = new ODrive_ROS(odrives[3], &system_diagnostics.status[3],
+    odrive_ros[3] = new ODrive_ROS(odrives[3],
                                    odrive_encoder_topics[3]->message, "Rear_Right");
-    odrive_ros[4] = new ODrive_ROS(odrives[5], &system_diagnostics.status[5],
+    odrive_ros[4] = new ODrive_ROS(odrives[5],
                                    odrive_encoder_topics[4]->message, "Trencher");
-    odrive_ros[5] = new ODrive_ROS(odrives[4], &system_diagnostics.status[4],
+    odrive_ros[5] = new ODrive_ROS(odrives[4],
                                    odrive_encoder_topics[5]->message, "Conveyor");
 
     actuators[0] = new ActuatorUnit(&actuator_bus, 128); // Slot 3L
@@ -242,29 +242,10 @@ void setup() {
 //    actuators[3]->set_limits(0, -825, true, true);
     actuators[3]->set_inverted(true,0);
 
-    actuators_ros[0] = new ActuatorsROS(actuators[0], actuator_encoder_topics[0]->message,
-                                        &system_diagnostics.status[6], "Front_Left");
-    actuators_ros[1] = new ActuatorsROS(actuators[1], actuator_encoder_topics[1]->message,
-                                        &system_diagnostics.status[7], "Front_Right");
-    actuators_ros[2] = new ActuatorsROS(actuators[2], actuator_encoder_topics[2]->message,
-                                        &system_diagnostics.status[8], "Rear_Left");
-    actuators_ros[3] = new ActuatorsROS(actuators[3], actuator_encoder_topics[3]->message,
-                                        &system_diagnostics.status[9], "Rear_Right");
-
-    auto* load_cell_clk_pins =     new int[4] {5, 9, 11, 24};
-    auto* load_cell_data_pins =    new int[4] {6, 10, 12, 25};
-    auto* load_cell_calibrations = new float[4] {1.0, 1.0, 1.0, 1.0};
-    load_cells[0] = new LoadCells(4, load_cell_clk_pins, load_cell_data_pins,
-                                  load_cell_calibrations,
-                                  &system_diagnostics.status[10], load_cell_topics[0]->message,
-                                  "Hopper", 2048);
-    auto* load_cell_clk_pins_2 =     new int[4] {26, 28, 30, 32};
-    auto* load_cell_data_pins_2 =    new int[4] {27, 29, 31, 33};
-    auto* load_cell_calibrations_2 = new float[4] {1.0, 1.0, 1.0, 1.0};
-    load_cells[1] = new LoadCells(4, load_cell_clk_pins_2, load_cell_data_pins_2,
-                                  load_cell_calibrations_2,
-                                  &system_diagnostics.status[11], load_cell_topics[1]->message,
-                                  "Suspension", load_cells[0]->get_used_eeprom());
+    actuators_ros[0] = new ActuatorsROS(actuators[0], actuator_encoder_topics[0]->message, "Front_Left");
+    actuators_ros[1] = new ActuatorsROS(actuators[1], actuator_encoder_topics[1]->message, "Front_Right");
+    actuators_ros[2] = new ActuatorsROS(actuators[2], actuator_encoder_topics[2]->message, "Rear_Left");
+    actuators_ros[3] = new ActuatorsROS(actuators[3], actuator_encoder_topics[3]->message, "Rear_Right");
 
     e_stop_controller = new EStopController(&system_diagnostics.status[13]);
     hopper_door = new HopperDoor();
