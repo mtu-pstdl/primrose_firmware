@@ -60,6 +60,7 @@ Actuators actuator_bus;
 LoadCells* load_cells[2];
 
 BatteryMonitor* battery_monitor;
+sensor_msgs::BatteryState* battery_state_topic;
 
 ROSNode* ros_nodes[16];
 
@@ -211,35 +212,24 @@ void setup() {
     system_diagnostics.status_length = SYSTEM_DIAGNOSTICS_COUNT;
     system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[SYSTEM_DIAGNOSTICS_COUNT];
 
-    odrive_ros[0] = new ODrive_ROS(odrives[0],
-                                   odrive_encoder_topics[0]->message, "Front_Left");
-    odrive_ros[1] = new ODrive_ROS(odrives[1],
-                                   odrive_encoder_topics[1]->message, "Front_Right");
-    odrive_ros[2] = new ODrive_ROS(odrives[2],
-                                   odrive_encoder_topics[2]->message, "Rear_Left");
-    odrive_ros[3] = new ODrive_ROS(odrives[3],
-                                   odrive_encoder_topics[3]->message, "Rear_Right");
-    odrive_ros[4] = new ODrive_ROS(odrives[5],
-                                   odrive_encoder_topics[4]->message, "Trencher");
-    odrive_ros[5] = new ODrive_ROS(odrives[4],
-                                   odrive_encoder_topics[5]->message, "Conveyor");
+    odrive_ros[0] = new ODrive_ROS(odrives[0], odrive_encoder_topics[0]->message, "Front_Left");
+    odrive_ros[1] = new ODrive_ROS(odrives[1], odrive_encoder_topics[1]->message, "Front_Right");
+    odrive_ros[2] = new ODrive_ROS(odrives[2], odrive_encoder_topics[2]->message, "Rear_Left");
+    odrive_ros[3] = new ODrive_ROS(odrives[3], odrive_encoder_topics[3]->message, "Rear_Right");
+    odrive_ros[4] = new ODrive_ROS(odrives[5], odrive_encoder_topics[4]->message, "Trencher");
+    odrive_ros[5] = new ODrive_ROS(odrives[4], odrive_encoder_topics[5]->message, "Conveyor");
 
     actuators[0] = new ActuatorUnit(&actuator_bus, 128); // Slot 3L
-//    actuators[0]->set_limits(0,-510, false, false);
-//    actuators[0]->set_inverted(true,0);
 
     actuators[1] = new ActuatorUnit(&actuator_bus, 129); // Slot 1L
     actuators[1]->set_inverted(true,0); // Set the motor to run in the opposite direction (for the conveyor
     actuators[1]->set_inverted(true,1);
-//    actuators[1]->set_limits(0, -835, true, true);
 
     actuators[2] = new ActuatorUnit(&actuator_bus, 130); // Slot 2L
-//    actuators[2]->set_limits(0, 25, true, true);
     actuators[2]->set_inverted(true,0);
     actuators[2]->set_inverted(true,1);
 
     actuators[3] = new ActuatorUnit(&actuator_bus, 131); // Slot 1R
-//    actuators[3]->set_limits(0, -825, true, true);
     actuators[3]->set_inverted(true,0);
 
     actuators_ros[0] = new ActuatorsROS(actuators[0], actuator_encoder_topics[0]->message, "Front_Left");
@@ -249,7 +239,10 @@ void setup() {
 
     e_stop_controller = new EStopController(&system_diagnostics.status[13]);
     hopper_door = new HopperDoor();
-    battery_monitor = new BatteryMonitor(&system_diagnostics.status[12], e_stop_controller);
+
+    battery_state_topic = new sensor_msgs::BatteryState();
+    battery_monitor = new BatteryMonitor(e_stop_controller, battery_state_topic);
+
     accessory_power = new AccessoryPower();
 
     for (auto & odrive : odrives) e_stop_controller->add_estop_device(odrive);
