@@ -16,12 +16,12 @@
 
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticArray.h"
-#include "Sensors/LoadCells.h"
-#include "Sensors/BatteryMonitor.h"
+#include "Sensor_nodes/LoadCells.h"
+#include "Sensor_nodes/BatteryMonitor.h"
 #include "Odometers.h"
 #include "Misc/HopperDoor.h"
 #include "Misc/AccessoryPower.h"
-#include "Sensors/IMU.h"
+#include "Sensor_nodes/IMU.h"
 
 // Motor configurations
 feedforward_struct trencher_ff = {
