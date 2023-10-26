@@ -43,6 +43,8 @@ class BatteryMonitor : public ROSNode {
 
 private:
 
+    ros::NodeHandle* node_handle;
+
     sensor_msgs::BatteryState* battery_state_msg;
 
 //    TLI4971 CurrentSensor = TLI4971(AREF_PIN, VREF_PIN, 120, 5, 0, 0, 0, false);
@@ -201,6 +203,13 @@ public:
 
         this->estop_controller = estop_controller;
         this->battery_state_msg = battery_state_msg;
+        this->battery_state_msg->header.frame_id = "battery_link";
+        this->battery_state_msg->voltage = NAN;
+        this->battery_state_msg->current = NAN;
+        this->battery_state_msg->charge = NAN;
+
+        this->battery_state_msg->serial_number = "PRIMROSE_MCIU_BATTERY_MONITOR";
+        this->battery_state_msg->location = "SOMEWHERE_ON_THE_MOON";
 
         // Setup battery state topic
         this->battery_state_msg->design_capacity = BATTERY_NORM_CAPACITY;
@@ -232,13 +241,14 @@ public:
     };
 
     void update() override {
-
         this->save_data_flag = this->estop_controller->is_high_voltage_enabled();
+        this->battery_state_msg->header.stamp = this->node_handle->now();
         this->save_data();
     }
 
     void subscribe(ros::NodeHandle *node_handle) override {
         node_handle->subscribe(this->battery_sub);
+        this->node_handle = node_handle;
     }
 };
 

@@ -270,6 +270,7 @@ void setup() {
     ros_nodes[ros_node_count++] = hopper_door;
     ros_nodes[ros_node_count++] = battery_monitor;
     ros_nodes[ros_node_count++] = accessory_power;
+    ros_nodes[ros_node_count++] = imu;
 
     // Allocate memory for the system diagnostics strings
     for (auto & system_info_string : system_info_strings) system_info_string = new char[55];
@@ -347,7 +348,7 @@ void loop() {
         for (ROSNode *node: ros_nodes) {
             if (node == nullptr) continue;
             node->update();
-//            node->publish();
+            node->publish();
         }
     }
 
