@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <Arduino.h>
 #include <SPI.h>
+#include "PositionSensor.h"
 
 #define AMT22_NOP       0x00
 #define AMT22_RESET     0x60
@@ -17,7 +18,7 @@
 #define RES12           12
 #define RES14           14
 
-class SteeringEncoders {
+class SteeringEncoders : public PositionSensor {
 
 private:
     /*Object creation*/

@@ -237,17 +237,21 @@ void setup() {
                                    static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[5]->message),
                                    "Conveyor");
 
-    actuators[0] = new ActuatorUnit(&actuator_bus, 128); // Slot 3L
+    actuators[0] = new ActuatorUnit(&actuator_bus, 128,
+                                    nullptr, nullptr); // Slot 3L
 
-    actuators[1] = new ActuatorUnit(&actuator_bus, 129); // Slot 1L
+    actuators[1] = new ActuatorUnit(&actuator_bus, 129,
+                                    nullptr, nullptr); // Slot 1L
     actuators[1]->set_inverted(true,0); // Set the motor to run in the opposite direction (for the conveyor
     actuators[1]->set_inverted(true,1);
 
-    actuators[2] = new ActuatorUnit(&actuator_bus, 130); // Slot 2L
+    actuators[2] = new ActuatorUnit(&actuator_bus, 130,
+                                    nullptr, nullptr); // Slot 2L
     actuators[2]->set_inverted(true,0);
     actuators[2]->set_inverted(true,1);
 
-    actuators[3] = new ActuatorUnit(&actuator_bus, 131); // Slot 1R
+    actuators[3] = new ActuatorUnit(&actuator_bus, 131,
+                                    nullptr, nullptr); // Slot 1R
     actuators[3]->set_inverted(true,0);
 
     actuators_ros[0] = new ActuatorsROS(actuators[0],

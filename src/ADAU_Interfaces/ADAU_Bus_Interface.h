@@ -1,0 +1,14 @@
+//
+// Created by Jay on 10/31/2023.
+//
+
+#ifndef PRIMROSE_MCIU_ADAU_BUS_INTERFACE_H
+#define PRIMROSE_MCIU_ADAU_BUS_INTERFACE_H
+
+
+class ADAU_Bus_Interface {
+
+};
+
+
+#endif //PRIMROSE_MCIU_ADAU_BUS_INTERFACE_H

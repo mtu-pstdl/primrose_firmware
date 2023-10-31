@@ -8,6 +8,7 @@
 #include <Arduino.h>
 #include "Actuators.h"
 #include "Misc/EStopDevice.h"
+#include "Sensors_internal/PositionSensor.h"
 
 #define ACTUATOR_SPEED 1000000
 #define ACTUATOR_ACCEL 1000000
@@ -229,19 +230,8 @@ private:
     uint16_t message_failure_count = 0;
     const uint16_t message_failure_threshold = 20;
 
-
-
-    char* status_string = nullptr;
-
-    void allocate_strings(){
-        this->status_string = new char[100];
-        this->motors[0].name = new char[5];
-        this->motors[1].name = new char[5];
-        sprintf(this->motors[0].name, "SUSP");
-        sprintf(this->motors[1].name, "TURN");
-        this->motors[0].status_string = new char[256];
-        this->motors[1].status_string = new char[256];
-    }
+    PositionSensor* suspension_encoder;
+    PositionSensor* steering_encoder;
 
     motor_data motors[2]{
             motor_data(),
@@ -274,9 +264,13 @@ private:
 public:
 
 
-    ActuatorUnit(Actuators* command_bus, uint8_t id) {
+    ActuatorUnit(Actuators* command_bus, uint8_t id,
+                 PositionSensor* suspension_encoder, PositionSensor* steering_encoder) {
         this->command_bus = command_bus;
         this->id = id;
+
+        this->suspension_encoder = suspension_encoder;
+        this->steering_encoder = steering_encoder;
 
         // Setup all the required messages for gathering information from the object
         this->reocurring_messages = new telemetry_message[7];
@@ -297,7 +291,6 @@ public:
         this->set_duty_cycle(0, 1);
 
         this->build_telemetry_messages();
-        this->allocate_strings();
     }
 
     void update();

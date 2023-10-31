@@ -227,31 +227,6 @@ uint16_t ActuatorUnit::get_status() const {
     return this->status;
 }
 
-char* ActuatorUnit::get_motor_fault_string(uint8_t motor) {
-    sprintf(this->motors[motor].status_string, "");
-    // Indicate the control mode
-    switch (this->motors[motor].control_mode) {
-        case control_modes::DUTY_CYCLE:
-            sprintf(this->motors[motor].status_string, "DUTY_CYCLE");
-            break;
-        case control_modes::POSITION:
-            sprintf(this->motors[motor].status_string, "POSITION");
-            break;
-        case control_modes::E_STOPPED:
-            sprintf(this->motors[motor].status_string, "E_STOPPED");
-            break;
-        default:
-            sprintf(this->motors[motor].status_string, "UNKNOWN");
-            break;
-    }
-    return motors[motor].status_string;
-}
-
-char* ActuatorUnit::get_status_string() {
-    sprintf(this->status_string, "");
-    return this->status_string;
-}
-
 int32_t ActuatorUnit::get_target_position(uint8_t motor) {
 //    if (!(this->data_flags & TGT_POS_MASK)) return INT32_MIN;
     return this->motors[motor].target_position;
