@@ -7,6 +7,22 @@
 
 class PositionSensor {
 
+    int32_t get_position() const{
+        return 0;
+    }
+
+    uint32_t get_last_update_time(){
+        return 0;
+    }
+
+    boolean is_valid(){
+        return false;
+    }
+
+    boolean fault() const{
+        return false;
+    }
+
 };
 
 #endif //PRIMROSE_MCIU_POSITIONSENSOR_H

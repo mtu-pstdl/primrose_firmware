@@ -4,7 +4,9 @@
 
 #include "ADAU_Bus_Interface.h"
 
-extern ADAU_Bus_Interface ADAU_BUS_INTERFACE;
+extern ADAU_Bus_Interface bus_interface;
+
+ADAU_Bus_Interface bus_interface = ADAU_Bus_Interface();
 
 void ADAU_Bus_Interface::attachSensor(ADAU_Sensor *sensor) {
     // Add the sensor to the array of sensor pointers

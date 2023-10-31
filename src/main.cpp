@@ -24,6 +24,7 @@
 #include "Misc/AccessoryPower.h"
 #include "Sensor_nodes/IMU.h"
 #include "Sensors_internal/SteeringEncoders.h"
+#include "Sensors_internal/SuspensionEncoders.h"
 
 // Motor configurations
 feedforward_struct trencher_ff = {
@@ -239,20 +240,24 @@ void setup() {
                                    "Conveyor");
 
     actuators[0] = new ActuatorUnit(&actuator_bus, 128,
-                                    nullptr, nullptr); // Slot 3L
+                                    new SteeringEncoders(10),
+                                    new SuspensionEncoders(0x01)); // Slot 3L
 
     actuators[1] = new ActuatorUnit(&actuator_bus, 129,
-                                    nullptr, nullptr); // Slot 1L
+                                    new SteeringEncoders(10),
+                                    new SuspensionEncoders(0x02)); // Slot 2R
     actuators[1]->set_inverted(true,0); // Set the motor to run in the opposite direction (for the conveyor
     actuators[1]->set_inverted(true,1);
 
     actuators[2] = new ActuatorUnit(&actuator_bus, 130,
-                                    nullptr, nullptr); // Slot 2L
+                                    new SteeringEncoders(10),
+                                    new SuspensionEncoders(0x03)); // Slot 2L
     actuators[2]->set_inverted(true,0);
     actuators[2]->set_inverted(true,1);
 
     actuators[3] = new ActuatorUnit(&actuator_bus, 131,
-                                    nullptr, nullptr); // Slot 1R
+                                    new SteeringEncoders(10),
+                                    new SuspensionEncoders(0x04)); // Slot 3R
     actuators[3]->set_inverted(true,0);
 
     actuators_ros[0] = new ActuatorsROS(actuators[0],
