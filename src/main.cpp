@@ -22,6 +22,7 @@
 #include "Misc/HopperDoor.h"
 #include "Misc/AccessoryPower.h"
 #include "Sensor_nodes/IMU.h"
+#include "Sensors_internal/SteeringEncoders.h"
 
 // Motor configurations
 feedforward_struct trencher_ff = {
@@ -49,6 +50,9 @@ diagnostic_msgs::DiagnosticArray system_diagnostics;
 diagnostic_msgs::DiagnosticStatus* system_info;
 ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
 
+std_msgs::Int32 test_output_msg;
+ros::Publisher test_output_pub("/test_output", &test_output_msg);
+
 //IntervalTimer load_cell_read_timer;
 
 ODrivePro* odrives[6];
@@ -68,6 +72,8 @@ Odometers odometers;
 EStopController* e_stop_controller;
 HopperDoor* hopper_door;
 AccessoryPower* accessory_power;
+
+SteeringEncoders* steering_encoder;
 
 #define SYSTEM_INFO_COUNT 10
 char* system_info_strings[SYSTEM_INFO_COUNT];
@@ -187,8 +193,15 @@ void setup() {
     can1.enableFIFO();
     can1.enableFIFOInterrupt();
 
+    SPI.begin();
+
     // Setup the odometer reset subscriber
     node_handle.subscribe(odometer_reset_sub);
+
+    // Setup the test output publisher
+    node_handle.advertise(test_output_pub);
+
+    steering_encoder = new SteeringEncoders(10);
 
     for (int i = 0; i < 6; i++) {
         odrives[i] = new ODrivePro(i, &can1, &node_handle);
@@ -311,13 +324,19 @@ void setup() {
         if (node == nullptr) continue;
         node->subscribe(&node_handle);
     }
-
 }
 
 void loop() {
 
     uint32_t loop_start = micros(); // Get the time at the start of the loop
     digitalWriteFast(LED_BUILTIN, LOW); // Turn on the LED
+
+    steering_encoder->update();
+    // Set the test output message to the current steering encoder value
+    test_output_msg.data = steering_encoder->getPosition();
+
+    // Publish the test output message
+    test_output_pub.publish(&test_output_msg);
 
     system_message_count = 0;
     for (char *string: system_status_messages) {

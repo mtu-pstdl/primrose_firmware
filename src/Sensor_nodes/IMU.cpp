@@ -7,6 +7,14 @@
 void IMU::update() {
     // Read the FIFO
     icm_20948_DMP_data_t data;
+
+    if (!this->imu.isConnected()) {
+        this->imu_msg->header.frame_id = "imu_link_failed";
+        return;
+    } else {
+        this->imu_msg->header.frame_id = "imu_link_up";
+    }
+
     this->imu.readDMPdataFromFIFO(&data);
     // Update the message
     this->imu_msg->header.stamp = this->node_handle->now();

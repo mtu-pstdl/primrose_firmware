@@ -7,12 +7,12 @@
 
 
 void ActuatorUnit::build_telemetry_messages() {
-    reocurring_messages[0] = *build_message(
-            Actuators::serial_commands::read_encoder_count_m1,
-            50, 5, &ActuatorUnit::encoder_count_callback);
-    reocurring_messages[1] = *build_message(
-            Actuators::serial_commands::read_encoder_count_m2,
-            50, 5, &ActuatorUnit::encoder_count_callback);
+//    reocurring_messages[0] = *build_message(
+//            Actuators::serial_commands::read_encoder_count_m1,
+//            50, 5, &ActuatorUnit::encoder_count_callback);
+//    reocurring_messages[1] = *build_message(
+//            Actuators::serial_commands::read_encoder_count_m2,
+//            50, 5, &ActuatorUnit::encoder_count_callback);
     reocurring_messages[2] = *build_message(
             Actuators::serial_commands::read_main_battery_voltage,
             100, 2, &ActuatorUnit::main_battery_voltage_callback);
@@ -159,6 +159,8 @@ void ActuatorUnit::queue_telemetry_messages() {
         }
     }
     for (int i = 0; i < 7; i++) {  // Queue telemetry messages last so they get sent if there is space
+        // Check for null pointers
+        if (reocurring_messages[i].msg == nullptr) continue;
         if (millis() - reocurring_messages[i].last_send_time > reocurring_messages[i].send_interval) {
             if (!command_bus->space_available()) return;
             command_bus->queue_message(this->reocurring_messages[i].msg);
