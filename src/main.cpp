@@ -7,6 +7,7 @@
 #include "ODrive/ODrive_ROS.h"
 #include "Actuators/ActuatorUnit.h"
 #include "Actuators/ActuatorsROS.h"
+#include "ADAU_Interfaces/ADAU_Sensor.h"
 #include <std_srvs/SetBool.h>
 #include <std_msgs/Float32.h>
 #include <math.h>
