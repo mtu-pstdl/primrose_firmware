@@ -9,6 +9,12 @@
 #define ADAU_INTERFACE Serial1
 #define ADAU_RESET_PIN  3
 
+// Message parameters
+#define MESSAGE_START_BYTE 0xFF
+#define MESSAGE_END_BYTE   0x00
+#define MESSAGE_MAX_LENGTH 254
+#define END_MESSAGE_COUNT  3
+
 // There is only one ADAU on the bus and we want all ADAU_Sensors to share this object
 // We want this object to be a singleton and exist only once automatically
 
@@ -18,11 +24,12 @@ class ADAU_Sensor;
 class ADAU_Bus_Interface {
 
     // Data sent by the ADAU is formatted as follows:
+    // 1 byte: start of message (0xFF)
     // 1 byte: sensor_id
     // 1 byte: data_length (Needs to match the data_size of the sensor otherwise reject the message)
     // 1 byte: checksum (xor of all bytes in the message including the sensor_id)
     // n bytes: data
-    // 5 bytes: end of message (0x00 0x00 0x00 0x00 0x00)
+    // 6 bytes: end of message (0x00 0x00 0x00 0x00 0x00 0x00)
 
 private:
 
@@ -32,8 +39,18 @@ private:
     int num_sensors = 0;
     int current_max_sensors = 10;
 
+    enum current_state {
+        waiting_for_start_byte,
+        waiting_for_header,
+        waiting_for_data,
+        waiting_for_end_byte,
+        waiting_for_end_byte_failure,
+    } current_state = waiting_for_start_byte;
+
+    uint32_t parse_start_time = 0;
     // Message fragment variables
-    bool   header_received = false; // True if the header of the message has been received
+
+    uint8_t message_end_count = 0;   // The number of 0x00 bytes received
     struct message_header {
         uint8_t sensor_id = 0;      // The id of the sensor that sent the message
         uint8_t data_length = 0;    // The length of the data in the message
@@ -60,6 +77,12 @@ private:
     void load_data();
 
     void finish_message();
+
+    void process_message();
+
+    boolean validate_checksum();
+
+    void cleanup();
 
     void parse_buffer();
 

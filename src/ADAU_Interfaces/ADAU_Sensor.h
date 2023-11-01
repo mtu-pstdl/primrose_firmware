@@ -7,8 +7,8 @@
 
 #include "ADAU_Bus_Interface.h"
 
-// Use the bus interface object declared in the ADAU_Bus_Interface.h file
-extern ADAU_Bus_Interface bus_interface;
+// Use the global bus interface object to prevent conflicts
+extern ADAU_Bus_Interface ADAU_BUS_INTERFACE;
 
 class ADAU_Sensor {
 
@@ -29,7 +29,7 @@ public:
 
     ADAU_Sensor(uint8_t sensor_id, void* data_ptr, uint8_t data_size){
         // Attach pointer of self to the bus interface
-        bus_interface.attachSensor(this);
+        ADAU_BUS_INTERFACE.attachSensor(this);
         // Set the data pointer and size
         this->sensor_id = sensor_id;
         this->data_ptr = data_ptr;
@@ -42,6 +42,14 @@ public:
 
     void* get_data_ptr(){
         return this->data_ptr;
+    }
+
+    void set_last_update_time(uint32_t time){
+        this->last_update_time = time;
+    }
+
+    void set_valid(boolean valid){
+        this->valid_data = valid;
     }
 
     uint8_t get_sensor_id() const{
