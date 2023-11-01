@@ -8,8 +8,11 @@
 class PositionSensor {
 
 public:
-    virtual // Implemented only by sensors that don't use the ADAU bus interface
-    void update() {
+
+    virtual void initialize() {
+    }
+
+    virtual void update() {
 
     }
 

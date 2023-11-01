@@ -175,6 +175,9 @@ void ActuatorUnit::update() {
     } else {
         this->check_connection();
     }
+    // Update encoder data
+    this->motors[0].encoder->update();
+    this->motors[1].encoder->update();
 }
 
 void ActuatorUnit::check_connection() {

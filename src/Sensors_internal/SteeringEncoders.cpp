@@ -4,25 +4,24 @@
 
 #include "SteeringEncoders.h"
 
-uint8_t SteeringEncoders::spiWriteRead(uint8_t byte, boolean release_line) {
-    if (!transaction_in_progress) begin_transaction();
+uint8_t SteeringEncoders::spiWriteRead(uint8_t byte) {
     uint8_t response;
     response = SPI.transfer(byte);
-    if (release_line) end_transaction();
+    delayMicroseconds(3);
     return response;
 }
 
 void SteeringEncoders::readPosition(){
-    raw_position;       //16-bit response from encoder
+    begin_transaction();
     bool binaryArray[16];           //after receiving the position we will populate this array and use it for calculating the checksum
 
     //read the first byte of the position
-    raw_position = spiWriteRead(AMT22_NOP, false) << 8;
+    raw_position = spiWriteRead(AMT22_NOP) << 8;
 
     //this is the time required between bytes as specified in the datasheet.
-    delayMicroseconds(10);
+//    delayMicroseconds(3);
 
-    raw_position |= spiWriteRead(AMT22_NOP, true);
+    raw_position = raw_position | spiWriteRead(AMT22_NOP);
 
     // Validate the checkbits
     // The checkbits are odd parity over the odd and even bits
@@ -49,5 +48,5 @@ void SteeringEncoders::readPosition(){
         this->valid = true;
         this->position = raw_position & 0x3FFF;
     }
-
+    end_transaction();
 }

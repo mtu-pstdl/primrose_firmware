@@ -23,10 +23,8 @@ class SteeringEncoders : public PositionSensor {
 private:
     /*Object creation*/
     uint8_t cs_pin;
-    uint8_t resolution = RES14;
 
     bool initialized = false;
-    bool transaction_in_progress = false;
     bool failure     = false;
     bool valid       = false;
 
@@ -34,34 +32,33 @@ private:
     uint16_t position = 0;
     float_t  velocity = 0;
     uint16_t last_position = 0;
-    uint32_t  last_update_time = 0;
+    uint32_t last_update_time = 0;
 
     void begin_transaction() {
-        this->transaction_in_progress = true;
-        SPI.beginTransaction(SPISettings(1000000, LSBFIRST, SPI_MODE0));
+        SPI.beginTransaction(SPISettings(100000, LSBFIRST, SPI_MODE0));
         SPI.setClockDivider(SPI_CLOCK_DIV32);
         digitalWriteFast(cs_pin, LOW); // Select
-        delayMicroseconds(5); //wait for the encoder to be ready (3us as specified in the datasheet)
+        delayMicroseconds(10); //wait for the encoder to be ready (3us as specified in the datasheet)
     }
 
     void end_transaction() {
         delayMicroseconds(5); //wait for the encoder to be ready (3us as specified in the datasheet
-        SPI.endTransaction();
         digitalWriteFast(cs_pin, HIGH); // Deselect
-        this->transaction_in_progress = false;
+        delayMicroseconds(5);
+        SPI.endTransaction();
     }
 
     void reset() {
-        spiWriteRead(AMT22_NOP, false);
+        spiWriteRead(AMT22_NOP);
         //this is the time required between bytes as specified in the datasheet.
         delayMicroseconds(3);
-        spiWriteRead(AMT22_RESET, true);
+        spiWriteRead(AMT22_RESET);
         delay(250); //250 second delay to allow the encoder to start back up
     }
 
     void readPosition();
 
-    uint8_t spiWriteRead(uint8_t byte, boolean release_line);
+    uint8_t spiWriteRead(uint8_t byte);
 
     void update_velocity() {
         uint16_t delta_position = this->position - this->last_position;
@@ -81,7 +78,12 @@ public:
     explicit SteeringEncoders(uint8_t cs_pin){
         this->cs_pin = cs_pin;
         pinMode(cs_pin, OUTPUT);
-        digitalWriteFast(cs_pin, HIGH); // Deselect
+        digitalWriteFast(cs_pin, HIGH);
+    }
+
+    void initialize() override {
+        this->reset();
+        this->initialized = true;
     }
 
     /**

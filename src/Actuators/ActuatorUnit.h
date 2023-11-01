@@ -231,7 +231,7 @@ public:
 
 
     ActuatorUnit(Actuators* command_bus, uint8_t id,
-                 PositionSensor* suspension_encoder, PositionSensor* steering_encoder) {
+                 PositionSensor* steering_encoder, PositionSensor* suspension_encoder) {
         this->command_bus = command_bus;
         this->id = id;
 

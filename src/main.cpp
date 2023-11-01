@@ -181,8 +181,8 @@ uint32_t spin_time = 0;
 
 void setup() {
 
-    pinMode(LED_BUILTIN, OUTPUT);
-    digitalWrite(LED_BUILTIN, HIGH);
+//    pinMode(LED_BUILTIN, OUTPUT);
+//    digitalWrite(LED_BUILTIN, HIGH);
 
     node_handle.getHardware()->setBaud(4000000); // ~4Mbps
     node_handle.setSpinTimeout(100); // 50ms
@@ -197,7 +197,9 @@ void setup() {
     can1.enableFIFO();
     can1.enableFIFOInterrupt();
 
+    pinMode(13, OUTPUT);
     SPI.begin();
+//    SPI.setCS(0);
 
     // Setup the odometer reset subscriber
     node_handle.subscribe(odometer_reset_sub);
@@ -258,7 +260,7 @@ void setup() {
     actuators[2]->set_inverted(true,1);
 
     actuators[3] = new ActuatorUnit(&actuator_bus, 131,
-                                    new SteeringEncoders(8),
+                                    new SteeringEncoders(9),
                                     new SuspensionEncoders(0x04)); // Slot 3R
     actuators[3]->set_inverted(true,0);
 
@@ -341,7 +343,7 @@ void setup() {
 void loop() {
 
     uint32_t loop_start = micros(); // Get the time at the start of the loop
-    digitalWriteFast(LED_BUILTIN, LOW); // Turn on the LED
+//    digitalWriteFast(LED_BUILTIN, LOW); // Turn on the LED
 
     ADAU_BUS_INTERFACE.parse_buffer(); // Update the ADAU bus
 
@@ -354,9 +356,11 @@ void loop() {
     }
     test_output_string[18] = ' ';
     if (steering_encoder->data_valid()){
-        sprintf(test_output_string + 19, ",   Valid: %ld", steering_encoder->get_position());
+        sprintf(test_output_string + 19, ",   Valid: %ld : %ld", steering_encoder->get_position(),
+                steering_encoder->get_raw_position() & 0x3FFF);
     } else {
-        sprintf(test_output_string + 19, ", Invalid: %ld", steering_encoder->get_position());
+        sprintf(test_output_string + 19, ", Invalid: %ld : %ld", steering_encoder->get_position(),
+                steering_encoder->get_raw_position() & 0x3FFF);
     }
 
     test_output_msg.data = test_output_string;
