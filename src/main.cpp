@@ -343,7 +343,7 @@ void loop() {
 
     steering_encoder->update();
     // Set the test output message to the current steering encoder value
-    test_output_msg.data = steering_encoder->getPosition();
+    test_output_msg.data = steering_encoder->get_position();
 
     // Publish the test output message
     test_output_pub.publish(&test_output_msg);

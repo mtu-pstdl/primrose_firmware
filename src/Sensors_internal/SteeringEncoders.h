@@ -30,6 +30,9 @@ private:
     bool failure     = false;
 
     uint16_t position = 0;
+    float_t  velocity = 0;
+    uint16_t last_position = 0;
+    uint32_t  last_update_time = 0;
 
     void begin_transaction() {
         this->transaction_in_progress = true;
@@ -91,6 +94,14 @@ private:
         return response;
     }
 
+    void update_velocity() {
+        uint16_t delta_position = this->position - this->last_position;
+        uint32_t delta_time = millis() - this->last_update_time;
+        this->velocity = delta_position / (float_t) delta_time;
+        this->last_position = this->position;
+        this->last_update_time = millis();
+    }
+
 public:
 
     /**
@@ -112,6 +123,7 @@ public:
     bool update() {
         if (!this->initialized) return false;
         this->position = this->readPosition();
+        this->update_velocity();
         if (this->position == 0xFFFF) {
             this->failure = true;
             return false;
@@ -123,10 +135,13 @@ public:
      * Gets the position of the steering encoders
      * @return the position of the steering encoders
      */
-    uint16_t getPosition() const {
+    int32_t get_position() const {
         return this->position;
     }
 
+    float_t get_velocity() const{
+        return this->velocity;
+    }
 
 };
 

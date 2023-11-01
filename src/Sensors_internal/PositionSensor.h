@@ -7,7 +7,17 @@
 
 class PositionSensor {
 
+public:
+    // Implemented only by sensors that don't use the ADAU bus interface
+    void update() {
+
+    }
+
     int32_t get_position() const{
+        return 0;
+    }
+
+    float_t get_velocity() const{
         return 0;
     }
 

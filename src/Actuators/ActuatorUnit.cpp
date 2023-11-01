@@ -63,12 +63,12 @@ void ActuatorUnit::update_duty_cycle_command(float_t duty_cycle, uint8_t motor,
     // Validate that we have not exceeded the position limits in any control mode
     if (this->motors[motor].has_limit) {
         if (this->motors[motor].limit_direction) {
-            if (this->motors[motor].current_position > this->motors[motor].max_extension) {
+            if (this->motors[motor].encoder->get_position() > this->motors[motor].max_extension) {
                 if (this->motors[motor].limit_action_dir && duty_cycle > 0) duty_cycle = 0;
                 else if (!this->motors[motor].limit_action_dir && duty_cycle < 0) duty_cycle = 0;
             }
         } else {
-            if (this->motors[motor].current_position < this->motors[motor].max_extension) {
+            if (this->motors[motor].encoder->get_position() < this->motors[motor].max_extension) {
                 if (this->motors[motor].limit_action_dir && duty_cycle < 0) duty_cycle = 0;
                 else if (!this->motors[motor].limit_action_dir && duty_cycle > 0) duty_cycle = 0;
             }
@@ -111,7 +111,7 @@ void ActuatorUnit::set_target_position(int32_t position, uint8_t motor) {
 
 void ActuatorUnit::position_control_callback(uint8_t motor){
     // Get the current position
-    int32_t current_position = this->motors[motor].current_position;
+    int32_t current_position = this->motors[motor].encoder->get_position();
     int32_t target_position = this->motors[motor].target_position;
     int32_t position_error = target_position - current_position;
     if (this->motors[motor].achieved_position) {
@@ -188,19 +188,15 @@ void ActuatorUnit::check_connection() {
 }
 
 int32_t ActuatorUnit::get_position(uint8_t motor) {
-    if (!(this->data_flags & M1_POS_MASK) && motor == 0) return INT32_MIN;
-    if (!(this->data_flags & M2_POS_MASK) && motor == 1) return INT32_MIN;
-    return this->motors[motor].current_position;
+    return this->motors[motor].encoder->get_position();
 }
 
 boolean ActuatorUnit::on_target(uint8_t motor){
     return this->motors[motor].achieved_position;
 }
 
-int32_t ActuatorUnit::get_velocity(uint8_t motor) {
-//    if (!(this->data_flags & M1_VEL_MASK) && motor == 0) return INT32_MIN;
-    if (!(this->data_flags & M2_VEL_MASK) && motor == 1) return INT32_MIN;
-    return this->motors[motor].current_speed;
+float_t ActuatorUnit::get_velocity(uint8_t motor) {
+    return this->motors[motor].encoder->get_velocity();
 }
 
 float_t ActuatorUnit::get_current(uint8_t motor) {

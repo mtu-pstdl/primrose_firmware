@@ -14,6 +14,7 @@ private:
 
     struct data {
         uint16_t position = 0;
+        float_t  velocity = 0;
         boolean  fault = true;
     } data = {};
 
@@ -27,6 +28,10 @@ public:
 
     int32_t get_position() const{
         return data.position;
+    }
+
+    float_t get_velocity() const{
+        return data.velocity;
     }
 
     uint32_t get_last_update_time(){
