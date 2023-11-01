@@ -84,8 +84,6 @@ private:
 
     void cleanup();
 
-    void parse_buffer();
-
 public:
 
     ADAU_Bus_Interface(){
@@ -104,11 +102,7 @@ public:
 
     void attachSensor(ADAU_Sensor* sensor);
 
-    void bufferCheck() { // Called externally in the main loop
-        if(ADAU_INTERFACE.available()){
-            parse_buffer();
-        }
-    }
+    void parse_buffer();
 
 };
 

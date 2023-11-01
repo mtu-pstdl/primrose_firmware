@@ -8,28 +8,28 @@
 class PositionSensor {
 
 public:
-    // Implemented only by sensors that don't use the ADAU bus interface
+    virtual // Implemented only by sensors that don't use the ADAU bus interface
     void update() {
 
     }
 
-    int32_t get_position() const{
+    virtual int32_t get_position() const{
         return 0;
     }
 
-    float_t get_velocity() const{
+    virtual float_t get_velocity() const{
         return 0;
     }
 
-    uint32_t get_last_update_time(){
+    virtual uint32_t get_last_update_time(){
         return 0;
     }
 
-    boolean is_valid(){
+    virtual boolean is_valid(){
         return false;
     }
 
-    boolean fault() const{
+    virtual boolean fault() const{
         return false;
     }
 

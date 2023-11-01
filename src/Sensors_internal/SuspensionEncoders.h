@@ -26,19 +26,19 @@ public:
         this->sensor = new ADAU_Sensor(sensor_id, &data, sizeof(data));
     }
 
-    int32_t get_position() const{
+    int32_t get_position() const override{
         return data.position;
     }
 
-    float_t get_velocity() const{
+    float_t get_velocity() const override{
         return data.velocity;
     }
 
-    uint32_t get_last_update_time(){
+    uint32_t get_last_update_time() override{
         return sensor->get_last_update_time();
     }
 
-    boolean is_valid(){
+    boolean is_valid() override{
         return sensor->is_valid();
     }
 

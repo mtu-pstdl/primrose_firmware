@@ -25,6 +25,7 @@
 #include "Sensor_nodes/IMU.h"
 #include "Sensors_internal/SteeringEncoders.h"
 #include "Sensors_internal/SuspensionEncoders.h"
+#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/String.h"
 
 // Motor configurations
 feedforward_struct trencher_ff = {
@@ -52,8 +53,9 @@ diagnostic_msgs::DiagnosticArray system_diagnostics;
 diagnostic_msgs::DiagnosticStatus* system_info;
 ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
 
-std_msgs::Int32 test_output_msg;
+std_msgs::String test_output_msg;
 ros::Publisher test_output_pub("/test_output", &test_output_msg);
+char test_output_string[100];
 
 //IntervalTimer load_cell_read_timer;
 
@@ -240,23 +242,23 @@ void setup() {
                                    "Conveyor");
 
     actuators[0] = new ActuatorUnit(&actuator_bus, 128,
-                                    new SteeringEncoders(10),
+                                    new SteeringEncoders(5),
                                     new SuspensionEncoders(0x01)); // Slot 3L
 
     actuators[1] = new ActuatorUnit(&actuator_bus, 129,
-                                    new SteeringEncoders(10),
+                                    new SteeringEncoders(6),
                                     new SuspensionEncoders(0x02)); // Slot 2R
     actuators[1]->set_inverted(true,0); // Set the motor to run in the opposite direction (for the conveyor
     actuators[1]->set_inverted(true,1);
 
     actuators[2] = new ActuatorUnit(&actuator_bus, 130,
-                                    new SteeringEncoders(10),
+                                    new SteeringEncoders(7),
                                     new SuspensionEncoders(0x03)); // Slot 2L
     actuators[2]->set_inverted(true,0);
     actuators[2]->set_inverted(true,1);
 
     actuators[3] = new ActuatorUnit(&actuator_bus, 131,
-                                    new SteeringEncoders(10),
+                                    new SteeringEncoders(8),
                                     new SuspensionEncoders(0x04)); // Slot 3R
     actuators[3]->set_inverted(true,0);
 
@@ -341,9 +343,23 @@ void loop() {
     uint32_t loop_start = micros(); // Get the time at the start of the loop
     digitalWriteFast(LED_BUILTIN, LOW); // Turn on the LED
 
+    ADAU_BUS_INTERFACE.parse_buffer(); // Update the ADAU bus
+
     steering_encoder->update();
-    // Set the test output message to the current steering encoder value
-    test_output_msg.data = steering_encoder->get_position();
+    // Set the test output message to the current steering encoder value in binary and decimal
+    test_output_string[0] = '0';
+    test_output_string[1] = 'b';
+    for (int i = 0; i < 16; i++) {
+        test_output_string[i + 2] = (steering_encoder->get_raw_position() >> (15 - i)) & 0x01 ? '1' : '0';
+    }
+    test_output_string[18] = ' ';
+    if (steering_encoder->data_valid()){
+        sprintf(test_output_string + 19, ",   Valid: %ld", steering_encoder->get_position());
+    } else {
+        sprintf(test_output_string + 19, ", Invalid: %ld", steering_encoder->get_position());
+    }
+
+    test_output_msg.data = test_output_string;
 
     // Publish the test output message
     test_output_pub.publish(&test_output_msg);
