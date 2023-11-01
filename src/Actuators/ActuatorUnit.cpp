@@ -246,30 +246,6 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
         sprintf(device_message, "Lost communication");
         return true;
     }
-//    if (this->motors[0].current_position < -2000) {
-//        sprintf(device_name, "Actuator Unit: %d", this->id);
-//        sprintf(device_message, "Suspension encoder disconnected");
-//        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
-//        return true;
-//    }
-//    if (this->motors[1].current_position < -2000) {
-//        sprintf(device_name, "Actuator Unit: %d", this->id);
-//        sprintf(device_message, "Steering encoder disconnected");
-//        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
-//        return true;
-//    }
-//    if (this->motors[0].current_position > 1000) {
-//        sprintf(device_name, "Actuator Unit: %d", this->id);
-//        sprintf(device_message, "Suspension encoder dead short");
-//        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
-//        return true;
-//    }
-//    if (this->motors[1].current_position > 1000) {
-//        sprintf(device_name, "Actuator Unit: %d", this->id);
-//        sprintf(device_message, "Steering encoder dead short");
-//        this->estop(); // Make sure this unit stops even if automatic e-stop is disabled
-//        return true;
-//    }
     if (this->get_logic_battery_voltage() < 10) {
         sprintf(device_name, "Actuator Unit: %d", this->id);
         sprintf(device_message, "Logic battery voltage too low: %0.1fV", this->get_logic_battery_voltage());
@@ -334,6 +310,19 @@ void ActuatorUnit::set_limits(uint8_t motor, int32_t limit, boolean direction, b
     this->motors[motor].limit_direction = direction;
     this->motors[motor].limit_action_dir = action_dir;
     this->motors[motor].has_limit = true;
+}
+
+uint16_t ActuatorUnit::get_fault_flags(uint8_t motor) {
+    uint16_t flags = 0;
+    if (!this->connected) flags |= fault_flags::CONNECTION_LOST;
+    if (this->get_temperature() > 80) flags |= fault_flags::TEMP_HIGH;
+    if (this->get_logic_battery_voltage() < 10) flags |= fault_flags::LOGIC_BUS_LOW;
+    if (this->get_main_battery_voltage() < 46) flags |= fault_flags::MAIN_BUS_LOW;
+    if (this->motors[motor].current_current > this->motors[motor].current_limit) flags |= fault_flags::CURRENT_LIMIT;
+    if (this->motors[motor].control_mode == control_modes::E_STOPPED) flags |= fault_flags::ESTOPPED;
+    if (this->motors[motor].encoder->fault()) flags |= fault_flags::ENCODER_FAILURE;
+    if (!this->motors[motor].encoder->is_valid()) flags |= fault_flags::ENCODER_INVALID;
+    return flags;
 }
 
 

@@ -21,15 +21,27 @@ void ActuatorsROS::control_callback(const std_msgs::Int32MultiArray &msg) {
     }
 }
 
-void ActuatorsROS::update() {
-//    this->actuator->update();
-    this->output_topic->data[1] = this->actuator->get_position(0);
-    this->output_topic->data[2] = 0; // Velocity steering
-    this->output_topic->data[3] = this->actuator->get_position(1);
-    this->output_topic->data[4] = 0; // Velocity
+int32_t ActuatorsROS::to_fixed_point(float value, float scale) {
+    return (int32_t)(value * scale);
+}
 
+void ActuatorsROS::update() {
+    this->actuator->update();
+    this->output_topic->data[1] = this->actuator->get_position(0);
+    this->output_topic->data[2] = this->to_fixed_point(this->actuator->get_velocity(0), UNIT_SCALE);
+    this->output_topic->data[3] = this->actuator->get_position(1);
+    this->output_topic->data[4] = this->to_fixed_point(this->actuator->get_velocity(1), UNIT_SCALE);
     this->output_topic->data[5] = this->actuator->get_duty_cycle(0) * 100;
     this->output_topic->data[6] = this->actuator->get_duty_cycle(1) * 100;
+
+    // Controller information
+    this->output_topic->data[7] = this->actuator->get_target_position(0);
+    this->output_topic->data[8] = this->actuator->get_target_position(1);
+
+    // Fault information
+    this->output_topic->data[9]  = this->actuator->get_fault_flags(0);
+    this->output_topic->data[10] = this->actuator->get_fault_flags(1);
+
 }
 
 void ActuatorsROS::publish() {

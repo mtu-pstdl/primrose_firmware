@@ -27,9 +27,22 @@ class ActuatorUnit : public EStopDevice {
 
 public:
 
-    uint8_t id;
+    uint8_t  id;
     boolean  connected = true;
     uint32_t last_response = 0;
+
+    enum fault_flags: uint16_t {
+        ENCODER_INVALID = 0x0001,
+        ENCODER_FAILURE = 0x0002,
+        MAIN_BUS_LOW    = 0x0004,
+        LOGIC_BUS_LOW   = 0x0008,
+        MAIN_BUS_HIGH   = 0x0010,
+        LOGIC_BUS_HIGH  = 0x0020,
+        TEMP_HIGH       = 0x0040,
+        CONNECTION_LOST = 0x0080,
+        ESTOPPED        = 0x0100,
+        CURRENT_LIMIT   = 0x0200,
+    };
 
     enum controller_status_bitmask: uint16_t {
         normal                   = 0x0000,
@@ -75,6 +88,9 @@ public:
         boolean achieved_position   = false;     // Whether the motor has achieved its target position
         odometer_value* odometer    = nullptr;   // The odometer data of the motor
 
+        // Fault flags
+        uint16_t fault_flags        = 0;         // A bitmask of the faults that have occurred on the motor
+
         // Configuration variables
         float_t p_gain               = -0.01;     // The proportional gain of the motor
         float_t i_gain               = -0.001;    // The integral gain of the motor
@@ -88,51 +104,6 @@ public:
         boolean limit_direction      = false;     // Which direction the limit should apply from
         boolean limit_action_dir     = false;     // Which direction the limit action should apply from
     };
-
-//    // Welcome to pointer and reference hell
-//    static void encoder_count_callback(void *actuator, Actuators::serial_message *msg) {
-//        // Cast the void pointer to an ActuatorUnit pointer
-//        auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-//        actuator_unit->message_dropped_count = 0;
-//        actuator_unit->connected = true;
-//        actuator_unit->last_response = millis();
-//        uint32_t raw_position = (msg->data[0] << 24) | (msg->data[1] << 16) | (msg->data[2] << 8) | msg->data[3];
-////        bool negative = msg->data[4] & 0b00000010;
-//        if (msg->command == Actuators::serial_commands::read_encoder_count_m1){
-//            // Trim the position value to a 32 bit signed integer
-//            actuator_unit->motors[0].current_position = (int32_t) raw_position;
-//            if (actuator_unit->motors[0].control_mode == POSITION) {
-//                actuator_unit->position_control_callback(0);
-//            }
-//            actuator_unit->data_flags |= M1_POS_MASK;
-//        } else if (msg->command == Actuators::serial_commands::read_encoder_count_m2){
-//            actuator_unit->motors[1].current_position = (int32_t) raw_position;
-//            if (actuator_unit->motors[1].control_mode == POSITION) {
-//                actuator_unit->position_control_callback(1);
-//            }
-//            actuator_unit->data_flags |= M2_POS_MASK;
-//        }
-//    }
-//
-//    static void encoder_speed_callback(void *actuator, Actuators::serial_message *msg) {
-//        auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
-//        actuator_unit->message_dropped_count = 0;
-//        actuator_unit->connected = true;
-//        actuator_unit->last_response = millis();
-//        if (msg->command == Actuators::serial_commands::read_encoder_speed_m1){
-//            uint32_t raw_speed = (msg->data[0] << 24) | (msg->data[1] << 16) | (msg->data[2] << 8) | msg->data[3];
-//            if (msg->data[4]) {
-//                actuator_unit->motors[0].current_speed = - (int32_t) raw_speed;
-//            } else actuator_unit->motors[0].current_speed = (int32_t) raw_speed;
-////            actuator_unit->data_flags |= M1_VEL_MASK;
-//        } else if (msg->command == Actuators::serial_commands::read_encoder_speed_m2){
-//            uint32_t raw_speed = (msg->data[0] << 24) | (msg->data[1] << 16) | (msg->data[2] << 8) | msg->data[3];
-//            if (msg->data[4]) {
-//                actuator_unit->motors[1].current_speed = - (int32_t) raw_speed;
-//            } else actuator_unit->motors[1].current_speed = (int32_t) raw_speed;
-//            actuator_unit->data_flags |= M2_VEL_MASK;
-//        }
-//    }
 
     static void motor_currents_callback(void *actuator, Actuators::serial_message *msg) {
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
@@ -328,6 +299,8 @@ public:
     float_t get_main_battery_voltage() const;
 
     float_t get_logic_battery_voltage() const;
+
+    uint16_t get_fault_flags(uint8_t motor);
 
     void update_odometer(uint8_t motor);
 

@@ -18,6 +18,8 @@
 
 #define TOPIC_BASE "/mciu/Actuators"
 
+#define UNIT_SCALE 100
+
 class ActuatorsROS : public ROSNode {
 
 private:
@@ -30,13 +32,11 @@ private:
 
     ros::Subscriber<std_msgs::Int32MultiArray, ActuatorsROS> command_sub;
 
-    diagnostic_msgs::DiagnosticStatus* diagnostic_topic;
     std_msgs::Int32MultiArray* output_topic;
 
     String name;
 
     char* strings[9]{nullptr};
-    char* status_string = new char[25];
     char* pub_name = new char[50];
 
     ActuatorUnit* actuator;
@@ -47,12 +47,20 @@ public:
             command_sub("template_for_later", &ActuatorsROS::control_callback, this){
         this->actuator = actuator;
         // Add key-value pairs to the condition topic
-        sprintf(status_string, "Initializing");
         this->name = disp_name;
 
         this->output_topic = output_topic;
         this->output_topic->data_length = 12;
         this->output_topic->data = new int32_t[12];
+        if (disp_name == "Front_Left"){
+            this->output_topic->data[0] = 0;
+        } else if (disp_name == "Front_Right"){
+            this->output_topic->data[0] = 1;
+        } else if (disp_name == "Rear_Left"){
+            this->output_topic->data[0] = 2;
+        } else if (disp_name == "Rear_Right"){
+            this->output_topic->data[0] = 3;
+        }
 
         this->command_sub.topic_ = this->pub_name;
         sprintf(pub_name, "/mciu/%s/actuators/input", disp_name.c_str());
@@ -73,6 +81,7 @@ public:
 
     void publish() override;
 
+    static int32_t to_fixed_point(float value, float scale);
 };
 
 
