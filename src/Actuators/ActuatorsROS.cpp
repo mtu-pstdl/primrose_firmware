@@ -38,9 +38,17 @@ void ActuatorsROS::update() {
     this->output_topic->data[7] = this->actuator->get_target_position(0);
     this->output_topic->data[8] = this->actuator->get_target_position(1);
 
+    this->output_topic->data[11] = to_fixed_point(this->actuator->get_current(0), UNIT_SCALE);
+    this->output_topic->data[12] = to_fixed_point(this->actuator->get_current(1), UNIT_SCALE);
+
+    this->output_topic->data[13] = to_fixed_point(this->actuator->get_main_battery_voltage(), UNIT_SCALE);
+    this->output_topic->data[14] = to_fixed_point(this->actuator->get_logic_battery_voltage(), UNIT_SCALE);
+
+    this->output_topic->data[15] = to_fixed_point(this->actuator->get_temperature(), UNIT_SCALE);
+
     // Fault information
-    this->output_topic->data[9]  = this->actuator->get_fault_flags(0);
-    this->output_topic->data[10] = this->actuator->get_fault_flags(1);
+    this->output_topic->data[16]  = this->actuator->get_fault_flags(0);
+    this->output_topic->data[17]  = this->actuator->get_fault_flags(1);
 
 }
 

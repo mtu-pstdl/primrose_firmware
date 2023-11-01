@@ -50,8 +50,8 @@ public:
         this->name = disp_name;
 
         this->output_topic = output_topic;
-        this->output_topic->data_length = 12;
-        this->output_topic->data = new int32_t[12];
+        this->output_topic->data_length = 18;
+        this->output_topic->data = new int32_t[18];
         if (disp_name == "Front_Left"){
             this->output_topic->data[0] = 0;
         } else if (disp_name == "Front_Right"){
