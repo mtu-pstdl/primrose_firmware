@@ -35,7 +35,7 @@ private:
     uint32_t last_update_time = 0;
 
     void begin_transaction() const {
-        SPI.beginTransaction(SPISettings(1000, LSBFIRST, SPI_MODE0));
+        SPI.beginTransaction(SPISettings(10000, LSBFIRST, SPI_MODE0));
         SPI.setClockDivider(SPI_CLOCK_DIV128);
         digitalWrite(cs_pin, LOW); // Select
         delayMicroseconds(10); //wait for the encoder to be ready (3us as specified in the datasheet)
