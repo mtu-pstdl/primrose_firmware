@@ -6,7 +6,7 @@
 #define TEENSYCANTRANSCEIVER_ACTUATORUNIT_H
 
 #include <Arduino.h>
-#include "Actuators.h"
+#include "Actuator_Bus_Interface.h"
 #include "Misc/EStopDevice.h"
 #include "Sensors_internal/PositionSensor.h"
 
@@ -22,6 +22,8 @@
 #define LG_BAT_MASK 0b00100000
 #define MN_BAT_MASK 0b01000000
 #define STATUS_MASK 0b10000000
+
+extern Actuator_Bus_Interface ACTUATOR_BUS_INTERFACE;
 
 class ActuatorUnit : public EStopDevice {
 
@@ -105,7 +107,7 @@ public:
         boolean limit_action_dir     = false;     // Which direction the limit action should apply from
     };
 
-    static void motor_currents_callback(void *actuator, Actuators::serial_message *msg) {
+    static void motor_currents_callback(void *actuator, Actuator_Bus_Interface::serial_message *msg) {
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
         actuator_unit->message_dropped_count = 0;
         actuator_unit->connected = true;
@@ -122,7 +124,7 @@ public:
         actuator_unit->data_flags |= CURENT_MASK;
     }
 
-    static void main_battery_voltage_callback(void *actuator, Actuators::serial_message *msg) {
+    static void main_battery_voltage_callback(void *actuator, Actuator_Bus_Interface::serial_message *msg) {
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
         actuator_unit->message_dropped_count = 0;
         actuator_unit->connected = true;
@@ -131,7 +133,7 @@ public:
         actuator_unit->data_flags |= MN_BAT_MASK;
     }
 
-    static void logic_battery_voltage_callback(void *actuator, Actuators::serial_message *msg) {
+    static void logic_battery_voltage_callback(void *actuator, Actuator_Bus_Interface::serial_message *msg) {
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
         actuator_unit->message_dropped_count = 0;
         actuator_unit->connected = true;
@@ -140,7 +142,7 @@ public:
         actuator_unit->data_flags |= LG_BAT_MASK;
     }
 
-    static void controller_temp_callback(void *actuator, Actuators::serial_message *msg) {
+    static void controller_temp_callback(void *actuator, Actuator_Bus_Interface::serial_message *msg) {
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
         actuator_unit->data_flags |= CTTEMP_MASK;
         actuator_unit->message_dropped_count = 0;
@@ -149,7 +151,7 @@ public:
         actuator_unit->controller_temperature = (msg->data[0] << 8) | msg->data[1];
     }
 
-    static void controller_status_callback(void *actuator, Actuators::serial_message *msg) {
+    static void controller_status_callback(void *actuator, Actuator_Bus_Interface::serial_message *msg) {
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
         actuator_unit->message_dropped_count = 0;
         actuator_unit->connected = true;
@@ -159,13 +161,13 @@ public:
         actuator_unit->data_flags |= STATUS_MASK;
     }
 
-    static void command_message_callback(void *actuator, Actuators::serial_message *msg) {
+    static void command_message_callback(void *actuator, Actuator_Bus_Interface::serial_message *msg) {
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
 //        actuator_unit->message_dropped_count = 0;
 //        actuator_unit->connected = true;
     }
 
-    static void command_failure_callback(void *actuator, Actuators::serial_message *msg) {
+    static void command_failure_callback(void *actuator, Actuator_Bus_Interface::serial_message *msg) {
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
         // Because command messages are more important than status messages we must resend them if they fail
 //        if (actuator_unit->command_bus->space_available())
@@ -177,7 +179,7 @@ public:
         }
     }
 
-    static void message_failure_callback(void *actuator, Actuators::serial_message *msg) {
+    static void message_failure_callback(void *actuator, Actuator_Bus_Interface::serial_message *msg) {
         auto* actuator_unit = static_cast<ActuatorUnit*>(actuator);
         // Check if the serial_message failed because of CRC failure
         // (This indicates the controller is connected but the connection is noisy and a separate failure)
@@ -193,7 +195,7 @@ public:
 
 private:
 
-    Actuators* command_bus;
+    Actuator_Bus_Interface* command_bus;
 
     uint16_t message_dropped_count = 0;
     uint16_t message_failure_count = 0;
@@ -205,7 +207,7 @@ private:
     };
 
     struct telemetry_message{
-        Actuators::serial_message* msg; // The serial_message to send
+        Actuator_Bus_Interface::serial_message* msg; // The serial_message to send
         uint32_t last_send_time; // The time the serial_message was last sent
         uint32_t send_interval;  // The minimum time between sending the serial_message
     };
@@ -220,8 +222,8 @@ private:
     uint16_t status = 0;
     uint16_t data_flags = 0;  // A bitmask of the data that has been received from the motor
 
-    telemetry_message* build_message(Actuators::serial_commands command, uint32_t send_interval, uint8_t data_length,
-                                     void (*callback)(void *, Actuators::serial_message*));
+    telemetry_message* build_message(Actuator_Bus_Interface::serial_commands command, uint32_t send_interval, uint8_t data_length,
+                                     void (*callback)(void *, Actuator_Bus_Interface::serial_message*));
 
     void build_telemetry_messages();
 
@@ -230,10 +232,9 @@ private:
 public:
 
 
-    ActuatorUnit(Actuators* command_bus, uint8_t id,
-                 PositionSensor* steering_encoder, PositionSensor* suspension_encoder) {
-        this->command_bus = command_bus;
+    ActuatorUnit(uint8_t id, PositionSensor* steering_encoder, PositionSensor* suspension_encoder) {
         this->id = id;
+        this->command_bus = &ACTUATOR_BUS_INTERFACE;
 
         this->motors[0].encoder = suspension_encoder;
         this->motors[1].encoder = steering_encoder;
@@ -241,8 +242,8 @@ public:
         // Setup all the required messages for gathering information from the object
         this->reocurring_messages = new telemetry_message[7];
         this->command_messages = new telemetry_message[2];
-        this->command_messages[0].msg = new Actuators::serial_message();
-        this->command_messages[1].msg = new Actuators::serial_message();
+        this->command_messages[0].msg = new Actuator_Bus_Interface::serial_message();
+        this->command_messages[1].msg = new Actuator_Bus_Interface::serial_message();
         for (int i = 0; i < 2; i++) {
             this->command_messages[i].send_interval = 100;
             this->command_messages[i].msg->id = this->id;

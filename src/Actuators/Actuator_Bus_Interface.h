@@ -9,7 +9,7 @@
 
 #define MESSAGE_QUEUE_SIZE 100
 
-class Actuators {
+class Actuator_Bus_Interface {
 
 public:
     enum serial_commands: uint8_t {
@@ -101,7 +101,7 @@ public:
     uint16_t crc = 0;
     uint16_t calc_crc = 0;
 
-    Actuators(){
+    Actuator_Bus_Interface(){
         Serial2.begin(100000);
         // Yellow to brown
         // Green to purple

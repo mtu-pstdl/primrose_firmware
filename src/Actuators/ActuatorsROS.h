@@ -16,7 +16,7 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/KeyValue.h"
 #include "ROSNode.h"
 
-#define TOPIC_BASE "/mciu/Actuators"
+#define TOPIC_BASE "/mciu/Actuator_Bus_Interface"
 
 #define UNIT_SCALE 100
 

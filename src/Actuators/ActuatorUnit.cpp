@@ -8,34 +8,34 @@
 
 void ActuatorUnit::build_telemetry_messages() {
 //    reocurring_messages[0] = *build_message(
-//            Actuators::serial_commands::read_encoder_count_m1,
+//            Actuator_Bus_Interface::serial_commands::read_encoder_count_m1,
 //            50, 5, &ActuatorUnit::encoder_count_callback);
 //    reocurring_messages[1] = *build_message(
-//            Actuators::serial_commands::read_encoder_count_m2,
+//            Actuator_Bus_Interface::serial_commands::read_encoder_count_m2,
 //            50, 5, &ActuatorUnit::encoder_count_callback);
     reocurring_messages[2] = *build_message(
-            Actuators::serial_commands::read_main_battery_voltage,
+            Actuator_Bus_Interface::serial_commands::read_main_battery_voltage,
             100, 2, &ActuatorUnit::main_battery_voltage_callback);
     reocurring_messages[3] = *build_message(
-            Actuators::serial_commands::read_logic_battery_voltage,
+            Actuator_Bus_Interface::serial_commands::read_logic_battery_voltage,
             500, 2, &ActuatorUnit::logic_battery_voltage_callback);
     reocurring_messages[4] = *build_message(
-            Actuators::serial_commands::read_motor_currents,
+            Actuator_Bus_Interface::serial_commands::read_motor_currents,
             50, 4, &ActuatorUnit::motor_currents_callback);
     reocurring_messages[5] = *build_message(
-            Actuators::serial_commands::read_temperature,
+            Actuator_Bus_Interface::serial_commands::read_temperature,
             500, 2, &ActuatorUnit::controller_temp_callback);
     reocurring_messages[6] = *build_message(
-            Actuators::serial_commands::read_status,
+            Actuator_Bus_Interface::serial_commands::read_status,
             1000, 2, &ActuatorUnit::controller_status_callback);
 
 }
 
 ActuatorUnit::telemetry_message*
-ActuatorUnit::build_message(Actuators::serial_commands command, uint32_t send_interval, uint8_t data_length,
-                            void (*callback)(void *, Actuators::serial_message*)) {
+ActuatorUnit::build_message(Actuator_Bus_Interface::serial_commands command, uint32_t send_interval, uint8_t data_length,
+                            void (*callback)(void *, Actuator_Bus_Interface::serial_message*)) {
     auto* telem = new telemetry_message;
-    telem->msg = new Actuators::serial_message;
+    telem->msg = new Actuator_Bus_Interface::serial_message;
     telem->msg->command = command;
     telem->msg->data_length = data_length;
     telem->msg->id = this->id;
@@ -82,12 +82,12 @@ void ActuatorUnit::update_duty_cycle_command(float_t duty_cycle, uint8_t motor,
 
     auto duty_cycle_int = (int16_t) (duty_cycle * INT16_MAX); // Convert to signed 16 bit integer
     if (motor == 0) {
-        this->command_messages[0].msg->command = Actuators::serial_commands::drive_m1_duty_cycle;
+        this->command_messages[0].msg->command = Actuator_Bus_Interface::serial_commands::drive_m1_duty_cycle;
         this->command_messages[0].msg->data[0] = duty_cycle_int >> 8;
         this->command_messages[0].msg->data[1] = duty_cycle_int & 0xFF;
         this->command_messages[0].msg->data_length = 2;
     } else {
-        this->command_messages[1].msg->command = Actuators::serial_commands::drive_m2_duty_cycle;
+        this->command_messages[1].msg->command = Actuator_Bus_Interface::serial_commands::drive_m2_duty_cycle;
         this->command_messages[1].msg->data[0] = duty_cycle_int >> 8;
         this->command_messages[1].msg->data[1] = duty_cycle_int & 0xFF;
         this->command_messages[1].msg->data_length = 2;

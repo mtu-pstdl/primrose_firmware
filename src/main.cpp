@@ -1,6 +1,6 @@
 
 #include <Arduino.h>
-#include <Actuators/Actuators.h>
+#include <Actuators/Actuator_Bus_Interface.h>
 #include <FlexCAN_T4.h>
 #include <ros.h>
 #include "ODrive/ODrivePro.h"
@@ -64,7 +64,6 @@ ODrive_ROS* odrive_ros[6];
 
 ActuatorUnit* actuators[4];
 ActuatorsROS* actuators_ros[4];
-Actuators actuator_bus;
 
 BatteryMonitor* battery_monitor;
 IMU* imu;
@@ -197,7 +196,9 @@ void setup() {
     can1.enableFIFO();
     can1.enableFIFOInterrupt();
 
-//    pinMode(13, OUTPUT);
+    pinMode(13, OUTPUT);
+    pinMode(12, INPUT);
+    pinMode(11, OUTPUT);
     SPI.begin();
 //    SPI.setCS(0);
 
@@ -243,23 +244,23 @@ void setup() {
                                    static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[5]->message),
                                    "Conveyor");
 
-    actuators[0] = new ActuatorUnit(&actuator_bus, 128,
+    actuators[0] = new ActuatorUnit(128,
                                     new SteeringEncoders(5),
                                     new SuspensionEncoders(0x01)); // Slot 3L
 
-    actuators[1] = new ActuatorUnit(&actuator_bus, 129,
+    actuators[1] = new ActuatorUnit(129,
                                     new SteeringEncoders(6),
                                     new SuspensionEncoders(0x02)); // Slot 2R
     actuators[1]->set_inverted(true,0); // Set the motor to run in the opposite direction (for the conveyor
     actuators[1]->set_inverted(true,1);
 
-    actuators[2] = new ActuatorUnit(&actuator_bus, 130,
+    actuators[2] = new ActuatorUnit(130,
                                     new SteeringEncoders(7),
                                     new SuspensionEncoders(0x03)); // Slot 2L
     actuators[2]->set_inverted(true,0);
     actuators[2]->set_inverted(true,1);
 
-    actuators[3] = new ActuatorUnit(&actuator_bus, 131,
+    actuators[3] = new ActuatorUnit(131,
                                     new SteeringEncoders(9),
                                     new SuspensionEncoders(0x04)); // Slot 3R
     actuators[3]->set_inverted(true,0);
@@ -356,12 +357,14 @@ void loop() {
     for (int i = 0; i < 16; i++) {
         test_output_string[i + 2] = (steering_encoder->get_raw_position() >> (15 - i)) & 0x01 ? '1' : '0';
     }
-    test_output_string[18] = ' ';
+//    test_output_string[18] = ' ';
     if (steering_encoder->data_valid()){
-        sprintf(test_output_string + 19, ",   Valid: %ld : %ld", steering_encoder->get_position(),
+        sprintf(test_output_string + 18, ",   Valid: %ld : %ld",
+                steering_encoder->get_position(),
                 steering_encoder->get_raw_position() & 0x3FFF);
     } else {
-        sprintf(test_output_string + 19, ", Invalid: %ld : %ld", steering_encoder->get_position(),
+        sprintf(test_output_string + 18, ", Invalid: %ld : %ld",
+                steering_encoder->get_position(),
                 steering_encoder->get_raw_position() & 0x3FFF);
     }
 
@@ -375,7 +378,7 @@ void loop() {
         string[0] = '\0';  // Clear the system status messages
     }
     system_info->level = diagnostic_msgs::DiagnosticStatus::OK;
-    actuator_bus.sent_last_cycle = 0;
+    ACTUATOR_BUS_INTERFACE.sent_last_cycle = 0;
 
     // Get the teensy temperature
 
@@ -453,11 +456,11 @@ void loop() {
     }
     // Allow the actuator bus to preform serial communication for the remaining time in the loop
     sprintf(system_info_strings[6], "S:%02d, F:%05lu, E:%05lu",
-            actuator_bus.get_queue_size(),
-            actuator_bus.total_messages_sent - actuator_bus.total_messages_received,
-            actuator_bus.total_messages_received - actuator_bus.total_messages_processed);
+            ACTUATOR_BUS_INTERFACE.get_queue_size(),
+            ACTUATOR_BUS_INTERFACE.total_messages_sent - ACTUATOR_BUS_INTERFACE.total_messages_received,
+            ACTUATOR_BUS_INTERFACE.total_messages_received - ACTUATOR_BUS_INTERFACE.total_messages_processed);
 
-    while (actuator_bus.spin() && micros() - loop_start < 45000) {
+    while (ACTUATOR_BUS_INTERFACE.spin() && micros() - loop_start < 45000) {
         yield();  // Yield to other tasks
     }
 
@@ -485,8 +488,8 @@ void loop() {
             100.0 * remaining_memory / 512000.0, ram_usage_rate());
     sprintf(system_info_strings[5], "%lu", can1.getTXQueueCount());
     sprintf(system_info_strings[7], "%lums (Sent %lu)",
-            actuator_bus.round_trip_time(),
-            actuator_bus.sent_last_cycle);
+            ACTUATOR_BUS_INTERFACE.round_trip_time(),
+            ACTUATOR_BUS_INTERFACE.sent_last_cycle);
     // Update the uptime
     sprintf(system_info_strings[8], "%.2luh %.2lum %.2lus",
             millis() / 3600000, (millis() / 60000) % 60, (millis() / 1000) % 60);

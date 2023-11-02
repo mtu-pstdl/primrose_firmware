@@ -2,10 +2,12 @@
 // Created by Jay on 3/16/2023.
 //
 
-#include "Actuators.h"
+#include "Actuator_Bus_Interface.h"
+
+Actuator_Bus_Interface ACTUATOR_BUS_INTERFACE = Actuator_Bus_Interface();
 
 //Calculates CRC16 of nBytes of data in byte array serial_message
-uint16_t Actuators::crc16(const uint8_t *packet, uint32_t nBytes) {
+uint16_t Actuator_Bus_Interface::crc16(const uint8_t *packet, uint32_t nBytes) {
     uint16_t crc = 0;
     for (int byte = 0; byte < nBytes; byte++) {
         crc = crc ^ ((unsigned int)packet[byte] << 8);
@@ -20,7 +22,7 @@ uint16_t Actuators::crc16(const uint8_t *packet, uint32_t nBytes) {
     return crc;
 }
 
-void Actuators::process_no_data_serial(serial_message* msg){
+void Actuator_Bus_Interface::process_no_data_serial(serial_message* msg){
     if (Serial2.available() >= 1) {
         this->total_messages_received++;
         if (Serial2.read() == 0xFF) {
@@ -48,7 +50,7 @@ void Actuators::process_no_data_serial(serial_message* msg){
     }
 }
 
-void Actuators::process_data_serial(serial_message *msg) {
+void Actuator_Bus_Interface::process_data_serial(serial_message *msg) {
     if (Serial2.available() == msg->data_length + sizeof(uint16_t)){
         this->total_messages_received++; // Increment the total messages received
         Serial2.readBytes(this->response_buffer, msg->data_length + sizeof(uint16_t));
@@ -89,7 +91,7 @@ void Actuators::process_data_serial(serial_message *msg) {
     }
 }
 
-void Actuators::check_for_response(){
+void Actuator_Bus_Interface::check_for_response(){
     serial_message* msg = this->message_queue[this->message_queue_dequeue_position];
     if(msg->expect_response) { // Determine if we are waiting for data or just a success serial_message
         this->process_data_serial(msg);   // This checks for a data serial_message
@@ -117,7 +119,7 @@ void Actuators::check_for_response(){
     }
 }
 
-boolean Actuators::spin() {
+boolean Actuator_Bus_Interface::spin() {
     if (this->waiting_for_response){
         this->check_for_response();
         return true;
@@ -163,7 +165,7 @@ boolean Actuators::spin() {
     }
 }
 
-Actuators::serial_message *Actuators::get_next_message() {
+Actuator_Bus_Interface::serial_message *Actuator_Bus_Interface::get_next_message() {
     // The serial_message queue is a circular buffer
     if (this->message_queue_enqueue_position == this->message_queue_dequeue_position){
         return nullptr;
@@ -176,7 +178,7 @@ Actuators::serial_message *Actuators::get_next_message() {
     }
 }
 
-void Actuators::queue_message(Actuators::serial_message *message) {
+void Actuator_Bus_Interface::queue_message(Actuator_Bus_Interface::serial_message *message) {
     if (!this->space_available()) {
         if (message->free_after_callback) delete message;
         return;
@@ -195,7 +197,7 @@ void Actuators::queue_message(Actuators::serial_message *message) {
 
 }
 
-bool Actuators::space_available() const {
+bool Actuator_Bus_Interface::space_available() const {
     if (this->message_queue_enqueue_position == this->message_queue_dequeue_position){
         return true;
     } else {
@@ -211,7 +213,7 @@ bool Actuators::space_available() const {
     }
 }
 
-uint8_t Actuators::get_queue_size() const {
+uint8_t Actuator_Bus_Interface::get_queue_size() const {
     // Calculate how many messages are in the queue
     if (this->message_queue_enqueue_position == this->message_queue_dequeue_position){
         return 0;
@@ -222,6 +224,6 @@ uint8_t Actuators::get_queue_size() const {
     }
 }
 
-uint32_t Actuators::round_trip_time() const {
+uint32_t Actuator_Bus_Interface::round_trip_time() const {
     return this->last_message_round_trip;
 }
