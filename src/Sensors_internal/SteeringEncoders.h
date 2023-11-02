@@ -34,14 +34,14 @@ private:
     uint16_t last_position = 0;
     uint32_t last_update_time = 0;
 
-    void begin_transaction() {
+    void begin_transaction() const {
         SPI.beginTransaction(SPISettings(100000, LSBFIRST, SPI_MODE0));
         SPI.setClockDivider(SPI_CLOCK_DIV32);
         digitalWriteFast(cs_pin, LOW); // Select
         delayMicroseconds(10); //wait for the encoder to be ready (3us as specified in the datasheet)
     }
 
-    void end_transaction() {
+    void end_transaction() const {
         delayMicroseconds(5); //wait for the encoder to be ready (3us as specified in the datasheet
         digitalWriteFast(cs_pin, HIGH); // Deselect
         delayMicroseconds(5);
@@ -49,10 +49,12 @@ private:
     }
 
     void reset() {
+        begin_transaction();
         spiWriteRead(AMT22_NOP);
         //this is the time required between bytes as specified in the datasheet.
         delayMicroseconds(3);
         spiWriteRead(AMT22_RESET);
+        end_transaction();
         delay(250); //250 second delay to allow the encoder to start back up
     }
 
@@ -81,17 +83,16 @@ public:
         digitalWriteFast(cs_pin, HIGH);
     }
 
-    void initialize() override {
-        this->reset();
-        this->initialized = true;
-    }
-
     /**
      * Updates the steering encoders
      * @return true if update was successful
      * @return false if update was unsuccessful
      */
     void update() override {
+        if (!this->initialized) {
+//            this->reset();
+            this->initialized = true;
+        }
         this->readPosition();
         this->update_velocity();
     }

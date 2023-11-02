@@ -197,7 +197,7 @@ void setup() {
     can1.enableFIFO();
     can1.enableFIFOInterrupt();
 
-    pinMode(13, OUTPUT);
+//    pinMode(13, OUTPUT);
     SPI.begin();
 //    SPI.setCS(0);
 
@@ -338,6 +338,8 @@ void setup() {
         if (node == nullptr) continue;
         node->subscribe(&node_handle);
     }
+
+    node_handle.loginfo("Running Firmware Build: " __DATE__ " " __TIME__);
 }
 
 void loop() {
