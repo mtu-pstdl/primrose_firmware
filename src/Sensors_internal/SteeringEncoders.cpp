@@ -7,7 +7,7 @@
 uint8_t SteeringEncoders::spiWriteRead(uint8_t byte) {
     uint8_t response;
     response = SPI.transfer(byte);
-    delayMicroseconds(5);
+    delayMicroseconds(3);
     return response;
 }
 
@@ -21,7 +21,7 @@ void SteeringEncoders::readPosition(){
     bool binaryArray[16] = {false,}; //after receiving the position we will populate this array and use it for calculating the checksum
 
     //read the first byte of the position
-//    this->raw_position = spiWriteRead(AMT22_NOP) << 8;
+    this->raw_position = spiWriteRead(AMT22_NOP) << 8;
 
     //this is the time required between bytes as specified in the datasheet.
 //    delayMicroseconds(3);

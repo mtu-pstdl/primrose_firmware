@@ -16,6 +16,7 @@
 
 // The time in milliseconds to wait after an estop is triggered before the main contactor is opened (to reduce back EMF)
 #define ESTOP_CONTACTOR_DELAY 2500  // 2.5 seconds
+#define HEARTBEAT_INTERVAL 4000  // 4 seconds
 
 class EStopController : public ROSNode {
 
@@ -26,10 +27,12 @@ private:
         RESUME = 1,
         ENABLE_AUTOMATIC = 2,
         DISABLE_AUTOMATIC = 3,
+        PI_HEARTBEAT = 4,
+        REMOTE_HEARTBEAT = 5,
     };
 
     ros::Subscriber<std_msgs::Int32, EStopController> estop_sub;
-    diagnostic_msgs::DiagnosticStatus* diagnostic_topic;
+//    diagnostic_msgs::DiagnosticStatus* diagnostic_topic;
 
     void estop_callback(const std_msgs::Int32& msg);
 
@@ -48,6 +51,8 @@ private:
     boolean  estop_triggered = false;
     uint32_t estop_triggered_time = 0;
     uint32_t estop_resume_time = 0;  // The time to wait after the contactor is closed before the E-Stop is cleared
+    uint32_t last_pi_heartbeat = 0;
+    uint32_t last_remote_heartbeat = 0;
 
 
     void check_for_faults() {
@@ -73,33 +78,20 @@ private:
 
     }
 
-    char* message_string = new char[50];
+    void pi_heartbeat() {
+        this->last_pi_heartbeat = millis();
+    }
+
+    void remote_heartbeat() {
+        this->last_remote_heartbeat = millis();
+    }
+
+//    char* estop_
 
 public:
 
-    EStopController(diagnostic_msgs::DiagnosticStatus* status) :
+    EStopController() :
         estop_sub("/mciu/estop_controller", &EStopController::estop_callback, this) {
-        this->diagnostic_topic = status;
-
-        // Setup the diagnostic topic
-        this->diagnostic_topic->name = "E-Stop";
-        this->diagnostic_topic->hardware_id = "MCIU";
-        this->diagnostic_topic->message = message_string;
-        sprintf(this->diagnostic_topic->message, "Initializing");
-
-        this->diagnostic_topic->values_length = 5;
-        this->diagnostic_topic->values = new diagnostic_msgs::KeyValue[5];
-        this->diagnostic_topic->values[0].key = "E-Stop Active";
-        this->diagnostic_topic->values[1].key = "Auto E-Stop Enabled";
-        this->diagnostic_topic->values[2].key = "Triggering Device";
-        this->diagnostic_topic->values[3].key = "Reason";
-        this->diagnostic_topic->values[4].key = "Number of Tripped Devices";
-
-        // Assign the strings
-        for (int i = 0; i < this->diagnostic_topic->values_length; i++) {
-            this->diagnostic_topic->values[i].value = new char[50];
-            sprintf(this->diagnostic_topic->values[i].value, "Initializing");
-        }
 
         pinMode(MAIN_CONTACTOR_PIN, OUTPUT);
         digitalWrite(MAIN_CONTACTOR_PIN, HIGH);
@@ -157,6 +149,11 @@ public:
 
     void update() override {
         this->update_strings();
+        if (millis() - last_pi_heartbeat > HEARTBEAT_INTERVAL) {
+            this->trigger_estop();
+            sprintf(this->tripped_device_name, "Pi");
+            sprintf(this->tripped_device_message, "Pi Heartbeat Expired");
+        }
         if (!estop_triggered) {
             if (millis() - estop_resume_time > 3000)
                 this->automatic_estop_inhibited = false;

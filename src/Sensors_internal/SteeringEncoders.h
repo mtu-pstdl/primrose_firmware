@@ -35,16 +35,15 @@ private:
     uint32_t last_update_time = 0;
 
     void begin_transaction() const {
-        SPI.beginTransaction(SPISettings(10000, LSBFIRST, SPI_MODE0));
-        SPI.setClockDivider(SPI_CLOCK_DIV128);
+        SPI.beginTransaction(SPISettings(100000, LSBFIRST, SPI_MODE0));
+        SPI.setClockDivider(SPI_CLOCK_DIV32);
         digitalWrite(cs_pin, LOW); // Select
         delayMicroseconds(10); //wait for the encoder to be ready (3us as specified in the datasheet)
     }
 
     void end_transaction() const {
-        delayMicroseconds(10); //wait for the encoder to be ready (3us as specified in the datasheet
+        delayMicroseconds(5); //wait for the encoder to be ready (3us as specified in the datasheet
         digitalWrite(cs_pin, HIGH); // Deselect
-        delayMicroseconds(5);
         SPI.endTransaction();
     }
 
