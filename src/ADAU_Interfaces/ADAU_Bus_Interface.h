@@ -7,6 +7,7 @@
 #include <Arduino.h>
 
 #define ADAU_INTERFACE Serial1
+#define ADAU_BAUD_RATE  115200
 #define ADAU_RESET_PIN  3
 
 // Message parameters
@@ -87,7 +88,7 @@ private:
 public:
 
     ADAU_Bus_Interface(){
-        ADAU_INTERFACE.begin(115200);
+        ADAU_INTERFACE.begin(ADAU_BAUD_RATE);
         pinMode(ADAU_RESET_PIN, OUTPUT);
         reset(); // Put the ADAU in a known state
 

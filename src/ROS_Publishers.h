@@ -11,6 +11,7 @@
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/sensor_msgs/Imu.h"
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/sensor_msgs/BatteryState.h"
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/msg.h"
+#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/String.h"
 
 /**
  * All publishers need to be declared at compile time, so they can't be dynamically created within
@@ -131,6 +132,14 @@ ros_topic battery_topic = {
         .message = &battery_msg
 };
 
+#define ESTOP_TOPIC_NUM 12
+std_msgs::String estop_msg;
+ros::Publisher estop_pub("/mciu/estop_output", &estop_msg);
+ros_topic estop_topic = {
+        .publisher = &estop_pub,
+        .message = &estop_msg
+};
+
 ros_topic* odrive_encoder_topics[6] = {
         &odrive1_encoder_topic,
         &odrive2_encoder_topic,
@@ -160,7 +169,8 @@ ros_topic* all_topics[ALL_TOPICS_LENGTH] = {
         &actuator3_encoder_topic,
         &actuator4_encoder_topic,
         &imu_topic,
-        &battery_topic
+        &battery_topic,
+        &estop_topic
 };
 
 #endif //TEENSYCANTRANSCEIVER_ROS_PUBLISHERS_H

@@ -278,7 +278,7 @@ void setup() {
                                         static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[3]->message),
                                         "Rear_Right");
 
-    e_stop_controller = new EStopController();
+    e_stop_controller = new EStopController(static_cast<std_msgs::String*>(all_topics[ESTOP_TOPIC_NUM]->message));
     hopper_door = new HopperDoor();
 
     battery_monitor = new BatteryMonitor(e_stop_controller,

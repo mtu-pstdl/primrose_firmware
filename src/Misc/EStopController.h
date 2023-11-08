@@ -11,6 +11,7 @@
 #include "EStopDevice.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/KeyValue.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/String.h"
 
 #define MAIN_CONTACTOR_PIN 0
 
@@ -32,12 +33,13 @@ private:
     };
 
     ros::Subscriber<std_msgs::Int32, EStopController> estop_sub;
+    std_msgs::String* estop_topic;
 //    diagnostic_msgs::DiagnosticStatus* diagnostic_topic;
 
     void estop_callback(const std_msgs::Int32& msg);
 
     // An array of pointers to estop devices
-    EStopDevice* estop_devices[15] = {nullptr};
+    EStopDevice* estop_devices[20] = {nullptr};
 
     // Automatic E-Stop variables
     boolean         automatic_estop_enabled = true;
@@ -46,6 +48,7 @@ private:
     uint32_t        number_of_tripped_devices = 0;
     char*           tripped_device_name = new char[30];
     char*           tripped_device_message = new char[50];
+    char*           estop_message = new char[256];
 
     // E-Stop variables
     boolean  estop_triggered = false;
@@ -58,9 +61,14 @@ private:
     void check_for_faults() {
         if (!automatic_estop_enabled || automatic_estop_inhibited) {
             for (auto & estop_device : estop_devices) {
-                if (estop_device != nullptr)
-                // still check for faults as this is used by modules to detect internal faults
-                estop_device->tripped(tripped_device_name, tripped_device_message);
+                if (estop_device != nullptr) {
+                    // still check for faults as this is used by modules to detect internal faults
+                    estop_device->tripped(tripped_device_name, tripped_device_message);
+                    sprintf(this->estop_message, "*[%s] %s\n", tripped_device_name, tripped_device_message);
+                    // Reset the tripped device name and message
+                    sprintf(this->tripped_device_name, "NULL");
+                    sprintf(this->tripped_device_message, "NULL");
+                }
             }
             return;
         }
@@ -71,6 +79,10 @@ private:
                 if (estop_device->tripped(tripped_device_name, tripped_device_message)) {
                     this->should_trigger_estop = true;
                     this->number_of_tripped_devices++;
+                    sprintf(this->estop_message, "[%s] %s\n", tripped_device_name, tripped_device_message);
+                    // Reset the tripped device name and message
+                    sprintf(this->tripped_device_name, "NULL");
+                    sprintf(this->tripped_device_message, "NULL");
                 }
             }
         }
@@ -86,13 +98,13 @@ private:
         this->last_remote_heartbeat = millis();
     }
 
-//    char* estop_
-
 public:
 
-    EStopController() :
+    explicit EStopController(std_msgs::String* estop_topic) :
         estop_sub("/mciu/estop_controller", &EStopController::estop_callback, this) {
-
+        this->estop_topic = estop_topic;
+        sprintf(this->tripped_device_name, "NULL");
+        this->estop_topic->data = this->estop_message;
         pinMode(MAIN_CONTACTOR_PIN, OUTPUT);
         digitalWrite(MAIN_CONTACTOR_PIN, HIGH);
         this->trigger_estop();
