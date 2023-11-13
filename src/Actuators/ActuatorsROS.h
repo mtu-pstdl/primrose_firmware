@@ -41,7 +41,15 @@ private:
 
     ActuatorUnit* actuator;
 
+    uint32_t increment = 0;
+
 public:
+
+    struct Node {
+        char *word;        // Null-terminated string for this word
+        unsigned int count;// How often we saw this word in the training file
+        Node *next; // Pointer to next Node in this bucket
+    };
 
     ActuatorsROS(ActuatorUnit* actuator, std_msgs::Int32MultiArray* output_topic, String disp_name) :
             command_sub("template_for_later", &ActuatorsROS::control_callback, this){
@@ -50,8 +58,8 @@ public:
         this->name = disp_name;
 
         this->output_topic = output_topic;
-        this->output_topic->data_length = 18;
-        this->output_topic->data = new int32_t[18];
+        this->output_topic->data_length = 20;
+        this->output_topic->data = new int32_t[20];
         if (disp_name == "Front_Left"){
             this->output_topic->data[0] = 0;
         } else if (disp_name == "Front_Right"){

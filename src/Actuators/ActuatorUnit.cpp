@@ -170,14 +170,15 @@ void ActuatorUnit::queue_telemetry_messages() {
 }
 
 void ActuatorUnit::update() {
+    // Update encoder data
+    this->motors[0].encoder->update();
+    this->motors[1].encoder->update();
+
     if (this->connected) {
         this->queue_telemetry_messages();
     } else {
         this->check_connection();
     }
-    // Update encoder data
-    this->motors[0].encoder->update();
-    this->motors[1].encoder->update();
 }
 
 void ActuatorUnit::check_connection() {
@@ -191,6 +192,7 @@ void ActuatorUnit::check_connection() {
 }
 
 int32_t ActuatorUnit::get_position(uint8_t motor) {
+//    if (!this->motors[motor].encoder->is_valid()) return INT32_MIN;
     return this->motors[motor].encoder->get_position();
 }
 

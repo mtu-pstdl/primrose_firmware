@@ -231,7 +231,7 @@ uint8_t ODrivePro::send_command(odrive::command_ids command_id, T value) {
     msg.buf[3] = (uint8_t) ((lower_32 >> 24) & 0xFF);
     msg.buf[2] = (uint8_t) ((lower_32 >> 16) & 0xFF);
     msg.buf[1] = (uint8_t) ((lower_32 >> 8) & 0xFF);
-    msg.buf[0] = (uint8_t) (lower_32 & 0xFF);
+    msg.buf[0] = (uint8_t)  (lower_32 & 0xFF);
     uint8_t result = this->can_bus->write(msg);
     return result; // Return the result of the write (1 for success, -1 for failure)
 }
@@ -249,11 +249,11 @@ uint8_t ODrivePro::send_command(odrive::command_ids command_id, T1 lower_data, T
     msg.buf[7] = (uint8_t) ((upper_32 >> 24) & 0xFF);
     msg.buf[6] = (uint8_t) ((upper_32 >> 16) & 0xFF);
     msg.buf[5] = (uint8_t) ((upper_32 >> 8) & 0xFF);
-    msg.buf[4] = (uint8_t) (upper_32 & 0xFF);
+    msg.buf[4] = (uint8_t)  (upper_32 & 0xFF);
     msg.buf[3] = (uint8_t) ((lower_32 >> 24) & 0xFF);
     msg.buf[2] = (uint8_t) ((lower_32 >> 16) & 0xFF);
     msg.buf[1] = (uint8_t) ((lower_32 >> 8) & 0xFF);
-    msg.buf[0] = (uint8_t) (lower_32 & 0xFF);
+    msg.buf[0] = (uint8_t)  (lower_32 & 0xFF);
     uint8_t result = this->can_bus->write(msg); // Send the message to the next available mailbox
     return result; // Return the result of the write (1 for success, -1 for failure)
 }

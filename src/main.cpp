@@ -188,6 +188,8 @@ void setup() {
     node_handle.initNode();
     node_handle.requestSyncTime();  // Sync time with ROS master
 
+    'A'
+
     // Set up the CAN bus
     can1.begin();
     can1.setBaudRate(500000); // 500kbps
@@ -377,10 +379,10 @@ void loop() {
 //                steering_encoder->get_position());
 //    }
 
-    test_output_msg.data = test_output_string;
+//    test_output_msg.data = test_output_string;
 
     // Publish the test output message
-    test_output_pub.publish(&test_output_msg);
+//    test_output_pub.publish(&test_output_msg);
 
     system_message_count = 0;
     for (char *string: system_status_messages) {

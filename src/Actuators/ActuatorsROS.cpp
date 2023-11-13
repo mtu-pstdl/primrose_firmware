@@ -50,6 +50,8 @@ void ActuatorsROS::update() {
     this->output_topic->data[16]  = this->actuator->get_fault_flags(0);
     this->output_topic->data[17]  = this->actuator->get_fault_flags(1);
 
+
+    this->output_topic->data[19]  = this->increment++;
 }
 
 void ActuatorsROS::publish() {
