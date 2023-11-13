@@ -18,15 +18,22 @@
 #define RES12           12
 #define RES14           14
 
+#define SPI_INTERFACE   SPI
+
+#define MAX_ATTEMPTS_PER_UPDATE 5
+#define MAX_INCREMENT_JITTER    2000
+
 class SteeringEncoders : public PositionSensor {
 
 private:
     /*Object creation*/
     uint8_t cs_pin;
 
-    bool initialized = false;
-    bool failure     = false;
-    bool valid       = false;
+    bool initializing       = false;
+    bool initialized        = false;
+    bool failure            = false;
+    bool signal_valid       = false;
+    bool valid_position     = false;
 
     uint16_t raw_position = 0;
     uint16_t position = 0;
@@ -34,18 +41,12 @@ private:
     uint16_t last_position = 0;
     uint32_t last_update_time = 0;
 
-    void begin_transaction() const {
-        SPI.beginTransaction(SPISettings(100000, LSBFIRST, SPI_MODE0));
-        SPI.setClockDivider(SPI_CLOCK_DIV32);
-        digitalWrite(cs_pin, LOW); // Select
-        delayMicroseconds(10); //wait for the encoder to be ready (3us as specified in the datasheet)
-    }
+    uint8_t  attempts = 0;
+    uint32_t initialization_time = 0;
 
-    void end_transaction() const {
-        delayMicroseconds(5); //wait for the encoder to be ready (3us as specified in the datasheet
-        digitalWrite(cs_pin, HIGH); // Deselect
-        SPI.endTransaction();
-    }
+    void begin_transaction() const;
+
+    void end_transaction() const;
 
     void reset() {
         begin_transaction();
@@ -54,15 +55,22 @@ private:
         delayMicroseconds(3);
         spiWriteRead(AMT22_RESET);
         end_transaction();
-        delay(250); //250 second delay to allow the encoder to start back up
+        this->initialization_time = millis();
     }
 
     void readPosition();
 
-    uint8_t spiWriteRead(uint8_t byte);
+    static uint8_t spiWriteRead(uint8_t byte);
 
     void update_velocity() {
-        uint16_t delta_position = this->position - this->last_position;
+        if (!this->signal_valid) return;
+        int32_t delta_position = this->position - this->last_position;
+        if (delta_position > MAX_INCREMENT_JITTER || delta_position < -MAX_INCREMENT_JITTER) {
+            this->signal_valid = false;
+            return;
+        } else {
+            this->valid_position = true;
+        }
         uint32_t delta_time = millis() - this->last_update_time;
         this->velocity = delta_position / (float_t) delta_time;
         this->last_position = this->position;
@@ -88,11 +96,32 @@ public:
      * @return false if update was unsuccessful
      */
     void update() override {
-        if (!this->initialized) {
-//            this->reset();
+        if (this->cs_pin == 0) {
+            this->failure = true;
+            return;
+        }
+        if (!this->initialized && !this->initializing) {
+            this->reset();
+            this->initializing = true;
+        }
+        if (this->initializing && millis() - this->initialization_time > 1000) {
+            this->initializing = false;
             this->initialized = true;
         }
-        this->readPosition();
+        if (this->initializing) {
+            return;
+        }
+        this->attempts = 0;
+        while (this->attempts < MAX_ATTEMPTS_PER_UPDATE) {
+            this->readPosition();
+            if (this->signal_valid) {
+                this->position = this->raw_position & 0x3FFF;
+                last_update_time = millis();
+                break;
+            }
+            this->attempts++;
+            delayMicroseconds(50);
+        }
         this->update_velocity();
     }
 
@@ -112,10 +141,19 @@ public:
         return this->velocity;
     }
 
-    bool data_valid(){
-        return this->valid;
+    bool data_valid() const {
+        return this->signal_valid;
     }
 
+    bool position_valid() const {
+        return this->valid_position;
+    }
+
+    bool is_valid() override {
+        return this->initialized && !this->failure && this->signal_valid;
+    }
+
+    void zeroEncoder();
 };
 
 

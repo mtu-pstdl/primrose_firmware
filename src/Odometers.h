@@ -85,7 +85,7 @@ class Odometers {
             for (int j = 0; j < 4; j++) {
                 odometer_values[j] = extract_odometer(eeprom_odometers[i].values[j]);
             }
-            // Determine which odometer data has the highest sequence ID and a valid CRC16 checksum
+            // Determine which odometer data has the highest sequence ID and a signal_valid CRC16 checksum
             uint16_t highest_sequence_id = 0;
             uint8_t highest_sequence_id_index = 0;
 

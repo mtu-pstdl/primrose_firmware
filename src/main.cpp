@@ -76,7 +76,7 @@ EStopController* e_stop_controller;
 HopperDoor* hopper_door;
 AccessoryPower* accessory_power;
 
-SteeringEncoders* steering_encoder;
+//SteeringEncoders* steering_encoder;
 
 #define SYSTEM_INFO_COUNT 10
 char* system_info_strings[SYSTEM_INFO_COUNT];
@@ -196,11 +196,15 @@ void setup() {
     can1.enableFIFO();
     can1.enableFIFOInterrupt();
 
-    pinMode(13, OUTPUT);
-    pinMode(12, INPUT);
-    pinMode(11, OUTPUT);
+//    pinMode(13, OUTPUT);
+//    pinMode(12, INPUT);
+//    pinMode(11, OUTPUT);
     SPI.begin();
+    SPI1.begin();
 //    SPI.setCS(0);
+//    SPI.setMOSI(11);
+//    SPI.setMISO(12);
+//    SPI.setSCK(13);
 
     // Setup the odometer reset subscriber
     node_handle.subscribe(odometer_reset_sub);
@@ -208,7 +212,7 @@ void setup() {
     // Setup the test output publisher
     node_handle.advertise(test_output_pub);
 
-    steering_encoder = new SteeringEncoders(10);
+//    steering_encoder = new SteeringEncoders(10);
 
     for (int i = 0; i < 6; i++) {
         odrives[i] = new ODrivePro(i, &can1, &node_handle);
@@ -245,23 +249,23 @@ void setup() {
                                    "Conveyor");
 
     actuators[0] = new ActuatorUnit(128,
-                                    new SteeringEncoders(5),
+                                    new SteeringEncoders(7),
                                     new SuspensionEncoders(0x01)); // Slot 3L
 
     actuators[1] = new ActuatorUnit(129,
-                                    new SteeringEncoders(6),
+                                    new SteeringEncoders(8),
                                     new SuspensionEncoders(0x02)); // Slot 2R
     actuators[1]->set_inverted(true,0); // Set the motor to run in the opposite direction (for the conveyor
     actuators[1]->set_inverted(true,1);
 
     actuators[2] = new ActuatorUnit(130,
-                                    new SteeringEncoders(7),
+                                    new SteeringEncoders(9),
                                     new SuspensionEncoders(0x03)); // Slot 2L
     actuators[2]->set_inverted(true,0);
     actuators[2]->set_inverted(true,1);
 
     actuators[3] = new ActuatorUnit(131,
-                                    new SteeringEncoders(9),
+                                    new SteeringEncoders(10),
                                     new SuspensionEncoders(0x04)); // Slot 3R
     actuators[3]->set_inverted(true,0);
 
@@ -350,23 +354,28 @@ void loop() {
 
     ADAU_BUS_INTERFACE.parse_buffer(); // Update the ADAU bus
 
-    steering_encoder->update();
-    // Set the test output message to the current steering encoder value in binary and decimal
-    test_output_string[0] = '0';
-    test_output_string[1] = 'b';
-    for (int i = 0; i < 16; i++) {
-        test_output_string[i + 2] = (steering_encoder->get_raw_position() >> (15 - i)) & 0x01 ? '1' : '0';
-    }
-//    test_output_string[18] = ' ';
-    if (steering_encoder->data_valid()){
-        sprintf(test_output_string + 18, ",   Valid: %ld : %ld",
-                steering_encoder->get_position(),
-                steering_encoder->get_raw_position() & 0x3FFF);
-    } else {
-        sprintf(test_output_string + 18, ", Invalid: %ld : %ld",
-                steering_encoder->get_position(),
-                steering_encoder->get_raw_position() & 0x3FFF);
-    }
+//    steering_encoder->update();
+//     Set the test output message to the current steering encoder value in binary and decimal
+//    test_output_string[0] = '0';
+//    test_output_string[1] = 'b';
+//    for (int i = 0; i < 16; i++) {
+//        test_output_string[i + 2] = (steering_encoder->get_raw_position() >> (15 - i)) & 0x01 ? '1' : '0';
+//    }
+    // Declare 2 char strings for "Junk" and "Good"
+//    test_output_string[18] = '\0';
+//    char junk[] = "Junk";
+//    char good[] = "Data";
+//    char* valid_string = steering_encoder->position_valid() ? good : junk;
+//    if (steering_encoder->data_valid()){
+//        sprintf(test_output_string + 18, ", Validated %s: %ld : %ld",
+//                valid_string,
+//                steering_encoder->get_raw_position() & 0x3FFF,
+//                steering_encoder->get_position());
+//    } else {
+//        sprintf(test_output_string + 18, ",        Invalid: %ld : %ld",
+//                steering_encoder->get_raw_position() & 0x3FFF,
+//                steering_encoder->get_position());
+//    }
 
     test_output_msg.data = test_output_string;
 

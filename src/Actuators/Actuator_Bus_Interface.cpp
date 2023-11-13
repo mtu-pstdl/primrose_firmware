@@ -66,7 +66,7 @@ void Actuator_Bus_Interface::process_data_serial(serial_message *msg) {
         // Get the CRC from the response
         crc = (uint16_t) (this->response_buffer[msg->data_length] << 8 | this->response_buffer[msg->data_length + 1]);
         if (crc == calc_crc) {
-            // The response is valid
+            // The response is signal_valid
             this->waiting_for_response = false;
             if (msg->object != nullptr && msg->callback != nullptr) {
                 // Call the callback function

@@ -25,7 +25,7 @@ void ADAU_Bus_Interface::load_header() {
             this->message_header.sensor_id = this->header_buffer[0];
             this->message_header.data_length = this->header_buffer[1];
             this->message_header.checksum = this->header_buffer[2];
-            // Check if the data length is valid
+            // Check if the data length is signal_valid
             if (this->message_header.data_length > 254) {
                 // The data length is invalid
                 // Reset the header received flag
@@ -35,7 +35,7 @@ void ADAU_Bus_Interface::load_header() {
                 // Break out of the while loop
                 break;
             }
-            // The header is valid
+            // The header is signal_valid
             this->current_state = waiting_for_data;
             // Reset the header length
             this->header_length = 0;
@@ -93,9 +93,9 @@ void ADAU_Bus_Interface::finish_message() {
 }
 
 void ADAU_Bus_Interface::process_message() {
-    // Check if the message is valid
+    // Check if the message is signal_valid
     if (this->validate_checksum()) {
-        // The message is valid
+        // The message is signal_valid
         // Find the sensor that sent the message
         for (int i = 0; i < this->num_sensors; i++) {
             if (this->sensors[i]->get_sensor_id() == this->message_header.sensor_id) {
@@ -105,7 +105,7 @@ void ADAU_Bus_Interface::process_message() {
                        this->message_header.data_length);
                 // Set the sensor's last update time
                 this->sensors[i]->set_last_update_time(millis());
-                // Set the sensor's valid data flag
+                // Set the sensor's signal_valid data flag
                 this->sensors[i]->set_valid(true);
                 // Break out of the for loop
                 break;
