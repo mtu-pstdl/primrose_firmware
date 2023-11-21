@@ -188,8 +188,6 @@ void setup() {
     node_handle.initNode();
     node_handle.requestSyncTime();  // Sync time with ROS master
 
-    'A'
-
     // Set up the CAN bus
     can1.begin();
     can1.setBaudRate(500000); // 500kbps
@@ -198,15 +196,8 @@ void setup() {
     can1.enableFIFO();
     can1.enableFIFOInterrupt();
 
-//    pinMode(13, OUTPUT);
-//    pinMode(12, INPUT);
-//    pinMode(11, OUTPUT);
     SPI.begin();
     SPI1.begin();
-//    SPI.setCS(0);
-//    SPI.setMOSI(11);
-//    SPI.setMISO(12);
-//    SPI.setSCK(13);
 
     // Setup the odometer reset subscriber
     node_handle.subscribe(odometer_reset_sub);

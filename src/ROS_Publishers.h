@@ -14,6 +14,9 @@
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/String.h"
 
 /**
+ * @file ROS_Publishers.h
+ * @brief This file contains the declarations of all the ROS publishers used in the project.
+ *
  * All publishers need to be declared at compile time, so they can't be dynamically created within
  * the ODrive_ROS class nor the Actuator_ROS class. Instead, they are declared here and then
  * their pointers are passed to the ODrive_ROS and Actuator_ROS classes.

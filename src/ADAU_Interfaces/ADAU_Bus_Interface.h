@@ -87,6 +87,10 @@ private:
 
 public:
 
+    /**
+     * This constructor initializes the serial interface to the Analog Data Acquisition Unit (ADAU)
+     * and resets the ADAU to a known state. And begins reading data from the ADAU.
+     */
     ADAU_Bus_Interface(){
         ADAU_INTERFACE.begin(ADAU_BAUD_RATE);
         pinMode(ADAU_RESET_PIN, OUTPUT);

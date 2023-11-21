@@ -22,6 +22,10 @@ uint16_t Actuator_Bus_Interface::crc16(const uint8_t *packet, uint32_t nBytes) {
     return crc;
 }
 
+/**
+ * @brief Processes serial messages that do not contain data
+ * @param msg The serial message to process
+ */
 void Actuator_Bus_Interface::process_no_data_serial(serial_message* msg){
     if (Serial2.available() >= 1) {
         this->total_messages_received++;
@@ -50,6 +54,10 @@ void Actuator_Bus_Interface::process_no_data_serial(serial_message* msg){
     }
 }
 
+/**
+ * @brief Processes serial messages that contain data
+ * @param msg The serial message to process
+ */
 void Actuator_Bus_Interface::process_data_serial(serial_message *msg) {
     if (Serial2.available() == msg->data_length + sizeof(uint16_t)){
         this->total_messages_received++; // Increment the total messages received
@@ -91,6 +99,9 @@ void Actuator_Bus_Interface::process_data_serial(serial_message *msg) {
     }
 }
 
+/**
+ * @brief Checks for a response to a sent message
+ */
 void Actuator_Bus_Interface::check_for_response(){
     serial_message* msg = this->message_queue[this->message_queue_dequeue_position];
     if(msg->expect_response) { // Determine if we are waiting for data or just a success serial_message
@@ -119,6 +130,10 @@ void Actuator_Bus_Interface::check_for_response(){
     }
 }
 
+/**
+ * @brief Sends messages and checks for responses
+ * @return True if a message was sent or a response was received, false otherwise
+ */
 boolean Actuator_Bus_Interface::spin() {
     if (this->waiting_for_response){
         this->check_for_response();
