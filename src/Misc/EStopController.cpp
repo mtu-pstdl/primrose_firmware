@@ -6,6 +6,7 @@
 
 void EStopController::check_for_faults() {
     sprintf(this->estop_message, "");
+    char tripped_message[50];
     if (!automatic_estop_enabled || automatic_estop_inhibited) {
         EStopDevice* estop_device = get_estop_device(0);
         for (int i = 0; estop_device != nullptr; i++) {
@@ -13,7 +14,13 @@ void EStopController::check_for_faults() {
             if (estop_device != nullptr) {
                 // still check for faults as this is used by modules to detect internal faults
                 estop_device->tripped(tripped_device_name, tripped_device_message);
-                sprintf(this->estop_message, "*[%s] %s\n", tripped_device_name, tripped_device_message);
+                sprintf(tripped_message, "*[%s] %s\n", tripped_device_name, tripped_device_message);
+                if (strlen(this->estop_message) + strlen(tripped_message) > STATUS_MESSAGE_LENGTH - 42) {
+                    sprintf(tripped_message, "[Further Faults Omitted, Buffer Exceeded]\n");
+                    strcat(this->estop_message, tripped_message);
+                    break;
+                }
+                strcat(this->estop_message, tripped_message);
                 // Reset the tripped device name and message
                 sprintf(this->tripped_device_name, "NULL");
                 sprintf(this->tripped_device_message, "NULL");
@@ -23,7 +30,6 @@ void EStopController::check_for_faults() {
     }
     this->should_trigger_estop = false;
     this->number_of_tripped_devices = 0;
-    char tripped_message[50];
     EStopDevice* estop_device = get_estop_device(0);
     for (int i = 0; estop_device != nullptr; i++) {
         estop_device = get_estop_device(i);
@@ -32,6 +38,12 @@ void EStopController::check_for_faults() {
                 this->should_trigger_estop = true;
                 this->number_of_tripped_devices++;
                 sprintf(tripped_message, "[%s] %s\n", tripped_device_name, tripped_device_message);
+                if (strlen(this->estop_message) + strlen(tripped_message) > STATUS_MESSAGE_LENGTH - 42) {
+                    sprintf(tripped_message, "[Further Faults Omitted, Buffer Exceeded]\n");
+                    strcat(this->estop_message, tripped_message);
+                    this->trigger_estop(true, false);
+                    break;
+                }
                 strcat(this->estop_message, tripped_message);
                 // Reset the tripped device name and message
                 sprintf(this->tripped_device_name, "NULL");
@@ -104,10 +116,6 @@ void EStopController::resume() {
 }
 
 void EStopController::update() {
-//    if (millis() - last_pi_heartbeat > HEARTBEAT_INTERVAL) {
-//        sprintf(this->estop_message, "E-Stop Triggered: No PI Heartbeat\n");
-//        this->trigger_estop(false, false);
-//    }
     // Check how many devices are in the linked list
     if (!estop_triggered) {
         if (millis() - estop_resume_time > 3000) this->automatic_estop_inhibited = false;

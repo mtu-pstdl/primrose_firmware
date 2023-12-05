@@ -248,27 +248,34 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
     // 2. Logic battery voltage too low
     // 3. Main battery voltage too low
     // 4. Controller temperature has exceeded 80C
+    bool tripped = false;
+    sprintf(device_name, "Actuator Unit: %d", this->id);
+    sprintf(device_message, "");
+    char temp[50];
     if (!this->connected) {
-        sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(device_message, "Lost communication");
-        return true;
+        sprintf(temp, "Lost Connection ");
+        strcat(device_message, temp);
+        tripped = true;
     }
     if (this->get_logic_battery_voltage() < 10 && this->get_logic_battery_voltage() != FP_NAN) {
         sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(device_message, "Logic battery voltage too low: %0.1fV", this->get_logic_battery_voltage());
-        return true;
+        sprintf(temp, "Logic bat volt low: %0.1fV ", this->get_logic_battery_voltage());
+        strcat(device_message, temp);
+        tripped = true;
     }
     if (this->get_main_battery_voltage() < 46 && this->get_main_battery_voltage() != FP_NAN) {
         sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(device_message, "Main battery voltage too low: %0.1fV", this->get_main_battery_voltage());
-        return true;
+        sprintf(temp, "Main bat volt low: %0.1fV ", this->get_main_battery_voltage());
+        strcat(device_message, temp);
+        tripped = true;
     }
     if (this->get_temperature() > 80) {
         sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(device_message, "Controller temperature too high: %0.2fC", this->get_temperature());
-        return true;
+        sprintf(temp, "Temp high: %0.2fC ", this->get_temperature());
+        strcat(device_message, temp);
+        tripped = true;
     }
-    return false;
+    return tripped;
 }
 
 float_t ActuatorUnit::get_duty_cycle(uint8_t motor) {

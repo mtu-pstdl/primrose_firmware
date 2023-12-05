@@ -19,6 +19,7 @@
 // The time in milliseconds to wait after an estop is triggered before the main contactor is opened (to reduce back EMF)
 #define ESTOP_CONTACTOR_DELAY 2500  // 2.5 seconds
 #define HEARTBEAT_INTERVAL 4000  // 4 seconds
+#define STATUS_MESSAGE_LENGTH 1024
 
 class EStopController : public ROSNode {
 
@@ -80,13 +81,13 @@ private:
     }
 
     // Automatic E-Stop variables
-    boolean         automatic_estop_enabled = true;
+    boolean         automatic_estop_enabled = false;
     boolean         automatic_estop_inhibited = false;
     boolean         should_trigger_estop = false;
     uint32_t        number_of_tripped_devices = 0;
     char*           tripped_device_name = new char[30];
     char*           tripped_device_message = new char[50];
-    char*           estop_message = new char[256];
+    char*           estop_message = new char[STATUS_MESSAGE_LENGTH];
 
     // E-Stop variables
     boolean  estop_triggered = false;
