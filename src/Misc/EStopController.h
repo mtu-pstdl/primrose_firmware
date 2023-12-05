@@ -52,7 +52,12 @@ private:
 
     void add_to_estop_device_list(EStopDevice* estop_device) {
         EStopDeviceList* current = estop_devices;
-        while (current->next != nullptr) {
+        while (true) {
+            if (current->estop_device == nullptr) {
+                current->estop_device = estop_device;
+                return;
+            }
+            if (current->next == nullptr) break;
             current = current->next;
         }
         current->next = new EStopDeviceList;
@@ -64,11 +69,12 @@ private:
      * @param index The index of the EStopDevice to get
      * @return A pointer to the EStopDevice at the given index or nullptr if the index is out of bounds
      */
-    EStopDevice* get_estop_device(uint32_t index) {
+    EStopDevice* get_estop_device(int32_t index) {
         EStopDeviceList* current = estop_devices;
-        for (uint32_t i = 0; i < index; i++) {
+        while (index > 0) {
             if (current->next == nullptr) return nullptr;
             current = current->next;
+            index--;
         }
         return current->estop_device;
     }

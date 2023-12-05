@@ -5,6 +5,7 @@
 #include "EStopController.h"
 
 void EStopController::check_for_faults() {
+    sprintf(this->estop_message, "");
     if (!automatic_estop_enabled || automatic_estop_inhibited) {
         EStopDevice* estop_device = get_estop_device(0);
         for (int i = 0; estop_device != nullptr; i++) {
@@ -108,18 +109,6 @@ void EStopController::update() {
 //        this->trigger_estop(false, false);
 //    }
     // Check how many devices are in the linked list
-    uint32_t device_count = 0;
-    EStopDeviceList* current = estop_devices;
-    while (current->next != nullptr) {
-        current = current->next;
-        device_count++;
-    }
-    if (device_count == 0) {
-        sprintf(this->estop_message, "E-Stop Triggered: No E-Stop Devices\n");
-        this->trigger_estop(false, false);
-    } else {
-        sprintf(this->estop_message, "All ok: %lu devices\n", device_count);
-    }
     if (!estop_triggered) {
         if (millis() - estop_resume_time > 3000) this->automatic_estop_inhibited = false;
         this->check_for_faults();

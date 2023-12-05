@@ -216,9 +216,9 @@ private:
     telemetry_message* command_messages;
 
     // Shared variables between motor 1 and motor 2
-    uint16_t controller_temperature = 0;
-    uint16_t main_battery_voltage   = 0;
-    uint16_t logic_battery_voltage  = 0;
+    uint16_t controller_temperature = UINT16_MAX;
+    uint16_t main_battery_voltage   = UINT16_MAX;
+    uint16_t logic_battery_voltage  = UINT16_MAX;
     uint16_t status = 0;
     uint16_t data_flags = 0;  // A bitmask of the data that has been received from the motor
 
