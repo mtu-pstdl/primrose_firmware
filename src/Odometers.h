@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 
-#define ODOMETER_COUNT 15
+#define ODOMETER_COUNT 16
 #define STARTING_ODOMETER_ADDRESS 0
 #define SAVE_ODOMETER_INTERVAL 30  // Unit: seconds
 

@@ -7,7 +7,8 @@
 void IMU::update() {
     // Read the FIFO
     icm_20948_DMP_data_t data;
-
+    this->imu_msg->header.stamp = this->node_handle->now();
+    if (!this->config_success) return;
     if (!this->imu.isConnected()) {
         this->imu_msg->header.frame_id = "imu_link_failed";
         return;
@@ -17,7 +18,6 @@ void IMU::update() {
 
     this->imu.readDMPdataFromFIFO(&data);
     // Update the message
-    this->imu_msg->header.stamp = this->node_handle->now();
 
     double q1 = ((double)data.PQuat6.Data.Q1) / 1073741824.0; // Convert to double. Divide by 2^30
     double q2 = ((double)data.PQuat6.Data.Q2) / 1073741824.0; // Convert to double. Divide by 2^30

@@ -81,10 +81,19 @@ ros_topic odrive6_encoder_topic = {
         .message = &odrive6_encoder_msg
 };
 
+std_msgs::Int32MultiArray odrive7_encoder_msg;
+ros::Publisher odrive7_encoder_pub("mciu/Conveyor/odrive/output", &odrive7_encoder_msg);
+
+#define ODRIVE7_ENCODER_TOPIC_NUM 6
+ros_topic odrive7_encoder_topic = {
+        .publisher = &odrive7_encoder_pub,
+        .message = &odrive7_encoder_msg
+};
+
 std_msgs::Int32MultiArray actuator1_encoder_msg;
 ros::Publisher actuator1_encoder_pub("mciu/Front_Left/actuators/output", &actuator1_encoder_msg);
 
-#define ACTUATOR1_ENCODER_TOPIC_NUM 6
+#define ACTUATOR1_ENCODER_TOPIC_NUM 7
 ros_topic actuator1_encoder_topic = {
         .publisher = &actuator1_encoder_pub,
         .message = &actuator1_encoder_msg
@@ -93,7 +102,7 @@ ros_topic actuator1_encoder_topic = {
 std_msgs::Int32MultiArray actuator2_encoder_msg;
 ros::Publisher actuator2_encoder_pub("mciu/Front_Right/actuators/output", &actuator2_encoder_msg);
 
-#define ACTUATOR2_ENCODER_TOPIC_NUM 7
+#define ACTUATOR2_ENCODER_TOPIC_NUM 8
 ros_topic actuator2_encoder_topic = {
         .publisher = &actuator2_encoder_pub,
         .message = &actuator2_encoder_msg
@@ -102,7 +111,7 @@ ros_topic actuator2_encoder_topic = {
 std_msgs::Int32MultiArray actuator3_encoder_msg;
 ros::Publisher actuator3_encoder_pub("mciu/Rear_Left/actuators/output", &actuator3_encoder_msg);
 
-#define ACTUATOR3_ENCODER_TOPIC_NUM 8
+#define ACTUATOR3_ENCODER_TOPIC_NUM 9
 ros_topic actuator3_encoder_topic = {
         .publisher = &actuator3_encoder_pub,
         .message = &actuator3_encoder_msg
@@ -111,7 +120,7 @@ ros_topic actuator3_encoder_topic = {
 std_msgs::Int32MultiArray actuator4_encoder_msg;
 ros::Publisher actuator4_encoder_pub("mciu/Rear_Right/actuators/output", &actuator4_encoder_msg);
 
-#define ACTUATOR4_ENCODER_TOPIC_NUM 9
+#define ACTUATOR4_ENCODER_TOPIC_NUM 10
 ros_topic actuator4_encoder_topic = {
         .publisher = &actuator4_encoder_pub,
         .message = &actuator4_encoder_msg
@@ -120,7 +129,7 @@ ros_topic actuator4_encoder_topic = {
 sensor_msgs::Imu imu_msg;
 ros::Publisher imu_pub("/mciu/Imu", &imu_msg);
 
-#define IMU_TOPIC_NUM 10
+#define IMU_TOPIC_NUM 11
 ros_topic imu_topic = {
         .publisher = &imu_pub,
         .message = &imu_msg
@@ -129,13 +138,13 @@ ros_topic imu_topic = {
 sensor_msgs::BatteryState battery_msg;
 ros::Publisher battery_pub("/mciu/Battery", &battery_msg);
 
-#define BATTERY_TOPIC_NUM 11
+#define BATTERY_TOPIC_NUM 12
 ros_topic battery_topic = {
         .publisher = &battery_pub,
         .message = &battery_msg
 };
 
-#define ESTOP_TOPIC_NUM 12
+#define ESTOP_TOPIC_NUM 13
 std_msgs::String estop_msg;
 ros::Publisher estop_pub("/mciu/estop_output", &estop_msg);
 ros_topic estop_topic = {
@@ -143,13 +152,30 @@ ros_topic estop_topic = {
         .message = &estop_msg
 };
 
-ros_topic* odrive_encoder_topics[6] = {
+#define SUSPENSION_LOAD_CELL_TOPIC_NUM 14
+std_msgs::Int32MultiArray suspension_load_cell_msg;
+ros::Publisher suspension_load_cell_pub("/mciu/load_cells/suspension/output", &suspension_load_cell_msg);
+ros_topic suspension_load_cell_topic = {
+        .publisher = &suspension_load_cell_pub,
+        .message = &suspension_load_cell_msg
+};
+
+#define HOPPER_LOAD_CELL_TOPIC_NUM 15
+std_msgs::Int32MultiArray hopper_load_cell_msg;
+ros::Publisher hopper_load_cell_pub("/mciu/load_cells/hopper/output", &hopper_load_cell_msg);
+ros_topic hopper_load_cell_topic = {
+        .publisher = &hopper_load_cell_pub,
+        .message = &hopper_load_cell_msg
+};
+
+ros_topic* odrive_encoder_topics[7] = {
         &odrive1_encoder_topic,
         &odrive2_encoder_topic,
         &odrive3_encoder_topic,
         &odrive4_encoder_topic,
         &odrive5_encoder_topic,
-        &odrive6_encoder_topic
+        &odrive6_encoder_topic,
+        &odrive7_encoder_topic
 };
 
 ros_topic* actuator_encoder_topics[4] = {
@@ -159,7 +185,12 @@ ros_topic* actuator_encoder_topics[4] = {
         &actuator4_encoder_topic
 };
 
-#define ALL_TOPICS_LENGTH 14
+ros_topic* load_cell_topics[2] = {
+        &suspension_load_cell_topic,
+        &hopper_load_cell_topic
+};
+
+#define ALL_TOPICS_LENGTH 16
 ros_topic* all_topics[ALL_TOPICS_LENGTH] = {
         &odrive1_encoder_topic,
         &odrive2_encoder_topic,
@@ -167,13 +198,16 @@ ros_topic* all_topics[ALL_TOPICS_LENGTH] = {
         &odrive4_encoder_topic,
         &odrive5_encoder_topic,
         &odrive6_encoder_topic,
+        &odrive7_encoder_topic,
         &actuator1_encoder_topic,
         &actuator2_encoder_topic,
         &actuator3_encoder_topic,
         &actuator4_encoder_topic,
         &imu_topic,
         &battery_topic,
-        &estop_topic
+        &estop_topic,
+        &suspension_load_cell_topic,
+        &hopper_load_cell_topic
 };
 
 #endif //TEENSYCANTRANSCEIVER_ROS_PUBLISHERS_H

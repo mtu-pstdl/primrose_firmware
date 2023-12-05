@@ -23,23 +23,33 @@ class LoadCells : public ROSNode {
 
     uint8_t sensor_id;
 
+    char* name = new char[30];
+
     ros::Subscriber<std_msgs::Int32MultiArray, LoadCells> command_sub;
 
     ADAU_Sensor* sensor;
 
     struct data_struct {
-        int32_t sensor[4];
-        uint8_t flags;
+        int32_t sensor[4];  // Fixed point, x100
+        uint8_t flags;      // First 4 bits are error flags for each sensor
     };
 
-    data_struct data;
+    data_struct data = {
+            .sensor = {0, 0, 0, 0},
+            .flags = 0b00001111
+    };
 
 public:
 
-    LoadCells(uint8_t sensor_id, std_msgs::Int32MultiArray* output_topic) :
+    LoadCells(uint8_t sensor_id,  const char* name, std_msgs::Int32MultiArray* output_topic) :
             command_sub("template_for_later", &LoadCells::control_callback, this){
         this->sensor_id = sensor_id;
         this->output_topic = output_topic;
+        this->output_topic->data_length = 4;
+        this->output_topic->data = data.sensor;
+        // Change the name of the command topic to the correct name
+        command_sub.topic_ = this->name;
+        sprintf(this->name, "/mciu/load_cells/%s/command", name);
         this->sensor = new ADAU_Sensor(sensor_id, &data, sizeof(data_struct));
     }
 

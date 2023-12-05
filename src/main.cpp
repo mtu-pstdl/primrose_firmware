@@ -59,11 +59,13 @@ char test_output_string[100];
 
 //IntervalTimer load_cell_read_timer;
 
-ODrivePro* odrives[6];
-ODrive_ROS* odrive_ros[6];
+ODrivePro* odrives[7];
+ODrive_ROS* odrive_ros[7];
 
 ActuatorUnit* actuators[4];
 ActuatorsROS* actuators_ros[4];
+
+LoadCells* load_cells[2];
 
 BatteryMonitor* battery_monitor;
 IMU* imu;
@@ -207,9 +209,8 @@ void setup() {
 
 //    steering_encoder = new SteeringEncoders(10);
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 7; i++) {
         odrives[i] = new ODrivePro(i, &can1, &node_handle);
-//        odometers.reset_odometer(i);
         odrives[i]->pass_odometer_data(odometers.get_odometer(i));
     }
 
@@ -240,6 +241,9 @@ void setup() {
     odrive_ros[5] = new ODrive_ROS(odrives[5],
                                    static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[5]->message),
                                    "Conveyor");
+    odrive_ros[6] = new ODrive_ROS(odrives[6],
+                                   static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[6]->message),
+                                   "Hopper");
 
     actuators[0] = new ActuatorUnit(128,
                                     new SteeringEncoders(7),
@@ -275,6 +279,11 @@ void setup() {
                                         static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[3]->message),
                                         "Rear_Right");
 
+    load_cells[0] = new LoadCells(0x01, "suspension",
+                                  static_cast<std_msgs::Int32MultiArray*>(load_cell_topics[0]->message));
+    load_cells[1] = new LoadCells(0x02, "hopper",
+                                  static_cast<std_msgs::Int32MultiArray*>(load_cell_topics[1]->message));
+
     e_stop_controller = new EStopController(static_cast<std_msgs::String*>(all_topics[ESTOP_TOPIC_NUM]->message));
     hopper_door = new HopperDoor();
 
@@ -289,8 +298,9 @@ void setup() {
 
     // Add all ros nodes to the ros node array
     int ros_node_count = 0;
-    for (auto & odrive_ro : odrive_ros) ros_nodes[ros_node_count++] = odrive_ro;
-    for (auto & actuator_ro : actuators_ros) ros_nodes[ros_node_count++] = actuator_ro;
+    for (auto & odrive : odrive_ros) ros_nodes[ros_node_count++] = odrive;
+    for (auto & actuator : actuators_ros) ros_nodes[ros_node_count++] = actuator;
+    for (auto & load_cell : load_cells) ros_nodes[ros_node_count++] = load_cell;
     ros_nodes[ros_node_count++] = e_stop_controller;
     ros_nodes[ros_node_count++] = hopper_door;
     ros_nodes[ros_node_count++] = battery_monitor;
