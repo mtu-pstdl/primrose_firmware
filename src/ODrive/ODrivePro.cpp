@@ -568,6 +568,7 @@ bool ODrivePro::tripped(char* name, char* reason) {
     if (!this->is_connected()) {
         sprintf(name, "ODrive: %d", this->can_id);
         sprintf(reason, "CONN LOST");
+//        odrive::sprintf_error_code(reason, 0x0000000F);
         return true;
     }
     // If an odrive reports a SPINOUT error, then it should be ignored and closed loop control should be resumed

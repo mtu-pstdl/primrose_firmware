@@ -13,25 +13,27 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/KeyValue.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/String.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32MultiArray.h"
+#include <TimeLib.h>
 
 #define MAIN_CONTACTOR_PIN 0
 
 // The time in milliseconds to wait after an estop is triggered before the main contactor is opened (to reduce back EMF)
 #define ESTOP_CONTACTOR_DELAY 2500  // 2.5 seconds
 #define HEARTBEAT_INTERVAL 4000  // 4 seconds
-#define STATUS_MESSAGE_LENGTH 1024
+#define STATUS_MESSAGE_LENGTH 800
 
 class EStopController : public ROSNode {
 
 private:
 
     enum ros_commands {
-        ESTOP = 0,
-        RESUME = 1,
-        ENABLE_AUTOMATIC = 2,
-        DISABLE_AUTOMATIC = 3,
-        PI_HEARTBEAT = 4,
-        REMOTE_HEARTBEAT = 5,
+        ESTOP             = 0,  // Trigger an E-Stop
+        RESUME            = 1,  // Resume from an E-Stop
+        ENABLE_AUTOMATIC  = 2,  // Enable automatic E-Stop
+        DISABLE_AUTOMATIC = 3,  // Disable automatic E-Stop
+        SUPPRESS_CURRENT  = 4,  // Ignore errors from currently tripped devices for future E-Stops (doesn't persist across restarts)
+        PI_HEARTBEAT      = 5,  // A heartbeat from the PI to indicate that it is still running
+        REMOTE_HEARTBEAT  = 6,  // A heartbeat from the drivers station to indicate that it is still running
     };
 
     ros::Subscriber<std_msgs::Int32, EStopController> estop_sub;
@@ -47,7 +49,7 @@ private:
      */
     struct EStopDeviceList {
         EStopDevice*     estop_device = nullptr;
-        boolean          has_tripped  = false;
+        boolean          suppressed   = false;
         EStopDeviceList* next         = nullptr;
     };
     EStopDeviceList* estop_devices = new EStopDeviceList;
@@ -63,7 +65,9 @@ private:
             current = current->next;
         }
         current->next = new EStopDeviceList;
+        current->next->suppressed = false;
         current->next->estop_device = estop_device;
+        current->next->next = nullptr;
     }
 
     /**
@@ -71,14 +75,14 @@ private:
      * @param index The index of the EStopDevice to get
      * @return A pointer to the EStopDevice at the given index or nullptr if the index is out of bounds
      */
-    EStopDevice* get_estop_device(int32_t index) {
+    EStopDeviceList* get_estop_device(int32_t index) {
         EStopDeviceList* current = estop_devices;
         while (index > 0) {
             if (current->next == nullptr) return nullptr;
             current = current->next;
             index--;
         }
-        return current->estop_device;
+        return current;
     }
 
     // Automatic E-Stop variables
@@ -108,6 +112,20 @@ private:
         this->last_remote_heartbeat = millis();
     }
 
+    void suppress_current() {
+        EStopDeviceList* current = estop_devices;
+        char temp[150];
+        while (current != nullptr) {
+            if (current->estop_device != nullptr) {
+                if (current->estop_device->tripped(temp, temp)) {
+                    current->suppressed = true;
+                } current->suppressed = false;
+            }
+            if (current->next == nullptr) break;
+            current = current->next;
+        }
+    }
+
 public:
 
     /**
@@ -135,8 +153,10 @@ public:
 
         pinMode(MAIN_CONTACTOR_PIN, OUTPUT);
         digitalWrite(MAIN_CONTACTOR_PIN, HIGH);
-//        this->trigger_estop();
+        // Check if the RTC has a time greater than 10 seconds
+        sprintf(this->estop_message, "[Firmware Start - Main Contactor Opened - E-Stop Triggered]");
 
+        this->trigger_estop(false, false);
     }
 
     /**

@@ -9,48 +9,36 @@ void EStopController::check_for_faults() {
     sprintf(this->tripped_device_name, "NULL");
     sprintf(this->tripped_device_message, "");
     char tripped_message[132];
-    if (!automatic_estop_enabled || automatic_estop_inhibited) {
-        EStopDevice* estop_device = get_estop_device(0);
-        for (int i = 0; estop_device != nullptr; i++) {
-            estop_device = get_estop_device(i);
-            if (estop_device != nullptr) {
-                // still check for faults as this is used by modules to detect internal faults
-                sprintf(this->tripped_device_name, "NULL");
-                sprintf(this->tripped_device_message, "");
-                estop_device->tripped(tripped_device_name, tripped_device_message);
-                sprintf(tripped_message, "*[%s] %s\n", tripped_device_name, tripped_device_message);
-                if (strlen(this->estop_message) + strlen(tripped_message) > STATUS_MESSAGE_LENGTH - 42) {
-                    sprintf(tripped_message, "[Further Faults Omitted, Buffer Exceeded]\n");
-                    strlcat(this->estop_message, tripped_message, STATUS_MESSAGE_LENGTH);
-                    break;
-                }
-                strcat(this->estop_message, tripped_message);
-            }
-        }
-        // Remove the trailing newline
-        this->estop_message[strlen(this->estop_message) - 1] = '\0';
-        return;
-    }
+
     this->should_trigger_estop = false;
     this->number_of_tripped_devices = 0;
-    EStopDevice* estop_device = get_estop_device(0);
-    for (int i = 0; estop_device != nullptr; i++) {
-        estop_device = get_estop_device(i);
-        if (estop_device != nullptr) {
+    boolean buffer_exceeded = false;
+
+    EStopDeviceList* current = estop_devices;
+    EStopDevice* estop_device = nullptr;
+    boolean suppressed = false;
+
+    for (int i = 0; current != nullptr; i++) {
+        current = get_estop_device(i);
+        if (current != nullptr) {
+            estop_device = current->estop_device;
+            suppressed = current->suppressed;
+            // still check for faults as this is used by modules to detect internal faults
             sprintf(this->tripped_device_name, "NULL");
             sprintf(this->tripped_device_message, "");
-            if (estop_device->tripped(tripped_device_name, tripped_device_message)) {
+            bool trip = estop_device->tripped(tripped_device_name, tripped_device_message);
+            if (!trip) continue;
+            if (!(suppressed || (!automatic_estop_enabled || automatic_estop_inhibited))) {
                 this->should_trigger_estop = true;
                 this->number_of_tripped_devices++;
                 sprintf(tripped_message, "[%s] %s\n", tripped_device_name, tripped_device_message);
-                if (strlen(this->estop_message) + strlen(tripped_message) > STATUS_MESSAGE_LENGTH - 42) {
-                    sprintf(tripped_message, "[Further Faults Omitted, Buffer Exceeded]\n");
-                    strlcat(this->estop_message, tripped_message, STATUS_MESSAGE_LENGTH);
-                    this->trigger_estop(true, false);
-                    break;
-                }
-                strcat(this->estop_message, tripped_message);
+            } else sprintf(tripped_message, "*[%s] %s\n", tripped_device_name, tripped_device_message);
+            if (buffer_exceeded) continue;
+            if (strlen(this->estop_message) + strlen(tripped_message) > STATUS_MESSAGE_LENGTH - 42) {
+                buffer_exceeded = true;
+                sprintf(tripped_message, "[Further Faults Omitted, Buffer Exceeded]\n");
             }
+            strlcat(this->estop_message, tripped_message, STATUS_MESSAGE_LENGTH);
         }
     }
     // Remove the trailing newline
@@ -72,6 +60,9 @@ void EStopController::estop_callback(const std_msgs::Int32 &msg) {
         case DISABLE_AUTOMATIC:
             this->automatic_estop_enabled = false;
             break;
+        case SUPPRESS_CURRENT:
+            this->suppress_current();
+            break;
         case PI_HEARTBEAT:
             this->pi_heartbeat();
             break;
@@ -87,12 +78,14 @@ bool EStopController::is_high_voltage_enabled() {
 }
 
 void EStopController::trigger_estop(boolean automatic, boolean remote) {
-    EStopDevice* estop_device = get_estop_device(0);
-    for (int i = 0; estop_device != nullptr; i++) {
-        estop_device = get_estop_device(i);
-        if (estop_device != nullptr) {
-            estop_device->estop();
+    digitalWrite(MAIN_CONTACTOR_PIN, HIGH);
+    EStopDeviceList* current = estop_devices;
+    while (current != nullptr) {
+        if (current->estop_device != nullptr) {
+            current->estop_device->estop();
         }
+        if (current->next == nullptr) break;
+        current = current->next;
     }
     if (!automatic && remote) {
         sprintf(this->estop_message, "E-Stop Triggered Remotely\n");
@@ -103,12 +96,13 @@ void EStopController::trigger_estop(boolean automatic, boolean remote) {
 
 void EStopController::resume() {
     digitalWrite(MAIN_CONTACTOR_PIN, LOW);
-    EStopDevice* estop_device = get_estop_device(0);
-    for (int i = 0; estop_device != nullptr; i++) {
-        estop_device = get_estop_device(i);
-        if (estop_device != nullptr) {
-            estop_device->resume();
+    EStopDeviceList* current = get_estop_device(0);
+    while (current != nullptr) {
+        if (current->estop_device != nullptr) {
+            current->estop_device->resume();
         }
+        if (current->next == nullptr) break;
+        current = current->next;
     }
     estop_triggered = false;
     estop_triggered_time = 0;
