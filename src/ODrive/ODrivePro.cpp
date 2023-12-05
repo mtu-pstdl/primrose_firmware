@@ -567,7 +567,7 @@ bool ODrivePro::tripped(char* name, char* reason) {
     // The only trigger state is if we lose communication with the ODrive
     if (!this->is_connected()) {
         sprintf(name, "ODrive: %d", this->can_id);
-        sprintf(reason, "Lost Connection");
+        sprintf(reason, "CONN LOST");
         return true;
     }
     // If an odrive reports a SPINOUT error, then it should be ignored and closed loop control should be resumed

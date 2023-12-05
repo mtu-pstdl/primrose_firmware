@@ -275,13 +275,12 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
 
     // Check if the motors encoders are healthy
     for (int i = 0; i < 2; i++) {
-        if (!this->motors[i].encoder->is_valid()) {
-            sprintf(temp, "ENCODER M%d INVALID ", i + 1);
+        if (this->motors[i].encoder->fault()) {
+            sprintf(temp, "ENCODER M%d FAULT-", i + 1);
             strcat(device_message, temp);
             tripped = true;
-        }
-        if (this->motors[i].encoder->fault()) {
-            sprintf(temp, "ENCODER M%d FAULT ", i + 1);
+        } else if (!this->motors[i].encoder->is_valid()) {
+            sprintf(temp, "ENCODER M%d INVALID-", i + 1);
             strcat(device_message, temp);
             tripped = true;
         }

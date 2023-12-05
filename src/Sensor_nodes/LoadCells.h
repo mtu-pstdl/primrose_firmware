@@ -13,16 +13,18 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32MultiArray.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/subscriber.h"
 #include "ADAU_Interfaces/ADAU_Sensor.h"
+#include "Misc/EStopDevice.h"
 
 #include <utility>
 
 
-class LoadCells : public ROSNode {
+class LoadCells : public ROSNode, public EStopDevice {
 
     std_msgs::Int32MultiArray* output_topic;
 
     uint8_t sensor_id;
 
+    char* topic_name = new char[30];
     char* name = new char[30];
 
     ros::Subscriber<std_msgs::Int32MultiArray, LoadCells> command_sub;
@@ -48,8 +50,9 @@ public:
         this->output_topic->data_length = 4;
         this->output_topic->data = data.sensor;
         // Change the name of the command topic to the correct name
-        command_sub.topic_ = this->name;
-        sprintf(this->name, "/mciu/%s/Load_cells/command", name);
+        command_sub.topic_ = this->topic_name;
+        sprintf(this->topic_name, "/mciu/%s/Load_cells/command", name);
+        sprintf(this->name, "%s", name);
         this->sensor = new ADAU_Sensor(sensor_id, &data, sizeof(data_struct));
     }
 
@@ -62,6 +65,22 @@ public:
     }
 
     void control_callback(const std_msgs::Int32MultiArray& msg);
+
+    boolean tripped(char* tripped_device_name, char* tripped_device_message) override {
+        if (data.flags != 0) {
+            sprintf(tripped_device_name, "%s: Load Cells", this->name);
+            sprintf(tripped_device_message, "Error flags: ");
+            for (int i = 0; i < 8; i++) {
+                if (data.flags & (1 << i)) {
+                    sprintf(tripped_device_message, "%s%d ", tripped_device_message, 1);
+                } else {
+                    sprintf(tripped_device_message, "%s%d ", tripped_device_message, 0);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
 
 };
 

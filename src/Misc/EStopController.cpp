@@ -52,11 +52,10 @@ void EStopController::check_for_faults() {
                 sprintf(this->tripped_device_message, "NULL");
             }
         }
-        // Remove the trailing newline
-        this->estop_message[strlen(this->estop_message) - 1] = '\0';
     }
+    // Remove the trailing newline
+    this->estop_message[strlen(this->estop_message) - 1] = '\0';
     if (this->should_trigger_estop) this->trigger_estop(true, false);
-
 }
 
 void EStopController::estop_callback(const std_msgs::Int32 &msg) {

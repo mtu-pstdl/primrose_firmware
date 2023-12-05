@@ -297,6 +297,7 @@ void setup() {
 
     for (auto & odrive : odrives) e_stop_controller->add_estop_device(odrive);
     for (auto & actuator : actuators) e_stop_controller->add_estop_device(actuator);
+    for (auto & load_cell : load_cells) e_stop_controller->add_estop_device(load_cell);
 
     // Add all ros nodes to the ros node array
     int ros_node_count = 0;
