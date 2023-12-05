@@ -68,8 +68,8 @@ public:
 
     boolean tripped(char* tripped_device_name, char* tripped_device_message) override {
         if (data.flags != 0) {
-            sprintf(tripped_device_name, "%s: Load Cells", this->name);
-            sprintf(tripped_device_message, "Error flags: ");
+            sprintf(tripped_device_name, "Load Cells: %s", this->name);
+            sprintf(tripped_device_message, "ERROR FLAGS: ");
             for (int i = 0; i < 8; i++) {
                 if (data.flags & (1 << i)) {
                     sprintf(tripped_device_message, "%s%d ", tripped_device_message, 1);

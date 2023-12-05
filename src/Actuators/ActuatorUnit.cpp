@@ -215,14 +215,14 @@ float_t ActuatorUnit::get_temperature() const {
 }
 
 float_t ActuatorUnit::get_main_battery_voltage() const {
-    if (!(this->data_flags & MN_BAT_MASK)) return FP_NAN;
-    if (this->main_battery_voltage == UINT16_MAX) return FP_NAN;
+//    if (!(this->data_flags & MN_BAT_MASK)) return FP_NAN;
+    if (this->main_battery_voltage == UINT16_MAX) return 0;
     return (float_t) this->main_battery_voltage / 10;
 }
 
 float_t ActuatorUnit::get_logic_battery_voltage() const {
-    if (!(this->data_flags & LG_BAT_MASK)) return FP_NAN;
-    if (this->logic_battery_voltage == UINT16_MAX) return FP_NAN;
+//    if (!(this->data_flags & LG_BAT_MASK)) return FP_NAN;
+    if (this->logic_battery_voltage == UINT16_MAX) return 0;
     return (float_t) this->logic_battery_voltage / 10;
 }
 
@@ -254,22 +254,22 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
     char temp[100];
     if (!this->connected) {
         sprintf(temp, "CONN LOST-");
-        strcat(device_message, temp);
+        strlcat(device_message, temp, 99);
         tripped = true;
     }
-    if (this->get_logic_battery_voltage() < 10 && this->get_logic_battery_voltage() != FP_NAN) {
+    if (this->get_logic_battery_voltage() < 10) {
         sprintf(temp, "LOGIC BUS LOW: %0.1fV-", this->get_logic_battery_voltage());
-        strcat(device_message, temp);
+        strlcat(device_message, temp, 99);
         tripped = true;
     }
-    if (this->get_main_battery_voltage() < 46 && this->get_main_battery_voltage() != FP_NAN) {
+    if (this->get_main_battery_voltage() < 46) {
         sprintf(temp, "MAIN BUS LOW: %0.1fV-", this->get_main_battery_voltage());
-        strcat(device_message, temp);
+        strlcat(device_message, temp, 99);
         tripped = true;
     }
     if (this->get_temperature() > 80) {
         sprintf(temp, "TEMP HIGH: %0.2fC-", this->get_temperature());
-        strcat(device_message, temp);
+        strlcat(device_message, temp, 99);
         tripped = true;
     }
 
@@ -277,11 +277,11 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
     for (int i = 0; i < 2; i++) {
         if (this->motors[i].encoder->fault()) {
             sprintf(temp, "ENCODER M%d FAULT-", i + 1);
-            strcat(device_message, temp);
+            strlcat(device_message, temp, 99);
             tripped = true;
         } else if (!this->motors[i].encoder->is_valid()) {
             sprintf(temp, "ENCODER M%d INVALID-", i + 1);
-            strcat(device_message, temp);
+            strlcat(device_message, temp, 99);
             tripped = true;
         }
     }

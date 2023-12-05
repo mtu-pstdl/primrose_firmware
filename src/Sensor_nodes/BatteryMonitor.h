@@ -38,7 +38,7 @@
 
 #define CURRENT_SENSOR_PIN 14
 
-class BatteryMonitor : public ROSNode {
+class BatteryMonitor : public ROSNode, public EStopDevice {
 
 
 private:
@@ -249,6 +249,12 @@ public:
     void subscribe(ros::NodeHandle *node_handle) override {
         node_handle->subscribe(this->battery_sub);
         this->node_handle = node_handle;
+    }
+
+    boolean tripped(char* tripped_device_name, char* tripped_device_message) override {
+        sprintf(tripped_device_name, "Battery Monitor");
+        sprintf(tripped_device_message, "NOT IMPLEMENTED");
+        return false;
     }
 };
 

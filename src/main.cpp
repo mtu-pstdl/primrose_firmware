@@ -279,7 +279,7 @@ void setup() {
                                         static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[3]->message),
                                         "Rear_Right");
 
-    load_cells[0] = new LoadCells(0x05, "Suspension",
+    load_cells[0] = new LoadCells(0x05, "Suspen",
                                   static_cast<std_msgs::Int32MultiArray*>(load_cell_topics[0]->message));
     load_cells[1] = new LoadCells(0x06, "Hopper",
                                   static_cast<std_msgs::Int32MultiArray*>(load_cell_topics[1]->message));
@@ -298,6 +298,8 @@ void setup() {
     for (auto & odrive : odrives) e_stop_controller->add_estop_device(odrive);
     for (auto & actuator : actuators) e_stop_controller->add_estop_device(actuator);
     for (auto & load_cell : load_cells) e_stop_controller->add_estop_device(load_cell);
+    e_stop_controller->add_estop_device(battery_monitor);
+    e_stop_controller->add_estop_device(imu);
 
     // Add all ros nodes to the ros node array
     int ros_node_count = 0;

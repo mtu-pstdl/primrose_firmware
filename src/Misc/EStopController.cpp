@@ -6,24 +6,25 @@
 
 void EStopController::check_for_faults() {
     sprintf(this->estop_message, "");
-    char tripped_message[100];
+    sprintf(this->tripped_device_name, "NULL");
+    sprintf(this->tripped_device_message, "");
+    char tripped_message[132];
     if (!automatic_estop_enabled || automatic_estop_inhibited) {
         EStopDevice* estop_device = get_estop_device(0);
         for (int i = 0; estop_device != nullptr; i++) {
             estop_device = get_estop_device(i);
             if (estop_device != nullptr) {
                 // still check for faults as this is used by modules to detect internal faults
+                sprintf(this->tripped_device_name, "NULL");
+                sprintf(this->tripped_device_message, "");
                 estop_device->tripped(tripped_device_name, tripped_device_message);
                 sprintf(tripped_message, "*[%s] %s\n", tripped_device_name, tripped_device_message);
                 if (strlen(this->estop_message) + strlen(tripped_message) > STATUS_MESSAGE_LENGTH - 42) {
                     sprintf(tripped_message, "[Further Faults Omitted, Buffer Exceeded]\n");
-                    strcat(this->estop_message, tripped_message);
+                    strlcat(this->estop_message, tripped_message, STATUS_MESSAGE_LENGTH);
                     break;
                 }
                 strcat(this->estop_message, tripped_message);
-                // Reset the tripped device name and message
-                sprintf(this->tripped_device_name, "NULL");
-                sprintf(this->tripped_device_message, "NULL");
             }
         }
         // Remove the trailing newline
@@ -36,20 +37,19 @@ void EStopController::check_for_faults() {
     for (int i = 0; estop_device != nullptr; i++) {
         estop_device = get_estop_device(i);
         if (estop_device != nullptr) {
+            sprintf(this->tripped_device_name, "NULL");
+            sprintf(this->tripped_device_message, "");
             if (estop_device->tripped(tripped_device_name, tripped_device_message)) {
                 this->should_trigger_estop = true;
                 this->number_of_tripped_devices++;
                 sprintf(tripped_message, "[%s] %s\n", tripped_device_name, tripped_device_message);
                 if (strlen(this->estop_message) + strlen(tripped_message) > STATUS_MESSAGE_LENGTH - 42) {
                     sprintf(tripped_message, "[Further Faults Omitted, Buffer Exceeded]\n");
-                    strcat(this->estop_message, tripped_message);
+                    strlcat(this->estop_message, tripped_message, STATUS_MESSAGE_LENGTH);
                     this->trigger_estop(true, false);
                     break;
                 }
                 strcat(this->estop_message, tripped_message);
-                // Reset the tripped device name and message
-                sprintf(this->tripped_device_name, "NULL");
-                sprintf(this->tripped_device_message, "NULL");
             }
         }
     }

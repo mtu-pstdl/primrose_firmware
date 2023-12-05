@@ -43,3 +43,23 @@ void IMU::update() {
 
 void IMU::publish() {
 }
+
+
+boolean IMU::tripped(char* tripped_device_name, char* tripped_device_message) {
+    char temp[100];
+    bool tripped = false;
+    sprintf(tripped_device_name, "IMU");
+    if (!this->config_success) {
+        sprintf(temp, "INIT FAILED-");
+        strcat(tripped_device_message, temp);
+        tripped = true;
+    }
+    if (!this->imu.isConnected()) {
+        sprintf(temp, "CONN LOST-");
+        strcat(tripped_device_message, temp);
+        tripped = true;
+    }
+    // Remove the trailing dash if there is one
+    if (tripped) tripped_device_message[strlen(tripped_device_message) - 1] = '\0';
+    return tripped;
+}

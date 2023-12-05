@@ -10,6 +10,7 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/sensor_msgs/Imu.h"
 #include <SPI.h>
 #include "../../.pio/libdeps/teensy40/SparkFun 9DoF IMU Breakout - ICM 20948 - Arduino Library/src/ICM_20948.h"
+#include "Misc/EStopDevice.h"
 
 #define SPI_BUS SPI1
 #define CS_PIN  32
@@ -28,7 +29,7 @@
 #define RESET_DMP         0x0010
 #define RESET_FIFO        0x0020
 
-class IMU: public ROSNode {
+class IMU: public ROSNode, public EStopDevice {
 
 private:
 
@@ -97,6 +98,8 @@ public:
     void update() override;
 
     void publish() override;
+
+    boolean tripped(char* tripped_device_name, char* tripped_device_message) override;
 
 };
 
