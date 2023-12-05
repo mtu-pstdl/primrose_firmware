@@ -86,7 +86,7 @@ private:
     boolean         should_trigger_estop = false;
     uint32_t        number_of_tripped_devices = 0;
     char*           tripped_device_name = new char[30];
-    char*           tripped_device_message = new char[50];
+    char*           tripped_device_message = new char[100];
     char*           estop_message = new char[STATUS_MESSAGE_LENGTH];
 
     // E-Stop variables

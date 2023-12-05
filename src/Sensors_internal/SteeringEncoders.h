@@ -149,8 +149,12 @@ public:
         return this->valid_position;
     }
 
-    bool is_valid() override {
+    boolean is_valid() override {
         return this->initialized && !this->failure && this->signal_valid;
+    }
+
+    boolean fault() override {
+        return this->failure;
     }
 
     void zeroEncoder();

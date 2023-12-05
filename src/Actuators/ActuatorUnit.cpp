@@ -241,40 +241,53 @@ void ActuatorUnit::estop() {
     this->set_duty_cycle(0, 0);
     this->set_duty_cycle(0, 1);
 }
-
+/**
+ * @brief Checks if the actuator unit is tripped and returns the status
+ * @param device_name A pointer to a char array to store the name of this device
+ * @param device_message  A pointer to a char array to store the message of this device
+ * @return True if the device is tripped, false otherwise
+ */
 bool ActuatorUnit::tripped(char* device_name, char* device_message) {
-    // The conditions that would trip an actuator unit are:
-    // 1. Lost communication with the controller
-    // 2. Logic battery voltage too low
-    // 3. Main battery voltage too low
-    // 4. Controller temperature has exceeded 80C
     bool tripped = false;
     sprintf(device_name, "Actuator Unit: %d", this->id);
     sprintf(device_message, "");
-    char temp[50];
+    char temp[100];
     if (!this->connected) {
-        sprintf(temp, "Lost Connection ");
+        sprintf(temp, "CONN LOST-");
         strcat(device_message, temp);
         tripped = true;
     }
     if (this->get_logic_battery_voltage() < 10 && this->get_logic_battery_voltage() != FP_NAN) {
-        sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(temp, "Logic bat volt low: %0.1fV ", this->get_logic_battery_voltage());
+        sprintf(temp, "LOGIC BUS LOW: %0.1fV-", this->get_logic_battery_voltage());
         strcat(device_message, temp);
         tripped = true;
     }
     if (this->get_main_battery_voltage() < 46 && this->get_main_battery_voltage() != FP_NAN) {
-        sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(temp, "Main bat volt low: %0.1fV ", this->get_main_battery_voltage());
+        sprintf(temp, "MAIN BUS LOW: %0.1fV-", this->get_main_battery_voltage());
         strcat(device_message, temp);
         tripped = true;
     }
     if (this->get_temperature() > 80) {
-        sprintf(device_name, "Actuator Unit: %d", this->id);
-        sprintf(temp, "Temp high: %0.2fC ", this->get_temperature());
+        sprintf(temp, "TEMP HIGH: %0.2fC-", this->get_temperature());
         strcat(device_message, temp);
         tripped = true;
     }
+
+    // Check if the motors encoders are healthy
+    for (int i = 0; i < 2; i++) {
+        if (!this->motors[i].encoder->is_valid()) {
+            sprintf(temp, "ENCODER M%d INVALID ", i + 1);
+            strcat(device_message, temp);
+            tripped = true;
+        }
+        if (this->motors[i].encoder->fault()) {
+            sprintf(temp, "ENCODER M%d FAULT ", i + 1);
+            strcat(device_message, temp);
+            tripped = true;
+        }
+    }
+    // Remove the trailing dash
+    if (tripped) device_message[strlen(device_message) - 1] = '\0';
     return tripped;
 }
 

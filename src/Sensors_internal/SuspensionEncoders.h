@@ -42,7 +42,8 @@ public:
         return sensor->is_valid();
     }
 
-    boolean fault() const{
+    boolean fault() override {
+//        return true;
         return data.fault;
     }
 

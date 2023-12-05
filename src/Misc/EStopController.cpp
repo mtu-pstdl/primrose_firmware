@@ -6,7 +6,7 @@
 
 void EStopController::check_for_faults() {
     sprintf(this->estop_message, "");
-    char tripped_message[50];
+    char tripped_message[100];
     if (!automatic_estop_enabled || automatic_estop_inhibited) {
         EStopDevice* estop_device = get_estop_device(0);
         for (int i = 0; estop_device != nullptr; i++) {
@@ -26,6 +26,8 @@ void EStopController::check_for_faults() {
                 sprintf(this->tripped_device_message, "NULL");
             }
         }
+        // Remove the trailing newline
+        this->estop_message[strlen(this->estop_message) - 1] = '\0';
         return;
     }
     this->should_trigger_estop = false;
@@ -50,6 +52,8 @@ void EStopController::check_for_faults() {
                 sprintf(this->tripped_device_message, "NULL");
             }
         }
+        // Remove the trailing newline
+        this->estop_message[strlen(this->estop_message) - 1] = '\0';
     }
     if (this->should_trigger_estop) this->trigger_estop(true, false);
 

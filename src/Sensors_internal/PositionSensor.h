@@ -32,7 +32,7 @@ public:
         return false;
     }
 
-    virtual boolean fault() const{
+    virtual boolean fault() {
         return false;
     }
 
