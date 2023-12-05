@@ -49,7 +49,7 @@ public:
         this->output_topic->data = data.sensor;
         // Change the name of the command topic to the correct name
         command_sub.topic_ = this->name;
-        sprintf(this->name, "/mciu/load_cells/%s/command", name);
+        sprintf(this->name, "/mciu/%s/Load_cells/command", name);
         this->sensor = new ADAU_Sensor(sensor_id, &data, sizeof(data_struct));
     }
 

@@ -12,6 +12,7 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/KeyValue.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/String.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32MultiArray.h"
 
 #define MAIN_CONTACTOR_PIN 0
 
@@ -33,13 +34,44 @@ private:
     };
 
     ros::Subscriber<std_msgs::Int32, EStopController> estop_sub;
-    std_msgs::String* estop_topic;
+    std_msgs::String*          estop_msg_topic;
+    std_msgs::Int32MultiArray* estop_status_topic;
 //    diagnostic_msgs::DiagnosticStatus* diagnostic_topic;
 
     void estop_callback(const std_msgs::Int32& msg);
 
-    // An array of pointers to estop devices
-    EStopDevice* estop_devices[20] = {nullptr};
+    /**
+     * @brief A linked list of EStopDevices so that they can be added at runtime without knowing the number of devices
+     *        at compile time
+     */
+    struct EStopDeviceList {
+        EStopDevice* estop_device = nullptr;
+        EStopDeviceList* next     = nullptr;
+    };
+    EStopDeviceList* estop_devices = new EStopDeviceList;
+
+    void add_to_estop_device_list(EStopDevice* estop_device) {
+        EStopDeviceList* current = estop_devices;
+        while (current->next != nullptr) {
+            current = current->next;
+        }
+        current->next = new EStopDeviceList;
+        current->next->estop_device = estop_device;
+    }
+
+    /**
+     * @brief Get an EStopDevice from the EStopDeviceList
+     * @param index The index of the EStopDevice to get
+     * @return A pointer to the EStopDevice at the given index or nullptr if the index is out of bounds
+     */
+    EStopDevice* get_estop_device(uint32_t index) {
+        EStopDeviceList* current = estop_devices;
+        for (uint32_t i = 0; i < index; i++) {
+            if (current->next == nullptr) return nullptr;
+            current = current->next;
+        }
+        return current->estop_device;
+    }
 
     // Automatic E-Stop variables
     boolean         automatic_estop_enabled = true;
@@ -54,41 +86,11 @@ private:
     boolean  estop_triggered = false;
     uint32_t estop_triggered_time = 0;
     uint32_t estop_resume_time = 0;  // The time to wait after the contactor is closed before the E-Stop is cleared
-    uint32_t last_pi_heartbeat = 0;
-    uint32_t last_remote_heartbeat = 0;
+    uint32_t last_pi_heartbeat     = HEARTBEAT_INTERVAL;
+    uint32_t last_remote_heartbeat = HEARTBEAT_INTERVAL;
 
 
-    void check_for_faults() {
-        if (!automatic_estop_enabled || automatic_estop_inhibited) {
-            for (auto & estop_device : estop_devices) {
-                if (estop_device != nullptr) {
-                    // still check for faults as this is used by modules to detect internal faults
-                    estop_device->tripped(tripped_device_name, tripped_device_message);
-                    sprintf(this->estop_message, "*[%s] %s\n", tripped_device_name, tripped_device_message);
-                    // Reset the tripped device name and message
-                    sprintf(this->tripped_device_name, "NULL");
-                    sprintf(this->tripped_device_message, "NULL");
-                }
-            }
-            return;
-        }
-        this->should_trigger_estop = false;
-        this->number_of_tripped_devices = 0;
-        for (auto & estop_device : estop_devices) {
-            if (estop_device != nullptr) {
-                if (estop_device->tripped(tripped_device_name, tripped_device_message)) {
-                    this->should_trigger_estop = true;
-                    this->number_of_tripped_devices++;
-                    sprintf(this->estop_message, "[%s] %s\n", tripped_device_name, tripped_device_message);
-                    // Reset the tripped device name and message
-                    sprintf(this->tripped_device_name, "NULL");
-                    sprintf(this->tripped_device_message, "NULL");
-                }
-            }
-        }
-        if (this->should_trigger_estop) this->trigger_estop(true);
-
-    }
+    void check_for_faults();
 
     void pi_heartbeat() {
         this->last_pi_heartbeat = millis();
@@ -100,81 +102,57 @@ private:
 
 public:
 
-    explicit EStopController(std_msgs::String* estop_topic) :
-        estop_sub("/mciu/estop_controller", &EStopController::estop_callback, this) {
-        this->estop_topic = estop_topic;
-        sprintf(this->tripped_device_name, "NULL");
-        this->estop_topic->data = this->estop_message;
-        pinMode(MAIN_CONTACTOR_PIN, OUTPUT);
-        digitalWrite(MAIN_CONTACTOR_PIN, HIGH);
-        this->trigger_estop();
-    }
+    /**
+     * @brief Construct a new EStopController object (There should only be one of these)
+     * @param estop_msg_topic A string message topic to publishes the fault messages from all tripped devices
+     * @param estop_status_topic An Int32MultiArray topic to publish the status of the E-Stop controller
+     */
+    explicit EStopController(std_msgs::String* estop_msg_topic, std_msgs::Int32MultiArray *estop_status_topic) :
+        estop_sub("/mciu/Estop_controller/input", &EStopController::estop_callback, this) {
+        this->estop_msg_topic = estop_msg_topic;
+        this->estop_status_topic = estop_status_topic;
 
-    void add_estop_device(EStopDevice* estop_device) {
-        for (auto & i : estop_devices) {
-            if (i == nullptr) {
-                i = estop_device;
-                return;
-            }
-        }
-    }
+        this->estop_msg_topic->data = this->estop_message;
+        sprintf(this->estop_message, "All ok");
 
-    bool is_high_voltage_enabled() {
-//        return !this->estop_triggered;
-        return !digitalReadFast(MAIN_CONTACTOR_PIN);
-    }
+        this->estop_status_topic->data_length = 4;
+        this->estop_status_topic->data = new int32_t[4];
+        this->estop_status_topic->data[0] = 0;  // Current state
+        this->estop_status_topic->data[1] = 0;  // Flags
+        this->estop_status_topic->data[2] = 0;  // Number of tripped devices
+        this->estop_status_topic->data[3] = 0;  // Time since last heartbeat
 
-    void trigger_estop(boolean automatic = false) {
-        for (auto & estop_device : estop_devices) {
-            if (estop_device != nullptr) {
-                estop_device->estop();
-            }
-        }
-        if (!automatic) {
-            sprintf(this->tripped_device_name, "Manual");
-            sprintf(this->tripped_device_message, "Manual E-Stop");
-        }
-        this->estop_triggered = true;
-        this->estop_triggered_time = millis();
-    }
-
-    void resume() {
-        digitalWrite(MAIN_CONTACTOR_PIN, LOW);
-        for (auto & estop_device : estop_devices) {
-            if (estop_device != nullptr) {
-                estop_device->resume();
-            }
-        }
-        estop_triggered = false;
-        estop_triggered_time = 0;
-        estop_resume_time = millis();
-        this->automatic_estop_inhibited = true;
         sprintf(this->tripped_device_name, "NULL");
         sprintf(this->tripped_device_message, "NULL");
+
+        pinMode(MAIN_CONTACTOR_PIN, OUTPUT);
+        digitalWrite(MAIN_CONTACTOR_PIN, HIGH);
+//        this->trigger_estop();
+
+    }
+
+    /**
+     * @brief Add an EStopDevice to the EStopController
+     * @param estop_device A pointer to the EStopDevice to add
+     */
+    void add_estop_device(EStopDevice* estop_device) {
+        this->add_to_estop_device_list(estop_device);
+    }
+
+    void update() override;
+
+    void publish() override {
     }
 
     void subscribe(ros::NodeHandle *node_handle) override {
         node_handle->subscribe(estop_sub);
     }
 
-    void update_strings();
+    bool is_high_voltage_enabled();
 
-    void update() override {
-        this->update_strings();
-        if (millis() - last_pi_heartbeat > HEARTBEAT_INTERVAL) {
-            this->trigger_estop();
-            sprintf(this->tripped_device_name, "Pi");
-            sprintf(this->tripped_device_message, "Pi Heartbeat Expired");
-        }
-        if (!estop_triggered) {
-            if (millis() - estop_resume_time > 3000)
-                this->automatic_estop_inhibited = false;
-            this->check_for_faults();
-        } else {
-            if (millis() - estop_triggered_time > ESTOP_CONTACTOR_DELAY)
-                digitalWriteFast(MAIN_CONTACTOR_PIN, HIGH);  // Open the main contactor
-        }
-    }
+    void trigger_estop(boolean automatic = false, boolean remote = false);
+
+    void resume();
 
 };
 

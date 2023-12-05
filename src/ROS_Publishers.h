@@ -82,7 +82,7 @@ ros_topic odrive6_encoder_topic = {
 };
 
 std_msgs::Int32MultiArray odrive7_encoder_msg;
-ros::Publisher odrive7_encoder_pub("mciu/Conveyor/odrive/output", &odrive7_encoder_msg);
+ros::Publisher odrive7_encoder_pub("mciu/Hopper/odrive/output", &odrive7_encoder_msg);
 
 #define ODRIVE7_ENCODER_TOPIC_NUM 6
 ros_topic odrive7_encoder_topic = {
@@ -144,25 +144,33 @@ ros_topic battery_topic = {
         .message = &battery_msg
 };
 
-#define ESTOP_TOPIC_NUM 13
+#define ESTOP_STR_TOPIC_NUM 13
 std_msgs::String estop_msg;
-ros::Publisher estop_pub("/mciu/estop_output", &estop_msg);
+ros::Publisher estop_pub("/mciu/Estop_controller/message", &estop_msg);
 ros_topic estop_topic = {
         .publisher = &estop_pub,
         .message = &estop_msg
 };
 
-#define SUSPENSION_LOAD_CELL_TOPIC_NUM 14
+#define ESTOP_TOPIC_NUM 14
+std_msgs::Int32MultiArray estop_status_msg;
+ros::Publisher estop_status_pub("/mciu/Estop_controller/status", &estop_status_msg);
+ros_topic estop_status_topic = {
+        .publisher = &estop_status_pub,
+        .message = &estop_status_msg
+};
+
+#define SUSPENSION_LOAD_CELL_TOPIC_NUM 15
 std_msgs::Int32MultiArray suspension_load_cell_msg;
-ros::Publisher suspension_load_cell_pub("/mciu/load_cells/suspension/output", &suspension_load_cell_msg);
+ros::Publisher suspension_load_cell_pub("/mciu/Suspension/Load_cells/output", &suspension_load_cell_msg);
 ros_topic suspension_load_cell_topic = {
         .publisher = &suspension_load_cell_pub,
         .message = &suspension_load_cell_msg
 };
 
-#define HOPPER_LOAD_CELL_TOPIC_NUM 15
+#define HOPPER_LOAD_CELL_TOPIC_NUM 16
 std_msgs::Int32MultiArray hopper_load_cell_msg;
-ros::Publisher hopper_load_cell_pub("/mciu/load_cells/hopper/output", &hopper_load_cell_msg);
+ros::Publisher hopper_load_cell_pub("/mciu/Hopper/Load_cells/output", &hopper_load_cell_msg);
 ros_topic hopper_load_cell_topic = {
         .publisher = &hopper_load_cell_pub,
         .message = &hopper_load_cell_msg
@@ -190,7 +198,7 @@ ros_topic* load_cell_topics[2] = {
         &hopper_load_cell_topic
 };
 
-#define ALL_TOPICS_LENGTH 16
+#define ALL_TOPICS_LENGTH 17
 ros_topic* all_topics[ALL_TOPICS_LENGTH] = {
         &odrive1_encoder_topic,
         &odrive2_encoder_topic,
@@ -206,6 +214,7 @@ ros_topic* all_topics[ALL_TOPICS_LENGTH] = {
         &imu_topic,
         &battery_topic,
         &estop_topic,
+        &estop_status_topic,
         &suspension_load_cell_topic,
         &hopper_load_cell_topic
 };

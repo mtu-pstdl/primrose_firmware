@@ -279,12 +279,14 @@ void setup() {
                                         static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[3]->message),
                                         "Rear_Right");
 
-    load_cells[0] = new LoadCells(0x01, "suspension",
+    load_cells[0] = new LoadCells(0x05, "Suspension",
                                   static_cast<std_msgs::Int32MultiArray*>(load_cell_topics[0]->message));
-    load_cells[1] = new LoadCells(0x02, "hopper",
+    load_cells[1] = new LoadCells(0x06, "Hopper",
                                   static_cast<std_msgs::Int32MultiArray*>(load_cell_topics[1]->message));
 
-    e_stop_controller = new EStopController(static_cast<std_msgs::String*>(all_topics[ESTOP_TOPIC_NUM]->message));
+    e_stop_controller = new EStopController(
+            static_cast<std_msgs::String*>(all_topics[ESTOP_STR_TOPIC_NUM]->message),
+            static_cast<std_msgs::Int32MultiArray*>(all_topics[ESTOP_TOPIC_NUM]->message));
     hopper_door = new HopperDoor();
 
     battery_monitor = new BatteryMonitor(e_stop_controller,
