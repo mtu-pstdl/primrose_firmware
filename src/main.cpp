@@ -362,34 +362,6 @@ void loop() {
 
     ADAU_BUS_INTERFACE.parse_buffer(); // Update the ADAU bus
 
-//    steering_encoder->update();
-//     Set the test output message to the current steering encoder value in binary and decimal
-//    test_output_string[0] = '0';
-//    test_output_string[1] = 'b';
-//    for (int i = 0; i < 16; i++) {
-//        test_output_string[i + 2] = (steering_encoder->get_raw_position() >> (15 - i)) & 0x01 ? '1' : '0';
-//    }
-    // Declare 2 char strings for "Junk" and "Good"
-//    test_output_string[18] = '\0';
-//    char junk[] = "Junk";
-//    char good[] = "Data";
-//    char* valid_string = steering_encoder->position_valid() ? good : junk;
-//    if (steering_encoder->data_valid()){
-//        sprintf(test_output_string + 18, ", Validated %s: %ld : %ld",
-//                valid_string,
-//                steering_encoder->get_raw_position() & 0x3FFF,
-//                steering_encoder->get_position());
-//    } else {
-//        sprintf(test_output_string + 18, ",        Invalid: %ld : %ld",
-//                steering_encoder->get_raw_position() & 0x3FFF,
-//                steering_encoder->get_position());
-//    }
-
-//    test_output_msg.data = test_output_string;
-
-    // Publish the test output message
-//    test_output_pub.publish(&test_output_msg);
-
     system_message_count = 0;
     for (char *string: system_status_messages) {
         string[0] = '\0';  // Clear the system status messages

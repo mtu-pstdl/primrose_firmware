@@ -15,8 +15,8 @@ void EStopController::check_for_faults() {
     boolean buffer_exceeded = false;
 
     EStopDeviceList* current = estop_devices;
-    EStopDevice* estop_device = nullptr;
-    boolean suppressed = false;
+    EStopDevice* estop_device;
+    boolean suppressed;
 
     for (int i = 0; current != nullptr; i++) {
         current = get_estop_device(i);
@@ -31,12 +31,12 @@ void EStopController::check_for_faults() {
             if (!(suppressed || (!automatic_estop_enabled || automatic_estop_inhibited))) {
                 this->should_trigger_estop = true;
                 this->number_of_tripped_devices++;
-                sprintf(tripped_message, "[%s] %s\n", tripped_device_name, tripped_device_message);
+                snprintf(tripped_message, 132, "[%s] %s\n", tripped_device_name, tripped_device_message);
             } else sprintf(tripped_message, "*[%s] %s\n", tripped_device_name, tripped_device_message);
             if (buffer_exceeded) continue;
             if (strlen(this->estop_message) + strlen(tripped_message) > STATUS_MESSAGE_LENGTH - 42) {
                 buffer_exceeded = true;
-                sprintf(tripped_message, "[Further Faults Omitted, Buffer Exceeded]\n");
+                snprintf(tripped_message, 132, "[Further Faults Omitted, Buffer Exceeded]\n");
             }
             strlcat(this->estop_message, tripped_message, STATUS_MESSAGE_LENGTH);
         }
