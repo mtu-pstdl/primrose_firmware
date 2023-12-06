@@ -34,11 +34,18 @@ class ADAU_Bus_Interface {
 
 private:
 
-    // A dynamically allocated array of pointers to ADAU_Sensors that attach themselves to this bus interface
-    ADAU_Sensor** sensors;
     // The number of sensors attached to this bus interface
     int num_sensors = 0;
-    int current_max_sensors = 10;
+
+    /**
+     * @brief A linked list of ADAU_Sensors so that they can be added at runtime without knowing the number of sensors
+     */
+    struct ADAU_Sensor_List {
+        ADAU_Sensor*      sensor = nullptr;
+        ADAU_Sensor_List* next   = nullptr;
+    };
+
+    ADAU_Sensor_List* sensor_list = new ADAU_Sensor_List;
 
     enum current_state {
         waiting_for_start_byte,
@@ -95,14 +102,6 @@ public:
         ADAU_INTERFACE.begin(ADAU_BAUD_RATE);
         pinMode(ADAU_RESET_PIN, OUTPUT);
         reset(); // Put the ADAU in a known state
-
-        // Allocate memory for the array of pointers to sensors
-        sensors = (ADAU_Sensor**)malloc(sizeof(ADAU_Sensor*) * current_max_sensors);
-
-        // Set all pointers to nullptr
-        for(int i = 0; i < current_max_sensors; i++){
-            sensors[i] = nullptr;
-        }
     }
 
     void attachSensor(ADAU_Sensor* sensor);

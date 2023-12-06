@@ -222,7 +222,8 @@ private:
     uint16_t status = 0;
     uint16_t data_flags = 0;  // A bitmask of the data that has been received from the motor
 
-    telemetry_message* build_message(Actuator_Bus_Interface::serial_commands command, uint32_t send_interval, uint8_t data_length,
+    telemetry_message* build_message(Actuator_Bus_Interface::serial_commands command, uint32_t send_interval,
+                                     uint8_t data_length,
                                      void (*callback)(void *, Actuator_Bus_Interface::serial_message*));
 
     void build_telemetry_messages();

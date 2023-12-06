@@ -119,6 +119,7 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
             this->in_flight_bitmask &= ~TORQUE_FLIGHT_BIT; // Clear the bit
             break;
         default:
+            // Cry about it
             break;
     }
 }
@@ -248,11 +249,11 @@ uint8_t ODrivePro::send_command(odrive::command_ids command_id, T1 lower_data, T
     uint32_t lower_32 = *(uint32_t*) &lower_data;
     msg.buf[7] = (uint8_t) ((upper_32 >> 24) & 0xFF);
     msg.buf[6] = (uint8_t) ((upper_32 >> 16) & 0xFF);
-    msg.buf[5] = (uint8_t) ((upper_32 >> 8) & 0xFF);
+    msg.buf[5] = (uint8_t) ((upper_32 >> 8)  & 0xFF);
     msg.buf[4] = (uint8_t)  (upper_32 & 0xFF);
     msg.buf[3] = (uint8_t) ((lower_32 >> 24) & 0xFF);
     msg.buf[2] = (uint8_t) ((lower_32 >> 16) & 0xFF);
-    msg.buf[1] = (uint8_t) ((lower_32 >> 8) & 0xFF);
+    msg.buf[1] = (uint8_t) ((lower_32 >> 8)  & 0xFF);
     msg.buf[0] = (uint8_t)  (lower_32 & 0xFF);
     uint8_t result = this->can_bus->write(msg); // Send the message to the next available mailbox
     return result; // Return the result of the write (1 for success, -1 for failure)
@@ -568,7 +569,6 @@ bool ODrivePro::tripped(char* name, char* reason) {
     if (!this->is_connected()) {
         sprintf(name, "ODrive: %d", this->can_id);
         sprintf(reason, "CONN LOST");
-//        odrive::sprintf_error_code(reason, 0x0000000F);
         return true;
     }
     // If an odrive reports a SPINOUT error, then it should be ignored and closed loop control should be resumed

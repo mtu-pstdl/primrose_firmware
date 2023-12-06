@@ -7,9 +7,25 @@
 
 ADAU_Bus_Interface ADAU_BUS_INTERFACE = ADAU_Bus_Interface();
 
+/**
+ * @brief Attach a sensor to the bus interface by adding it to the linked sensor list
+ * @param sensor A pointer to the sensor object to attach
+ */
 void ADAU_Bus_Interface::attachSensor(ADAU_Sensor *sensor) {
-    // Add the sensor to the array of sensor pointers
-    sensors[this->num_sensors] = sensor;
+    // Add the sensor to the sensor list
+    ADAU_Sensor_List* current = this->sensor_list;
+    while (true) {
+        if (current->sensor == nullptr) {
+            current->sensor = sensor;
+            break;
+        }
+        if (current->next == nullptr) break;
+        current = current->next;
+    }
+    current->next = new ADAU_Sensor_List;
+    current->next->sensor = sensor;
+    current->next->next   = nullptr;
+    // Increment the number of sensors
     this->num_sensors++;
 }
 
@@ -97,19 +113,21 @@ void ADAU_Bus_Interface::process_message() {
     if (this->validate_checksum()) {
         // The message is signal_valid
         // Find the sensor that sent the message
-        for (int i = 0; i < this->num_sensors; i++) {
-            if (this->sensors[i]->get_sensor_id() == this->message_header.sensor_id) {
+        ADAU_Sensor_List* current = this->sensor_list;
+        while (true) {
+            if (current->sensor == nullptr) break;
+            if (current->sensor->get_sensor_id() == this->message_header.sensor_id) {
                 // We have found the sensor that sent the message
-                // Copy the data from the message buffer to the sensor data buffer
-                memcpy(this->sensors[i]->get_data_ptr(), this->message_buffer,
-                       this->message_header.data_length);
-                // Set the sensor's last update time
-                this->sensors[i]->set_last_update_time(millis());
-                // Set the sensor's signal_valid data flag
-                this->sensors[i]->set_valid(true);
-                // Break out of the for loop
+                // Update the sensor
+                void* data_ptr = current->sensor->get_data_ptr();
+                memcpy(data_ptr, this->message_buffer, this->message_header.data_length);
+                // Record the time that the last message was received
+                this->last_message_time = millis();
+                // Break out of the while loop
                 break;
             }
+            if (current->next == nullptr) break;
+            current = current->next;
         }
     } else {
         // The message is invalid
