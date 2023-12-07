@@ -6,7 +6,7 @@
 #define PRIMROSE_MCIU_ADAU_BUS_INTERFACE_H
 #include <Arduino.h>
 
-#define ADAU_INTERFACE Serial1
+#define ADAU_INTERFACE  Serial1
 #define ADAU_BAUD_RATE  115200
 #define ADAU_RESET_PIN  3
 

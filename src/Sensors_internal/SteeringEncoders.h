@@ -96,10 +96,10 @@ public:
      * @return false if update was unsuccessful
      */
     void update() override {
-        if (this->cs_pin == 0) {
-            this->failure = true;
-            return;
-        }
+//        if (this->cs_pin == 0) {
+//            this->failure = true;
+//            return;
+//        }
         if (!this->initialized && !this->initializing) {
             this->reset();
             this->initializing = true;

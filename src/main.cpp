@@ -26,6 +26,7 @@
 #include "Sensors_internal/SteeringEncoders.h"
 #include "Sensors_internal/SuspensionEncoders.h"
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/String.h"
+#include "ADAU_Interfaces/ADAU_Tester.h"
 
 // Motor configurations
 feedforward_struct trencher_ff = {
@@ -77,6 +78,8 @@ Odometers odometers;
 EStopController* e_stop_controller;
 HopperDoor* hopper_door;
 AccessoryPower* accessory_power;
+
+ADAU_Tester* adauTester;
 
 //SteeringEncoders* steering_encoder;
 
@@ -246,23 +249,23 @@ void setup() {
                                    "Hopper");
 
     actuators[0] = new ActuatorUnit(128,
-                                    new SteeringEncoders(7),
+                                    new SteeringEncoders(0),
                                     new SuspensionEncoders(0x01)); // Slot 3L
 
     actuators[1] = new ActuatorUnit(129,
-                                    new SteeringEncoders(8),
+                                    new SteeringEncoders(4),
                                     new SuspensionEncoders(0x02)); // Slot 2R
     actuators[1]->set_inverted(true,0); // Set the motor to run in the opposite direction (for the conveyor
     actuators[1]->set_inverted(true,1);
 
     actuators[2] = new ActuatorUnit(130,
-                                    new SteeringEncoders(9),
+                                    new SteeringEncoders(10),
                                     new SuspensionEncoders(0x03)); // Slot 2L
     actuators[2]->set_inverted(true,0);
     actuators[2]->set_inverted(true,1);
 
     actuators[3] = new ActuatorUnit(131,
-                                    new SteeringEncoders(10),
+                                    new SteeringEncoders(24),
                                     new SuspensionEncoders(0x04)); // Slot 3R
     actuators[3]->set_inverted(true,0);
 
@@ -351,6 +354,8 @@ void setup() {
         if (node == nullptr) continue;
         node->subscribe(&node_handle);
     }
+
+    adauTester = new ADAU_Tester(&test_output_msg);
 
     node_handle.loginfo("Running Firmware Build: " __DATE__ " " __TIME__);
 }

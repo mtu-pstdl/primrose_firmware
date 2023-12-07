@@ -60,13 +60,17 @@ public:
         this->imu_msg = imu_msg;
         digitalWriteFast(CS_PIN, HIGH); // Deselect
         SPI_BUS.begin();
+//        digitalWrite(RST_PIN, HIGH);
+        delay(10);
+//        digitalWrite(RST_PIN, HIGH);
+        pinMode(IRQ_PIN, INPUT);
         this->imu.begin(CS_PIN, SPI_BUS);
         // Check if the IMU is connected
-        if (!this->imu.isConnected()) {
-            this->config_success = false;
-            this->imu_msg->header.frame_id = "imu_link_down";
-            return;
-        }
+//        if (!this->imu.isConnected()) {
+//            this->config_success = false;
+//            this->imu_msg->header.frame_id = "imu_link_down";
+//            return;
+//        }
         uint16_t steps = 0;
         steps |= (this->imu.initializeDMP() != ICM_20948_Stat_Ok) << 0;
         steps |= (this->imu.enableDMPSensor(INV_ICM20948_SENSOR_ORIENTATION) != ICM_20948_Stat_Ok) << 1;
