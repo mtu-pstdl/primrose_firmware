@@ -15,7 +15,7 @@ private:
     struct data {
         uint32_t position = 0;
         float_t  velocity = 0;
-        boolean  fault = true;
+        boolean  fault = false;
     } data = {};
 
     ADAU_Sensor* sensor;

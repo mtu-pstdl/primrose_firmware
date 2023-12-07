@@ -26,16 +26,14 @@ class ADAU_Bus_Interface {
 
     // Data sent by the ADAU is formatted as follows:
     // 1 byte: start of message (0xFF)
-    // 1 byte: sensor_id
+    // 1 byte: sensor_id (7bits) + parity (1 bit)
     // 1 byte: data_length (Needs to match the data_size of the sensor otherwise reject the message)
-    // 1 byte: checksum (xor of all bytes in the message including the sensor_id and data_length)
+    // 1 byte: checksum (sum of all bytes in the message including data_length, excludes sensor_id)
     // n bytes: data
     // 6 bytes: end of message (0x00 0x00 0x00 0x00 0x00 0x00)
-
 private:
 
-    // The number of sensors attached to this bus interface
-    int num_sensors = 0;
+
 
     /**
      * @brief A linked list of ADAU_Sensors so that they can be added at runtime without knowing the number of sensors
@@ -45,7 +43,7 @@ private:
         ADAU_Sensor_List* next   = nullptr;
     };
 
-    ADAU_Sensor_List* sensor_list = new ADAU_Sensor_List;
+    ADAU_Sensor_List* sensor_list = nullptr;
 
     enum current_state {
         waiting_for_start_byte,
@@ -108,6 +106,11 @@ public:
 
     void parse_buffer();
 
+    boolean validate_parity();
+
+    // The number of sensors attached to this bus interface
+    int num_sensors = 0;
+    int parse_count = 0;
 };
 
 #endif //PRIMROSE_MCIU_ADAU_BUS_INTERFACE_H

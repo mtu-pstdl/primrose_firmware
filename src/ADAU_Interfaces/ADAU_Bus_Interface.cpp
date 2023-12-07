@@ -13,20 +13,24 @@ ADAU_Bus_Interface ADAU_BUS_INTERFACE = ADAU_Bus_Interface();
  */
 void ADAU_Bus_Interface::attachSensor(ADAU_Sensor *sensor) {
     // Add the sensor to the sensor list
-    ADAU_Sensor_List* current = this->sensor_list;
-    while (true) {
-        if (current->sensor == nullptr) {
-            current->sensor = sensor;
-            break;
-        }
-        if (current->next == nullptr) break;
-        current = current->next;
-    }
-    current->next = new ADAU_Sensor_List;
-    current->next->sensor = sensor;
-    current->next->next   = nullptr;
-    // Increment the number of sensors
     this->num_sensors++;
+    ADAU_Sensor_List* current = this->sensor_list;
+    if (current == nullptr) {
+        // The sensor list is empty
+        this->sensor_list = new ADAU_Sensor_List;
+        this->sensor_list->sensor = sensor;
+    } else {
+        // The sensor list is not empty
+        while (true) {
+            if (current->next == nullptr) {
+                // We have reached the end of the list
+                current->next = new ADAU_Sensor_List;
+                current->next->sensor = sensor;
+                break;
+            }
+            current = current->next;
+        }
+    }
 }
 
 void ADAU_Bus_Interface::load_header() {
@@ -110,28 +114,37 @@ void ADAU_Bus_Interface::finish_message() {
 
 void ADAU_Bus_Interface::process_message() {
     // Check if the message is signal_valid
-    if (this->validate_checksum()) {
+    parse_count = 0;
+    if (this->validate_parity() || true) { // Disable parity check for now
+        this->message_header.sensor_id >>= 1;  // Shift the sensor id right by 1 bit to remove the parity bit
         // The message is signal_valid
         // Find the sensor that sent the message
         ADAU_Sensor_List* current = this->sensor_list;
-        while (true) {
-            if (current->sensor == nullptr) break;
+        while (current != nullptr) {
+            if (current->sensor == nullptr) continue;  // Skip this sensor if it is null
+            parse_count++;
             if (current->sensor->get_sensor_id() == this->message_header.sensor_id) {
                 // We have found the sensor that sent the message
                 // Update the sensor
+                // Check if the checksum is signal_valid
+                if (!this->validate_checksum()) {
+                    // The checksum is invalid
+                    // Increment the failed message count
+                    current->sensor->set_valid(false);
+                    this->failed_message_count++;
+                    continue;
+                }
                 void* data_ptr = current->sensor->get_data_ptr();
                 memcpy(data_ptr, this->message_buffer, this->message_header.data_length);
                 current->sensor->set_last_update_time(millis());
                 current->sensor->set_valid(true);
                 // Record the time that the last message was received
                 this->last_message_time = millis();
-                // Break out of the while loop
-                break;
             }
-            if (current->next == nullptr) break;
+//            if (current->next == nullptr) break;
             current = current->next;
         }
-    } else {
+    } else {  // Because the sensor_id is invalid we can't find the sensor that sent the message, so we can't update it
         // The message is invalid
         // Increment the failed message count
         this->failed_message_count++;
@@ -149,12 +162,25 @@ void ADAU_Bus_Interface::process_message() {
  */
 boolean ADAU_Bus_Interface::validate_checksum() {
     uint8_t checksum = 0;
-    checksum += this->message_header.sensor_id;
+//    checksum += this->message_header.sensor_id;
     checksum += this->message_header.data_length;
     for(int i = 0; i < this->message_header.data_length; i++){
         checksum += this->message_buffer[i];
     }
     return checksum == this->message_header.checksum;
+}
+
+/**
+ * @brief  Calculate if the parity for a given sensor id is valid (even parity, LSB is parity bit)
+ * @return True if the parity is signal_valid, false if the parity is invalid
+ */
+boolean ADAU_Bus_Interface::validate_parity() {
+    // Check if the sensor id passes the parity check
+    uint8_t parity = 0;
+    for (int i = 0; i < 7; i++) {
+        parity += (this->message_header.sensor_id >> i) & 0x01;  // Add the value of the current bit to the parity
+    }
+    return parity % 2 == 0;
 }
 
 void ADAU_Bus_Interface::cleanup() {

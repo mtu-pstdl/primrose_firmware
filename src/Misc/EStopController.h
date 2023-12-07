@@ -90,6 +90,7 @@ private:
     boolean         automatic_estop_inhibited = false;
     boolean         should_trigger_estop = false;
     uint32_t        number_of_tripped_devices = 0;
+    uint32_t        system_loops = 0;
     char*           tripped_device_name = new char[30];
     char*           tripped_device_message = new char[100];
     char*           estop_message = new char[STATUS_MESSAGE_LENGTH];
@@ -176,6 +177,10 @@ public:
     }
 
     boolean estop_message_updated(){
+        this->system_loops++;
+        if (this->system_loops % 100 == 0) {
+            return true;
+        }
         if (strcmp(this->estop_message, this->last_estop_message) != 0) {
             sprintf(this->last_estop_message, "%s", this->estop_message);
             return true;
