@@ -288,7 +288,7 @@ void setup() {
                                   static_cast<std_msgs::Int32MultiArray*>(load_cell_topics[1]->message));
 
     e_stop_controller = new EStopController(
-            static_cast<std_msgs::String*>(all_topics[ESTOP_STR_TOPIC_NUM]->message),
+            static_cast<std_msgs::String*>(estop_topic.message),
             static_cast<std_msgs::Int32MultiArray*>(all_topics[ESTOP_TOPIC_NUM]->message));
     hopper_door = new HopperDoor();
 
@@ -343,6 +343,10 @@ void setup() {
 
     node_handle.advertise(sys_diag_pub);
     sys_diag_pub.publish(&system_diagnostics);
+
+    node_handle.advertise(*estop_topic.publisher);
+    estop_topic.publisher->publish(estop_topic.message);
+
 
     for(ros_topic* topic: all_topics) {
         if (topic == nullptr) continue;
@@ -402,6 +406,7 @@ void loop() {
         }
     }
 
+
     // Calculate the bus voltage by averaging the voltages of all the ODrives
     float_t bus_voltage = 0;
     uint32_t odrive_count = 0;
@@ -424,6 +429,8 @@ void loop() {
     system_diagnostics.header.stamp = node_handle.now(); // Update the timestamp of the diagnostics message
     system_diagnostics.header.seq++;  // Increment the sequence number for the diagnostics message
 
+    if (e_stop_controller->estop_message_updated())
+        estop_topic.publisher->publish(estop_topic.message);
     for (ros_topic *topic: all_topics) {
         if (topic == nullptr) continue;
         topic->publisher->publish(topic->message);
@@ -519,5 +526,5 @@ void loop() {
         }
     }
 
-    sys_diag_pub.publish(&system_diagnostics);
+//    sys_diag_pub.publish(&system_diagnostics);
 }

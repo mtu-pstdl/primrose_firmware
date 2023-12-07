@@ -213,7 +213,7 @@ ros_topic* all_topics[ALL_TOPICS_LENGTH] = {
         &actuator4_encoder_topic,
         &imu_topic,
         &battery_topic,
-        &estop_topic,
+//        &estop_topic,
         &estop_status_topic,
         &suspension_load_cell_topic,
         &hopper_load_cell_topic

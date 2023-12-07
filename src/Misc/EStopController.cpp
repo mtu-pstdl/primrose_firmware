@@ -5,6 +5,7 @@
 #include "EStopController.h"
 
 void EStopController::check_for_faults() {
+    // Copy the value from the estop message buffer to the last estop message buffer
     sprintf(this->estop_message, "");
     sprintf(this->tripped_device_name, "NULL");
     sprintf(this->tripped_device_message, "");

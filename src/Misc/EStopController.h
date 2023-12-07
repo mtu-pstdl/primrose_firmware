@@ -93,6 +93,7 @@ private:
     char*           tripped_device_name = new char[30];
     char*           tripped_device_message = new char[100];
     char*           estop_message = new char[STATUS_MESSAGE_LENGTH];
+    char*           last_estop_message = new char[STATUS_MESSAGE_LENGTH];
 
     // E-Stop variables
     boolean  estop_triggered = false;
@@ -138,8 +139,7 @@ public:
         this->estop_msg_topic = estop_msg_topic;
         this->estop_status_topic = estop_status_topic;
 
-        this->estop_msg_topic->data = this->estop_message;
-        sprintf(this->estop_message, "All ok");
+        this->estop_msg_topic->data = this->last_estop_message;
 
         this->estop_status_topic->data_length = 4;
         this->estop_status_topic->data = new int32_t[4];
@@ -169,11 +169,17 @@ public:
 
     void update() override;
 
-    void publish() override {
-    }
+    void publish() override {}
 
     void subscribe(ros::NodeHandle *node_handle) override {
         node_handle->subscribe(estop_sub);
+    }
+
+    boolean estop_message_updated(){
+        if (strcmp(this->estop_message, this->last_estop_message) != 0) {
+            sprintf(this->last_estop_message, "%s", this->estop_message);
+            return true;
+        } return false;
     }
 
     bool is_high_voltage_enabled();
