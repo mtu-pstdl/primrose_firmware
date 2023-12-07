@@ -365,6 +365,8 @@ void loop() {
     uint32_t loop_start = micros(); // Get the time at the start of the loop
 //    digitalWriteFast(LED_BUILTIN, LOW); // Turn on the LED
 
+    adauTester->run();
+
     ADAU_BUS_INTERFACE.parse_buffer(); // Update the ADAU bus
 
     system_message_count = 0;

@@ -66,15 +66,15 @@ private:
         if (!this->signal_valid) return;
         int32_t delta_position = this->position - this->last_position;
         if (delta_position > MAX_INCREMENT_JITTER || delta_position < -MAX_INCREMENT_JITTER) {
-            this->signal_valid = false;
+            this->valid_position = false;
             return;
         } else {
             this->valid_position = true;
         }
-        uint32_t delta_time = millis() - this->last_update_time;
-        this->velocity = delta_position / (float_t) delta_time;
+        float_t delta_time =  (float_t) (micros() - this->last_update_time) / 1000000.0f;
+        this->velocity = (float_t) delta_position / (float_t) delta_time;
         this->last_position = this->position;
-        this->last_update_time = millis();
+        this->last_update_time = micros();
     }
 
 public:

@@ -26,7 +26,7 @@ private:
     };
 
     struct data {
-        uint16_t position = 0;
+        uint32_t position = 0;
         float_t  velocity = 0;
         boolean  fault = true;
     } suspension_data = {};
@@ -52,9 +52,9 @@ private:
     sensor_test_type current_test = valid_data;
 
     // The test works by running the ADAU through a series of possible
+    static uint8_t calculate_checksum(uint8_t sensor_id, void* data, uint8_t data_length);
 
-    template<typename T>
-    void send_data(uint8_t sensor_id, T* data, uint8_t data_length);
+    void send_data(uint8_t sensor_id, void* data, uint8_t data_length);
 
     void test_valid_message();
 
@@ -62,10 +62,12 @@ public:
 
     explicit ADAU_Tester(std_msgs::String* output_msg) {
         ADAU_SERIAL_BUS.addMemoryForRead(virtual_serial_buffer, 255);
-        for (int i = 0; i < 6; i++) {
-            auto* data = new Test_Data;
-            sensors[i] = new ADAU_Sensor(i + 10, data, sizeof(Test_Data));
-        }
+//        for (int i = 0; i < 6; i++) {
+//            auto* data = new Test_Data;
+//            sensors[i] = new ADAU_Sensor(i + 10, data, sizeof(Test_Data));
+//        }
+
+
 
         this->output_msg = output_msg;
         this->output_msg->data = output_string;
@@ -74,15 +76,17 @@ public:
 
     void run() {
         if (millis() - last_test < TIME_BETWEEN_TESTS) return;
+        // For now we just send data to suspension encoders 1 2 3 4
+        this->send_data(1, &suspension_data, sizeof(suspension_data));
+        this->send_data(2, &suspension_data, sizeof(suspension_data));
+        this->send_data(3, &suspension_data, sizeof(suspension_data));
+        this->send_data(4, &suspension_data, sizeof(suspension_data));
+
         last_test = millis();
-        switch (current_test) {
-            case valid_data:
-                // Send a valid message
-                test_valid_message();
-                break;
-            default:
-                break;
-        }
+
+        // Change the values of the data
+        suspension_data.velocity += 1;
+        suspension_data.position += suspension_data.velocity;
     }
 
 };

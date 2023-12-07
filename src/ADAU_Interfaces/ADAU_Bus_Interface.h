@@ -28,7 +28,7 @@ class ADAU_Bus_Interface {
     // 1 byte: start of message (0xFF)
     // 1 byte: sensor_id
     // 1 byte: data_length (Needs to match the data_size of the sensor otherwise reject the message)
-    // 1 byte: checksum (xor of all bytes in the message including the sensor_id)
+    // 1 byte: checksum (xor of all bytes in the message including the sensor_id and data_length)
     // n bytes: data
     // 6 bytes: end of message (0x00 0x00 0x00 0x00 0x00 0x00)
 

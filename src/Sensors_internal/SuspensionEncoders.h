@@ -13,7 +13,7 @@ class SuspensionEncoders : public PositionSensor {
 private:
 
     struct data {
-        uint16_t position = 0;
+        uint32_t position = 0;
         float_t  velocity = 0;
         boolean  fault = true;
     } data = {};
@@ -22,7 +22,7 @@ private:
 
 public:
 
-    SuspensionEncoders(uint8_t sensor_id){
+    explicit SuspensionEncoders(uint8_t sensor_id){
         this->sensor = new ADAU_Sensor(sensor_id, &data, sizeof(data));
     }
 

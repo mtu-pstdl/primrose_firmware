@@ -139,6 +139,12 @@ void ADAU_Bus_Interface::process_message() {
 
 }
 
+/**
+ * @brief  Calculate the checksum for a given sensor id and data
+ * @details The checksum is calculated by adding the sensor id to the data length and then adding all the data bytes
+ *          which wraps around at 255
+ * @return checksum The checksum of the message
+ */
 boolean ADAU_Bus_Interface::validate_checksum() {
     uint8_t checksum = 0;
     checksum += this->message_header.sensor_id;

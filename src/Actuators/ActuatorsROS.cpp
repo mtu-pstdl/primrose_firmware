@@ -31,6 +31,7 @@ void ActuatorsROS::update() {
     this->output_topic->data[2] = this->to_fixed_point(this->actuator->get_velocity(0), UNIT_SCALE);
     this->output_topic->data[3] = this->actuator->get_position(1);
     this->output_topic->data[4] = this->to_fixed_point(this->actuator->get_velocity(1), UNIT_SCALE);
+
     this->output_topic->data[5] = this->actuator->get_duty_cycle(0) * 100;
     this->output_topic->data[6] = this->actuator->get_duty_cycle(1) * 100;
 
