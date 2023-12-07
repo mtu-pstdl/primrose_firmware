@@ -121,6 +121,8 @@ void ADAU_Bus_Interface::process_message() {
                 // Update the sensor
                 void* data_ptr = current->sensor->get_data_ptr();
                 memcpy(data_ptr, this->message_buffer, this->message_header.data_length);
+                current->sensor->set_last_update_time(millis());
+                current->sensor->set_valid(true);
                 // Record the time that the last message was received
                 this->last_message_time = millis();
                 // Break out of the while loop

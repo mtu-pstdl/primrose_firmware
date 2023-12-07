@@ -8,7 +8,7 @@
 #include "ADAU_Sensor.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/String.h"
 
-#define TIME_BETWEEN_TESTS 6000  // 6 seconds between tests
+#define TIME_BETWEEN_TESTS 1000  // 1 second between tests
 #define ADAU_SERIAL_BUS    Serial1
 
 /**
@@ -28,7 +28,7 @@ private:
     struct data {
         uint32_t position = 0;
         float_t  velocity = 0;
-        boolean  fault = true;
+        boolean  fault = false;
     } suspension_data = {};
 
     enum sensor_test_type {
@@ -46,7 +46,9 @@ private:
     std_msgs::String* output_msg;
     char output_string[100] = {0};
 
-    uint8_t virtual_serial_buffer[255] = {0};  // Make this the serial bus so we can write directly to it without wiring
+
+    volatile uint8_t  virtual_serial_buffer[255] = {0};  // Make this the serial bus so we can write directly to it without wiring
+    volatile uint16_t virtual_serial_buffer_len  = 0;
 
     uint32_t         last_test    = 0;
     sensor_test_type current_test = valid_data;
@@ -61,14 +63,11 @@ private:
 public:
 
     explicit ADAU_Tester(std_msgs::String* output_msg) {
-        ADAU_SERIAL_BUS.addMemoryForRead(virtual_serial_buffer, 255);
 //        for (int i = 0; i < 6; i++) {
 //            auto* data = new Test_Data;
 //            sensors[i] = new ADAU_Sensor(i + 10, data, sizeof(Test_Data));
 //        }
-
-
-
+        ADAU_SERIAL_BUS.addMemoryForRead(virtual_serial_buffer, 255);
         this->output_msg = output_msg;
         this->output_msg->data = output_string;
 
@@ -76,6 +75,8 @@ public:
 
     void run() {
         if (millis() - last_test < TIME_BETWEEN_TESTS) return;
+        __disable_irq();
+        virtual_serial_buffer_len = 0;
         // For now we just send data to suspension encoders 1 2 3 4
         this->send_data(1, &suspension_data, sizeof(suspension_data));
         this->send_data(2, &suspension_data, sizeof(suspension_data));
@@ -85,8 +86,16 @@ public:
         last_test = millis();
 
         // Change the values of the data
-        suspension_data.velocity += 1;
+        suspension_data.velocity += 0.5f;
         suspension_data.position += suspension_data.velocity;
+
+        // Break some rules and update the serial library's head and tail pointers to pretend like we received data
+        ADAU_SERIAL_BUS.rx_buffer_head_ = virtual_serial_buffer_len;
+        ADAU_SERIAL_BUS.rx_buffer_tail_ = 0;
+        // Call the serial event handler
+//        ADAU_SERIAL_BUS.serialEventRun();
+        __enable_irq();
+
     }
 
 };

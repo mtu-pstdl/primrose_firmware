@@ -34,13 +34,19 @@ uint8_t ADAU_Tester::calculate_checksum(uint8_t sensor_id, void* data, uint8_t d
  * @param data_length The length of the data to send
  */
 void ADAU_Tester::send_data(uint8_t sensor_id, void* data, uint8_t data_length) {
-    virtual_serial_buffer[0] = 0xFF;  // Start byte
-    virtual_serial_buffer[1] = sensor_id;
-    virtual_serial_buffer[2] = data_length;
-    virtual_serial_buffer[3] = calculate_checksum(sensor_id, data, data_length);
+    uint8_t temp[100] = {0};
+    temp[0] = 0xFF;  // Start byte
+    temp[1] = sensor_id;
+    temp[2] = data_length;
+    temp[3] = calculate_checksum(sensor_id, data, data_length);
     for (int i = 0; i < data_length; i++) {
-        virtual_serial_buffer[4 + i] = ((uint8_t *) data)[i];
+        temp[4 + i] = ((uint8_t *) data)[i];
     }
-    memset(&virtual_serial_buffer[4 + data_length], 0, 6);  // End bytes (6 bytes)
+    memset(&temp[4 + data_length], 0, 6);  // End bytes (6 bytes)
+
+    // Copy the data to the virtual serial buffer
+    // This doesn't work
+    memcpy(virtual_serial_buffer + virtual_serial_buffer_len, temp, 11 + data_length);
+    virtual_serial_buffer_len += 11 + data_length;
 }
 
