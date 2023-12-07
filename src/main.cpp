@@ -371,6 +371,8 @@ void loop() {
 
     adauTester->run();
 
+    test_output_pub.publish(&test_output_msg);
+
     ADAU_BUS_INTERFACE.parse_buffer(); // Update the ADAU bus
 
     system_message_count = 0;

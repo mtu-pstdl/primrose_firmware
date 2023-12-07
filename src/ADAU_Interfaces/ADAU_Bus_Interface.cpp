@@ -123,6 +123,7 @@ void ADAU_Bus_Interface::process_message() {
         while (current != nullptr) {
             if (current->sensor == nullptr) continue;  // Skip this sensor if it is null
             parse_count++;
+            current->sensor->is_attached_properly();
             if (current->sensor->get_sensor_id() == this->message_header.sensor_id) {
                 // We have found the sensor that sent the message
                 // Update the sensor
@@ -149,9 +150,7 @@ void ADAU_Bus_Interface::process_message() {
         // Increment the failed message count
         this->failed_message_count++;
     }
-
     this->cleanup();
-
 }
 
 /**

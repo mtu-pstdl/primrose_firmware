@@ -22,6 +22,8 @@ private:
     // The size of the data structure in bytes
     uint8_t data_size = 0;
 
+    boolean attached_properly = false;
+
     boolean valid_data = false;
     uint32_t last_update_time = 0;
 
@@ -42,6 +44,14 @@ public:
 
     void* get_data_ptr(){
         return this->data_ptr;
+    }
+
+    void is_attached_properly(){  // Debugging function, remove later
+        this->attached_properly = true;
+    }
+
+    boolean is_attached(){
+        return this->attached_properly;
     }
 
     void set_last_update_time(uint32_t time){

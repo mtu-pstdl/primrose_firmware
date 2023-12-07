@@ -90,8 +90,14 @@ public:
         suspension_data.position += suspension_data.velocity;
 
         sprintf(this->output_string, "");
-        sprintf(this->output_string, "Sensors attached: %d, Sensors checked: %d",
-                ADAU_BUS_INTERFACE.num_sensors, ADAU_BUS_INTERFACE.parsed);
+        // Check if all sensors are attached properly
+        ADAU_Bus_Interface::ADAU_Sensor_List* current = ADAU_BUS_INTERFACE.sensor_list;
+        while (current != nullptr) {
+            if (!current->sensor->is_attached()) {
+
+            }
+            current = current->next;
+        }
 
         // Break some rules and update the serial library's head and tail pointers to pretend like we received data
         ADAU_SERIAL_BUS.rx_buffer_head_ = virtual_serial_buffer_len;

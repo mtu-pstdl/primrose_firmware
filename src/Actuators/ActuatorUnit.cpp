@@ -192,7 +192,7 @@ void ActuatorUnit::check_connection() {
 }
 
 int32_t ActuatorUnit::get_position(uint8_t motor) {
-//    if (!this->motors[motor].encoder->is_valid()) return INT32_MIN;
+    if (!this->motors[motor].encoder->is_valid()) return INT32_MIN;
     return this->motors[motor].encoder->get_position();
 }
 
@@ -201,6 +201,7 @@ boolean ActuatorUnit::on_target(uint8_t motor){
 }
 
 float_t ActuatorUnit::get_velocity(uint8_t motor) {
+    if (!this->motors[motor].encoder->is_valid()) return FP_NAN;
     return this->motors[motor].encoder->get_velocity();
 }
 

@@ -22,6 +22,8 @@ void ActuatorsROS::control_callback(const std_msgs::Int32MultiArray &msg) {
 }
 
 int32_t ActuatorsROS::to_fixed_point(float value, float scale) {
+    // If the value is nan or inf, return 0
+    if (isnan(value) || isinf(value)) return INT32_MIN;
     return (int32_t)(value * scale);
 }
 

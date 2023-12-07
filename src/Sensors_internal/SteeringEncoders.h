@@ -72,6 +72,10 @@ private:
             this->valid_position = true;
         }
         float_t delta_time =  (float_t) (micros() - this->last_update_time) / 1000000.0f;
+        if (delta_time == 0) {
+            this->velocity = 0;
+            return;
+        }
         this->velocity = (float_t) delta_position / (float_t) delta_time;
         this->last_position = this->position;
         this->last_update_time = micros();

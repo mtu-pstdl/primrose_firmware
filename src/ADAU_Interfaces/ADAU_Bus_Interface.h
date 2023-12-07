@@ -34,17 +34,6 @@ class ADAU_Bus_Interface {
 private:
 
 
-
-    /**
-     * @brief A linked list of ADAU_Sensors so that they can be added at runtime without knowing the number of sensors
-     */
-    struct ADAU_Sensor_List {
-        ADAU_Sensor*      sensor = nullptr;
-        ADAU_Sensor_List* next   = nullptr;
-    };
-
-    ADAU_Sensor_List* sensor_list = nullptr;
-
     enum current_state {
         waiting_for_start_byte,
         waiting_for_header,
@@ -91,6 +80,16 @@ private:
     void cleanup();
 
 public:
+
+    /**
+     * @brief A linked list of ADAU_Sensors so that they can be added at runtime without knowing the number of sensors
+     */
+    struct ADAU_Sensor_List {
+        ADAU_Sensor*      sensor = nullptr;
+        ADAU_Sensor_List* next   = nullptr;
+    };
+
+    ADAU_Sensor_List* sensor_list = nullptr;
 
     /**
      * This constructor initializes the serial interface to the Analog Data Acquisition Unit (ADAU)
