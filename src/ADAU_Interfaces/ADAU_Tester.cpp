@@ -66,8 +66,7 @@ void ADAU_Tester::send_data(uint8_t sensor_id, void* data, uint8_t data_length) 
     memset(&temp[4 + data_length], 0, 6);  // End bytes (6 bytes)
 
     // Copy the data to the virtual serial buffer
-    // This doesn't work
-    memcpy(virtual_serial_buffer + virtual_serial_buffer_len, temp, 11 + data_length);
-    virtual_serial_buffer_len += 11 + data_length;
+    memcpy(virtual_serial_buffer + virtual_serial_buffer_len, temp, 10 + data_length);
+    virtual_serial_buffer_len += 10 + data_length;
 }
 

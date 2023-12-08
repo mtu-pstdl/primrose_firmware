@@ -91,6 +91,8 @@ public:
 
     ADAU_Sensor_List* sensor_list = nullptr;
 
+    char output_string[1000] = {0};
+
     /**
      * This constructor initializes the serial interface to the Analog Data Acquisition Unit (ADAU)
      * and resets the ADAU to a known state. And begins reading data from the ADAU.

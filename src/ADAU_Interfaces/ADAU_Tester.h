@@ -31,27 +31,16 @@ private:
         boolean  fault = false;
     } suspension_data = {};
 
-    enum sensor_test_type {
-        valid_data,           // The whole message is added to the buffer with no errors
-        incomplete_data,      // The message is sent in fragments but the there are no errors in the data
-        invalid_data,         // The message is sent at once but the data is corrupted in some random way
-        invalid_sensor_id,    // The sensor id does not match any of the sensors attached to the bus interface
-        invalid_data_length,  // The data length is greater than the size of the data struct
-        invalid_checksum,     // The checksum is incorrect (the data is not corrupted)
-        test_complete,        // All tests have been completed
-    };
-
     ADAU_Sensor* sensors[6] = {nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
 
     std_msgs::String* output_msg;
-    char output_string[100] = {0};
+    char output_string[1000] = {0};
 
 
     uint8_t  virtual_serial_buffer[255] = {0};  // Make this the serial bus so we can write directly to it without wiring
     uint16_t virtual_serial_buffer_len  = 0;
 
     uint32_t         last_test    = 0;
-    sensor_test_type current_test = valid_data;
 
     // The test works by running the ADAU through a series of possible
     static uint8_t calculate_checksum(void* data, uint8_t data_length);
@@ -75,8 +64,6 @@ public:
 
     void run() {
         if (millis() - last_test < TIME_BETWEEN_TESTS) return;
-        __disable_irq();
-        virtual_serial_buffer_len = 0;
         // For now we just send data to suspension encoders 1 2 3 4
         this->send_data(0x01, &suspension_data, sizeof(suspension_data));
         this->send_data(0x02, &suspension_data, sizeof(suspension_data));
@@ -88,23 +75,6 @@ public:
         // Change the values of the data
         suspension_data.velocity += 0.5f;
         suspension_data.position += suspension_data.velocity;
-
-        sprintf(this->output_string, "");
-        // Check if all sensors are attached properly
-        ADAU_Bus_Interface::ADAU_Sensor_List* current = ADAU_BUS_INTERFACE.sensor_list;
-        while (current != nullptr) {
-            if (!current->sensor->is_attached()) {
-
-            }
-            current = current->next;
-        }
-
-        // Break some rules and update the serial library's head and tail pointers to pretend like we received data
-        ADAU_SERIAL_BUS.rx_buffer_head_ = virtual_serial_buffer_len;
-        ADAU_SERIAL_BUS.rx_buffer_tail_ = 0;
-        // Call the serial event handler
-//        ADAU_SERIAL_BUS.serialEventRun();
-        __enable_irq();
 
     }
 

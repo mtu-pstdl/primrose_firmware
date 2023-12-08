@@ -114,17 +114,21 @@ void ADAU_Bus_Interface::finish_message() {
 
 void ADAU_Bus_Interface::process_message() {
     // Check if the message is signal_valid
-    parse_count = 0;
+    char temp[1000] = {0};
     if (this->validate_parity() || true) { // Disable parity check for now
         this->message_header.sensor_id >>= 1;  // Shift the sensor id right by 1 bit to remove the parity bit
         // The message is signal_valid
         // Find the sensor that sent the message
         ADAU_Sensor_List* current = this->sensor_list;
+        sprintf(temp, "Message from sensor %d\n", this->message_header.sensor_id);
+        strlcat(this->output_string, temp, 100);
         while (current != nullptr) {
-            if (current->sensor == nullptr) continue;  // Skip this sensor if it is null
             parse_count++;
+            if (current->sensor == nullptr) continue;  // Skip this sensor if it is null
             current->sensor->is_attached_properly();
             if (current->sensor->get_sensor_id() == this->message_header.sensor_id) {
+                sprintf(temp, "-Match %d\n", this->message_header.sensor_id);
+                strlcat(this->output_string, temp, 900);
                 // We have found the sensor that sent the message
                 // Update the sensor
                 // Check if the checksum is signal_valid
@@ -141,8 +145,12 @@ void ADAU_Bus_Interface::process_message() {
                 current->sensor->set_valid(true);
                 // Record the time that the last message was received
                 this->last_message_time = millis();
+            } else {
+                sprintf(temp, "-No Match %d != %d\n", this->message_header.sensor_id,
+                        current->sensor->get_sensor_id());
+                strlcat(this->output_string, temp, 900);
             }
-//            if (current->next == nullptr) break;
+            if (current->next == nullptr) break;
             current = current->next;
         }
     } else {  // Because the sensor_id is invalid we can't find the sensor that sent the message, so we can't update it
@@ -191,10 +199,15 @@ void ADAU_Bus_Interface::cleanup() {
     this->header_length = 0;
     // Reset the message buffer length
     this->message_buffer_len = 0;
+    // Reset the header buffer
+    memset(this->header_buffer, 0, 3);
+    // Reset the message buffer
+    memset(this->message_buffer, 0, 254);
 }
 
 void ADAU_Bus_Interface::parse_buffer() {
     this->parse_start_time = micros(); // Record the time that the parse started so we don't overrun the allotted time
+    // Print the contents of the buffer to the temp string in hex
     while (ADAU_INTERFACE.available() && this->parse_start_time + 250 > micros()) {
        switch (this->current_state) {
            case waiting_for_start_byte:
@@ -218,6 +231,8 @@ void ADAU_Bus_Interface::parse_buffer() {
                // Wait for the end byte
                this->finish_message();
                break;
+           default:
+               this->cleanup();
        }
     }
 }
