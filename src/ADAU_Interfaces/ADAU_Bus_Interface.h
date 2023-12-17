@@ -6,8 +6,8 @@
 #define PRIMROSE_MCIU_ADAU_BUS_INTERFACE_H
 #include <Arduino.h>
 
-#define ADAU_INTERFACE  Serial1
-#define ADAU_BAUD_RATE  115200
+#define ADAU_INTERFACE  Serial4
+#define ADAU_BAUD_RATE  115200  // 115.2 kbps
 #define ADAU_RESET_PIN  3
 
 // Message parameters
@@ -91,6 +91,8 @@ public:
 
     ADAU_Sensor_List* sensor_list = nullptr;
 
+    uint8_t serial_buffer[1024] = {0};
+
     char output_string[1000] = {0};
 
     /**
@@ -98,16 +100,20 @@ public:
      * and resets the ADAU to a known state. And begins reading data from the ADAU.
      */
     ADAU_Bus_Interface(){
-        ADAU_INTERFACE.begin(ADAU_BAUD_RATE);
+        ADAU_INTERFACE.begin(ADAU_BAUD_RATE, SERIAL_8N1);
+        ADAU_INTERFACE.addMemoryForRead(serial_buffer, 255);
         pinMode(ADAU_RESET_PIN, OUTPUT);
         reset(); // Put the ADAU in a known state
+        // Attach to the serialEvent interrupt for whatever serial port is being used
     }
 
     void attachSensor(ADAU_Sensor* sensor);
 
     void parse_buffer();
 
-    boolean validate_parity();
+//    void serialEvent1(){
+//        this->parse_buffer();
+//    }
 
     // The number of sensors attached to this bus interface
     int num_sensors = 0;

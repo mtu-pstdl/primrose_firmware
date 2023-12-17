@@ -34,7 +34,7 @@ void ADAU_Bus_Interface::attachSensor(ADAU_Sensor *sensor) {
 }
 
 void ADAU_Bus_Interface::load_header() {
-    while (ADAU_INTERFACE.available() && this->parse_start_time + 250 > micros()) {
+    while (ADAU_INTERFACE.available() && this->parse_start_time + 2500 > micros()) {
         // Read the next byte
         uint8_t byte = ADAU_INTERFACE.read();
         this->header_buffer[this->header_length] = byte;
@@ -70,94 +70,80 @@ void ADAU_Bus_Interface::load_header() {
 
 void ADAU_Bus_Interface::load_data(){
     // If the header has been received keep reading bytes until we get all the expected bytes
-    while (ADAU_INTERFACE.available() && this->parse_start_time + 250 > micros()) {
-        // Read the next byte
-        uint8_t byte = ADAU_INTERFACE.read();
-        // Add the byte to the message buffer
-        this->message_buffer[this->message_buffer_len] = byte;
-        // Increment the message buffer length
-        this->message_buffer_len++;
-        // If the message buffer length is equal to the expected data length then we have received all the data
-        if (this->message_buffer_len == this->message_header.data_length) {
-            this->current_state = waiting_for_end_byte;
-            // Finish the message
-            this->finish_message();
-            // Break out of the while loop
-            break;
-        }
+    if (!ADAU_INTERFACE.available()) return;
+    // Read the next byte
+    uint8_t byte = ADAU_INTERFACE.read();
+    // Add the byte to the message buffer
+    this->message_buffer[this->message_buffer_len] = byte;
+    // Increment the message buffer length
+    this->message_buffer_len++;
+    // If the message buffer length is equal to the expected data length then we have received all the data
+    if (this->message_buffer_len == this->message_header.data_length) {
+        this->current_state = waiting_for_end_byte;
+        // Finish the message
+        this->finish_message();
     }
 }
 
 void ADAU_Bus_Interface::finish_message() {
     // When this function is called the message buffer should contain the entire message
-    // Wait for the end of message bytes
-    while (ADAU_INTERFACE.available() && this->parse_start_time + 250 > micros()) {
-        uint8_t byte = ADAU_INTERFACE.read();
-        if (byte == MESSAGE_END_BYTE) {
-            this->message_end_count++;
-        } else {
-            this->message_end_count = 0;
+    if (!ADAU_INTERFACE.available()) return;
+    uint8_t byte = ADAU_INTERFACE.read();
+    if (byte == MESSAGE_END_BYTE) {
+        this->message_end_count++;
+    } else {
+        this->message_end_count = 0;
+    }
+    if (this->current_state == waiting_for_end_byte) {
+        if (this->message_end_count == END_MESSAGE_COUNT) {
+            // We have received the footer so now we can process the message
+            this->process_message();
         }
-        if (this->current_state == waiting_for_end_byte) {
-            if (this->message_end_count == END_MESSAGE_COUNT) {
-                // We have received the footer so now we can process the message
-                this->process_message();
-            }
-        } else if (this->current_state == waiting_for_end_byte_failure) {
-            if (this->message_end_count == END_MESSAGE_COUNT) {
-                // We have received the footer so now we can cleanup
-                this->cleanup();
-            }
+    } else if (this->current_state == waiting_for_end_byte_failure) {
+        if (this->message_end_count == END_MESSAGE_COUNT) {
+            // We have received the footer so now we can cleanup
+            this->cleanup();
         }
     }
 }
 
 void ADAU_Bus_Interface::process_message() {
-    // Check if the message is signal_valid
-    char temp[1000] = {0};
-    if (this->validate_parity() || true) { // Disable parity check for now
-        this->message_header.sensor_id >>= 1;  // Shift the sensor id right by 1 bit to remove the parity bit
-        // The message is signal_valid
-        // Find the sensor that sent the message
-        ADAU_Sensor_List* current = this->sensor_list;
-        sprintf(temp, "Message from sensor %d\n", this->message_header.sensor_id);
-        strlcat(this->output_string, temp, 100);
-        while (current != nullptr) {
-            parse_count++;
-            if (current->sensor == nullptr) continue;  // Skip this sensor if it is null
-            current->sensor->is_attached_properly();
-            if (current->sensor->get_sensor_id() == this->message_header.sensor_id) {
-                sprintf(temp, "-Match %d\n", this->message_header.sensor_id);
-                strlcat(this->output_string, temp, 900);
-                // We have found the sensor that sent the message
-                // Update the sensor
-                // Check if the checksum is signal_valid
-                if (!this->validate_checksum()) {
-                    // The checksum is invalid
-                    // Increment the failed message count
-                    current->sensor->set_valid(false);
-                    this->failed_message_count++;
-                    continue;
-                }
-                void* data_ptr = current->sensor->get_data_ptr();
-                memcpy(data_ptr, this->message_buffer, this->message_header.data_length);
-                current->sensor->set_last_update_time(millis());
-                current->sensor->set_valid(true);
-                // Record the time that the last message was received
-                this->last_message_time = millis();
-            } else {
-                sprintf(temp, "-No Match %d != %d\n", this->message_header.sensor_id,
-                        current->sensor->get_sensor_id());
-                strlcat(this->output_string, temp, 900);
+    // Find the sensor that sent the message
+    boolean found_sensor = false;
+    ADAU_Sensor_List* current = this->sensor_list;
+    while (current != nullptr) {
+        if (current->sensor == nullptr) continue;  // Skip this sensor if it is null
+        if (current->sensor->get_sensor_id() == this->message_header.sensor_id) {
+            // We have found the sensor that sent the message
+            // Update the sensor
+            // Check if the checksum is signal_valid
+            if (this->message_header.data_length != current->sensor->get_data_size()) {
+                // The data length is invalid
+                // Increment the failed message count
+                current->sensor->set_valid(false);
+                this->failed_message_count++;
+                continue;
             }
-            if (current->next == nullptr) break;
-            current = current->next;
+            if (!this->validate_checksum()) {
+                // The checksum is invalid
+                // Increment the failed message count
+                current->sensor->set_valid(false);
+                this->failed_message_count++;
+                continue;
+            }
+            void* data_ptr = current->sensor->get_data_ptr();
+            memcpy(data_ptr, this->message_buffer, this->message_header.data_length);
+            current->sensor->set_last_update_time(millis());
+            current->sensor->set_valid(true);
+            // Record the time that the last message was received
+            this->last_message_time = millis();
+            parse_count++;
+            found_sensor = true;
         }
-    } else {  // Because the sensor_id is invalid we can't find the sensor that sent the message, so we can't update it
-        // The message is invalid
-        // Increment the failed message count
-        this->failed_message_count++;
+        if (current->next == nullptr) break;
+        current = current->next;
     }
+    if (!found_sensor) this->failed_message_count++;
     this->cleanup();
 }
 
@@ -175,19 +161,6 @@ boolean ADAU_Bus_Interface::validate_checksum() {
         checksum += this->message_buffer[i];
     }
     return checksum == this->message_header.checksum;
-}
-
-/**
- * @brief  Calculate if the parity for a given sensor id is valid (even parity, LSB is parity bit)
- * @return True if the parity is signal_valid, false if the parity is invalid
- */
-boolean ADAU_Bus_Interface::validate_parity() {
-    // Check if the sensor id passes the parity check
-    uint8_t parity = 0;
-    for (int i = 0; i < 7; i++) {
-        parity += (this->message_header.sensor_id >> i) & 0x01;  // Add the value of the current bit to the parity
-    }
-    return parity % 2 == 0;
 }
 
 void ADAU_Bus_Interface::cleanup() {
@@ -208,31 +181,41 @@ void ADAU_Bus_Interface::cleanup() {
 void ADAU_Bus_Interface::parse_buffer() {
     this->parse_start_time = micros(); // Record the time that the parse started so we don't overrun the allotted time
     // Print the contents of the buffer to the temp string in hex
-    while (ADAU_INTERFACE.available() && this->parse_start_time + 250 > micros()) {
-       switch (this->current_state) {
-           case waiting_for_start_byte:
-               // Wait for the start byte
-               if (ADAU_INTERFACE.read() == MESSAGE_START_BYTE) {
+    this->parse_count = 0;
+    this->failed_message_count = 0;
+    memset(this->output_string, 0, 999);
+    sprintf(this->output_string, "Starting parse, entry state: %d, buffer length: %d\n",
+            this->current_state, ADAU_INTERFACE.available());
+    while (this->parse_start_time + 2500 > micros()) {
+        if (!ADAU_INTERFACE.available()) break;
+        switch (this->current_state) {
+            case waiting_for_start_byte:
+                // Wait for the start byte
+                if (ADAU_INTERFACE.read() == MESSAGE_START_BYTE) {
                    // We have received the start byte
                    // Set the current state to waiting for header
                    this->current_state = waiting_for_header;
-               }
-               break;
-           case waiting_for_header:
+                }
+                break;
+            case waiting_for_header:
                // Wait for the header
-               this->load_header();
-               break;
-           case waiting_for_data:
-               // Wait for the data
-               this->load_data();
-               break;
+                this->load_header();
+                break;
+            case waiting_for_data:
+                // Wait for the data
+                this->load_data();
+                break;
            case waiting_for_end_byte:
            case waiting_for_end_byte_failure:
-               // Wait for the end byte
-               this->finish_message();
-               break;
+                // Wait for the end byte
+                this->finish_message();
+                break;
            default:
                this->cleanup();
        }
     }
+    sprintf(this->output_string, "%sFinished parse, exit state: %d, buffer length: %d,"
+                                 " parse count: %d, failed count: %lu, time elapsed: %lu\n",
+            this->output_string, this->current_state, ADAU_INTERFACE.available(),
+            this->parse_count, this->failed_message_count, micros() - this->parse_start_time);
 }
