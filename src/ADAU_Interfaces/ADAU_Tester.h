@@ -83,8 +83,8 @@ public:
         // Test the different types of corruption
         this->send_data(10, &test_data, sizeof(test_data),
                         NO_CORRUPTION);
-//        this->send_data(11, &test_data, sizeof(test_data),
-//                        CORRUPT_START_BYTE);
+        this->send_data(11, &test_data, sizeof(test_data),
+                        CORRUPT_START_BYTE);
 //        this->send_data(12, &test_data, sizeof(test_data),
 //                        CORRUPT_SENSOR_ID);
         this->send_data(13, &test_data, sizeof(test_data),

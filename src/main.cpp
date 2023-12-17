@@ -28,6 +28,7 @@
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/String.h"
 #include "ADAU_Interfaces/ADAU_Tester.h"
 #include "Watchdog_t4.h"
+#include "build_info.h"
 
 // Motor configurations
 feedforward_struct trencher_ff = {
@@ -380,7 +381,8 @@ void setup() {
     config.callback = watchdog_violation;
     wdt.begin(config);
 
-    node_handle.loginfo("Running Firmware Build: " __DATE__ " " __TIME__);
+
+
 }
 
 void loop() {
@@ -461,13 +463,22 @@ void loop() {
     int8_t spin_result = 0;
     spin_result = node_handle.spinOnce(); // 50ms timeout
 
+    static boolean first_run = true;
+    if (first_run) {
+        first_run = false;
+
+    }
+
     switch (spin_result) {
         case ros::SPIN_OK:
             break;
-        case ros::SPIN_ERR:
-            log_msg = "Spin error";
-            node_handle.logerror(log_msg.c_str());
-            // Collect info about the error
+        case ros::SPIN_ERR:  // Always happens once on startup
+            node_handle.logwarn("BUILD #" BUILD_NUMBER_STR " @ " BUILD_DATE " " BUILD_TIME);
+            node_handle.logwarn("BUILD TYPE: " BUILD_TYPE);
+            node_handle.logwarn("BUILD GIT HASH: " BUILD_GIT_HASH);
+            node_handle.logwarn("BUILD GIT BRANCH: " BUILD_GIT_BRANCH);
+            node_handle.logwarn("BUILD COMPILER VERSION: " BUILD_COMPILER_VERSION);
+            node_handle.logwarn("BUILD MACHINE NAME: " BUILD_MACHINE_NAME);
             break;
         case ros::SPIN_TIMEOUT:
             log_msg = "Spin timeout";

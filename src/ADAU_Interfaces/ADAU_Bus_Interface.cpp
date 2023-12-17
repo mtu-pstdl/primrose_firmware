@@ -247,7 +247,7 @@ void ADAU_Bus_Interface::parse_buffer() {
     }
     sprintf(this->output_string, "%sFinished parse, exit state: %d, buffer length: %d,"
                                  " parse count: %d, failed count: %lu, ignored bytes: %lu, "
-                                 "time elapsed: %lu\n",
+                                 "time elapsed: %lu us\n",
             this->output_string, this->current_state, ADAU_INTERFACE.available(),
             this->parse_count, this->failed_message_count, ignored_bytes,
             micros() - this->parse_start_time);
