@@ -5,11 +5,6 @@
 #include "ADAU_Tester.h"
 
 
-
-void ADAU_Tester::test_valid_message() {
-
-}
-
 /**
  * @brief  Calculate the checksum for a given sensor id and data
  * @param sensor_id    The sensor id to calculate the checksum for

@@ -120,14 +120,12 @@ void ADAU_Bus_Interface::process_message() {
             if (this->message_header.data_length != current->sensor->get_data_size()) {
                 // The data length is invalid
                 // Increment the failed message count
-                current->sensor->set_valid(false);
                 this->failed_message_count++;
                 continue;
             }
             if (!this->validate_checksum()) {
                 // The checksum is invalid
                 // Increment the failed message count
-                current->sensor->set_valid(false);
                 this->failed_message_count++;
                 continue;
             }

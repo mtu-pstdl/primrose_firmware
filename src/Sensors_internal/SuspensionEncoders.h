@@ -12,10 +12,14 @@ class SuspensionEncoders : public PositionSensor {
 
 private:
 
+    /**
+     * @brief The data structure that a analog linear position sensor sends
+     */
     struct data {
-        uint32_t position = 0;
-        float_t  velocity = 0;
-        boolean  fault = false;
+        float_t  position = 0;  // The position of the suspension encoder in ticks
+        float_t  velocity = 0;  // The velocity of the suspension encoder in ticks per second
+        uint32_t sequence = 0;  // The sequence number of the message (always incrementing)
+        boolean  fault = false; // Indicates if something is wrong with the sensor
     } data = {};
 
     ADAU_Sensor* sensor;
@@ -27,7 +31,7 @@ public:
     }
 
     int32_t get_position() const override{
-        return data.position;
+        return (int32_t) (data.position * 1000);
     }
 
     float_t get_velocity() const override{
