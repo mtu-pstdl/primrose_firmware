@@ -65,7 +65,37 @@ void ADAU_Bus_Interface::load_header() {
             break;
         }
     }
-    this->load_data();
+    this->prevalidate_data_length();
+}
+
+void ADAU_Bus_Interface::prevalidate_data_length() {
+    // Check if the data length matches the expected data length of the sensor it supposedly is for
+    ADAU_Sensor_List* current = this->sensor_list;
+    boolean success = false;
+    while (current != nullptr) {
+        if (current->sensor == nullptr) continue;  // Skip this sensor if it is null
+        if (current->sensor->get_sensor_id() == this->message_header.sensor_id) {
+            // We have found the sensor that sent the message
+            // Update the sensor
+            // Check if the checksum is signal_valid
+            if (this->message_header.data_length != current->sensor->get_data_size()) {
+                break;
+            }
+            success = true;
+        }
+        if (current->next == nullptr) break;
+        current = current->next;
+    }
+    if (!success) {
+        // We did not find the sensor that sent the message
+        // Increment the failed message count
+        this->current_state = waiting_for_end_byte_failure;
+        this->failed_message_count++;
+    } else {
+        // We found the sensor that sent the message
+        // Set the current state to waiting for data
+        this->current_state = waiting_for_data;
+    }
 }
 
 void ADAU_Bus_Interface::load_data(){

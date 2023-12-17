@@ -157,7 +157,7 @@ public:
         return this->initialized && !this->failure && this->signal_valid;
     }
 
-    boolean fault() override {
+    uint8_t fault() override {
         return this->failure;
     }
 

@@ -118,6 +118,8 @@ public:
     // The number of sensors attached to this bus interface
     int num_sensors = 0;
     int parse_count = 0;
+
+    void prevalidate_data_length();
 };
 
 #endif //PRIMROSE_MCIU_ADAU_BUS_INTERFACE_H

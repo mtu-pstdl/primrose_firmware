@@ -32,7 +32,7 @@ public:
         return false;
     }
 
-    virtual boolean fault() {
+    virtual uint8_t fault() {
         return false;
     }
 
