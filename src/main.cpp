@@ -27,6 +27,7 @@
 #include "Sensors_internal/SuspensionEncoders.h"
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/String.h"
 #include "ADAU_Interfaces/ADAU_Tester.h"
+#include "Watchdog_t4.h"
 
 // Motor configurations
 feedforward_struct trencher_ff = {
@@ -36,15 +37,18 @@ feedforward_struct trencher_ff = {
         new float_t[19]{0.8924418571359903, 0.9336526961981934, 0.9564353191563113, 1.0545682968419106, 1.0956791896783447, 1.1655547321087025, 1.1496691199748679, 1.1904955891573539, 1.2093394546417329, 1.2397901319373068, 1.28819931056913, 1.2661215055746053, 1.2726709948459896, 1.2938049218498964, 1.4171302597609259, 1.4186923515245125, 1.4106400849419782, 1.4540763298221129, 1.4360584135375623}
 };
 
-#define CPU_FREQ_BOOST 816000000 //
-//#define CPU_FREQ_BASE 600000000 // 300 MHz
+//
+
 #define CPU_FREQ_BASE 300000000
-//#define CPU_FREQ_BASE 24000000 // 300 MHz
 #define CPU_FREQ_MIN 24000000 // 24 MHz
 #define WARN_TEMP 65.0 // Degrees C
 #define THROTTLE_TEMP 75.0 // Degrees C
 uint32_t cpu_freq = CPU_FREQ_BASE;
 uint32_t cpu_boost_time = 0;
+
+// If a loop takes longer than MAX_LOOP_TIME then the whole system will be reset so this is a hard limit
+#define MAX_LOOP_TIME 1 // 1 second
+WDT_T4<WDT1> wdt;
 
 ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
@@ -56,7 +60,6 @@ ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
 
 std_msgs::String test_output_msg;
 ros::Publisher test_output_pub("/test_output", &test_output_msg);
-char test_output_string[100];
 
 //IntervalTimer load_cell_read_timer;
 
@@ -94,9 +97,10 @@ uint8_t system_message_count = 0;
 extern "C" uint32_t set_arm_clock(uint32_t frequency);
 #endif
 
+#define RESTART_ADDR 0xE000ED0C  // Application Restart and Control Register
 extern unsigned long _heap_start;  // start of heap
 extern unsigned long _heap_end;  // end of heap
-extern char *__brkval;  // current top of heap
+extern char          *__brkval;  // current top of heap
 
 uint32_t last_ram_time = 0;
 int last_ram = 0;
@@ -182,6 +186,15 @@ void odometer_reset_callback(const std_msgs::Int32& msg) {
 ros::Subscriber<std_msgs::Int32> odometer_reset_sub("/odometer_reset", odometer_reset_callback);
 
 uint32_t spin_time = 0;
+
+void watchdog_violation() {
+    // If the watchdog timer is triggered then reset the system
+    // This will only happen if the loop takes longer than MAX_LOOP_TIME
+    // This is a hard limit
+    wdt.reset();
+    // write to the restart register (Application Restart and Control Register) to hard reset the system
+    *(volatile uint32_t *)RESTART_ADDR = 0x5FA0004;
+}
 
 void setup() {
 
@@ -361,6 +374,12 @@ void setup() {
 
     adauTester = new ADAU_Tester(&test_output_msg);
 
+    WDT_timings_t config;
+    config.trigger = MAX_LOOP_TIME;
+    config.timeout = 5;
+    config.callback = watchdog_violation;
+    wdt.begin(config);
+
     node_handle.loginfo("Running Firmware Build: " __DATE__ " " __TIME__);
 }
 
@@ -527,6 +546,5 @@ void loop() {
             }
         }
     }
-
-//    sys_diag_pub.publish(&system_diagnostics);
+    wdt.feed();  // Feed the watchdog timer to prevent a reset
 }

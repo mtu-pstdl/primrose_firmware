@@ -76,15 +76,15 @@ public:
 //        if (millis() - last_test < TIME_BETWEEN_TESTS) return;
         virtual_serial_buffer_len = 0;
 
-//        test_data.integer_32 = random(0, 100000);
-//        test_data.integer_64 = random(0, 100000);
-//        test_data.float_32 = random(0, 100000) / 100.0f;
+        test_data.integer_32 = random(0, 100000);
+        test_data.integer_64 = random(0, 100000);
+        test_data.float_32 = random(0, 100000) / 100.0f;
 //
         // Test the different types of corruption
-//        this->send_data(10, &test_data, sizeof(test_data),
-//                        NO_CORRUPTION);
-//        this->send_data(11, &test_data, sizeof(test_data),
-//                        CORRUPT_START_BYTE);
+        this->send_data(10, &test_data, sizeof(test_data),
+                        NO_CORRUPTION);
+        this->send_data(11, &test_data, sizeof(test_data),
+                        CORRUPT_START_BYTE);
 //        this->send_data(12, &test_data, sizeof(test_data),
 //                        CORRUPT_SENSOR_ID);
 //        this->send_data(13, &test_data, sizeof(test_data),

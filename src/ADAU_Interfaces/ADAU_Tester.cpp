@@ -66,7 +66,8 @@ void ADAU_Tester::send_data(uint8_t sensor_id, void* data, uint8_t data_length,
         case NO_CORRUPTION:
             break;
         case CORRUPT_START_BYTE:
-            temp[0] = random(0x00, 0xFE); // Random start byte
+//            temp[0] = random(0x00, 0xFE); // Random start byte
+            temp[0] = 0x01;
             break;
         case CORRUPT_SENSOR_ID:
             // Random sensor id that is not the same as the sensor id
