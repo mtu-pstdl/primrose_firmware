@@ -7,7 +7,7 @@
 #include <Arduino.h>
 
 #define ADAU_INTERFACE  Serial4
-#define ADAU_BAUD_RATE  4000000  // 115.2 kbps
+#define ADAU_BAUD_RATE  1000000  // 1Mbaud
 #define ADAU_RESET_PIN  3
 
 // Message parameters
@@ -110,7 +110,7 @@ public:
      */
     ADAU_Bus_Interface(){
         ADAU_INTERFACE.begin(ADAU_BAUD_RATE, SERIAL_8N1);
-        ADAU_INTERFACE.addMemoryForRead(serial_buffer, 255);
+        ADAU_INTERFACE.addMemoryForRead(serial_buffer, 1024);
         pinMode(ADAU_RESET_PIN, OUTPUT);
         reset(); // Put the ADAU in a known state
         // Attach to the serialEvent interrupt for whatever serial port is being used

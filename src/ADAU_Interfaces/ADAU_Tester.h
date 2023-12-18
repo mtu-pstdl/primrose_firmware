@@ -87,6 +87,10 @@ public:
         this->send_data(0x05, &loadcell_data, sizeof(loadcell_data));
         this->send_data(0x06, &loadcell_data, sizeof(loadcell_data));
 
+//        for (int i = 0; i < 20; i++) {
+//            this->send_data(0x06, &loadcell_data, sizeof(loadcell_data));
+//        }
+
         last_test = millis();
 
         // Change the values of the data
