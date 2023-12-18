@@ -29,42 +29,19 @@
 #include "ADAU_Interfaces/ADAU_Tester.h"
 #include "Watchdog_t4.h"
 #include <EEPROM.h>
-#include "build_info.h"
-
-// Motor configurations
-feedforward_struct trencher_ff = {
-        true,
-        19,
-        new float_t[19]{100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1300, 1400, 1500, 1600, 1700, 1800, 1900},
-        new float_t[19]{0.8924418571359903, 0.9336526961981934, 0.9564353191563113, 1.0545682968419106, 1.0956791896783447, 1.1655547321087025, 1.1496691199748679, 1.1904955891573539, 1.2093394546417329, 1.2397901319373068, 1.28819931056913, 1.2661215055746053, 1.2726709948459896, 1.2938049218498964, 1.4171302597609259, 1.4186923515245125, 1.4106400849419782, 1.4540763298221129, 1.4360584135375623}
-};
-
-//
-
-#define CPU_FREQ_BASE 300000000
-#define CPU_FREQ_MIN 24000000 // 24 MHz
-#define WARN_TEMP 65.0 // Degrees C
-#define THROTTLE_TEMP 75.0 // Degrees C
-uint32_t cpu_freq = CPU_FREQ_BASE;
-uint32_t cpu_boost_time = 0;
+#include "Main_Helpers/build_info.h"
+#include "Main_Helpers/hardware_objects.h"
+#include "Main_Helpers/utility_functions.h"
 
 // If a loop takes longer than MAX_LOOP_TIME then the whole system will be reset so this is a hard limit
 #define MAX_LOOP_TIME 1 // 1 second
-#define WATCHDOG_FLAG_ADDR 4282 // The address in eeprom where if a watchdog was triggered it will be set
 WDT_T4<WDT1> wdt;
 
 ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
 
-#define SYSTEM_DIAGNOSTICS_COUNT 15
-diagnostic_msgs::DiagnosticArray system_diagnostics;
-diagnostic_msgs::DiagnosticStatus* system_info;
-ros::Publisher sys_diag_pub("/diagnostics", &system_diagnostics);
-
 std_msgs::String test_output_msg;
 ros::Publisher test_output_pub("/test_output", &test_output_msg);
-
-//IntervalTimer load_cell_read_timer;
 
 ODrivePro* odrives[7];
 ODrive_ROS* odrive_ros[7];
@@ -89,54 +66,8 @@ ADAU_Tester* adauTester;
 
 //SteeringEncoders* steering_encoder;
 
-#define SYSTEM_INFO_COUNT 10
-char* system_info_strings[SYSTEM_INFO_COUNT];
-
-char* system_status_messages[10];
-char  system_status_msg[100];
-uint8_t system_message_count = 0;
-
-#if defined(__IMXRT1062__)
-extern "C" uint32_t set_arm_clock(uint32_t frequency);
-#endif
-
-#define RESTART_ADDR 0xE000ED0C  // Application Restart and Control Register
-extern unsigned long _heap_start;  // start of heap
-extern unsigned long _heap_end;  // end of heap
-extern char          *__brkval;  // current top of heap
-
-uint32_t last_ram_time = 0;
-int last_ram = 0;
-int last_ram_usage = 0;
-
 int starting_actuator = 0;
 
-int freeram() {
-    uint32_t free = (char *)&_heap_end - __brkval;
-    // If free is less than 1000 then we restart the system and set the memory exhaustion flag
-    if (free < 1000) {
-        EEPROM.write(WATCHDOG_FLAG_ADDR, 0x5B);
-        *(volatile uint32_t *)RESTART_ADDR = 0x5FA0004;
-    }
-    return free;
-}
-
-int ram_usage_rate(){
-    int free_ram = freeram();
-    int ram_usage = last_ram - free_ram;
-    last_ram = free_ram;
-    if (millis() - last_ram_time > 1000 || ram_usage > 0) {
-        last_ram_time = millis();
-        last_ram_usage = ram_usage;
-    }
-    return last_ram_usage;
-}
-
-void set_mciu_level_max(int8_t level) {
-    if (level > system_diagnostics.status[SYSTEM_DIAGNOSTICS_COUNT - 1].level) {
-        system_diagnostics.status[SYSTEM_DIAGNOSTICS_COUNT - 1].level = level;
-    }
-}
 
 void can_recieve(const CAN_message_t &msg) {
     // Check node ID (Upper 6 bits of CAN ID)
@@ -149,18 +80,6 @@ void can_recieve(const CAN_message_t &msg) {
     }
 }
 
-
-void check_temp(){
-    if (tempmonGetTemp() > WARN_TEMP) {
-        set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::WARN);
-        sprintf(system_status_messages[system_message_count++], "High temperature");
-        if (tempmonGetTemp() > THROTTLE_TEMP) {
-            set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::ERROR);
-            sprintf(system_status_messages[system_message_count++], "System throttling");
-            set_arm_clock(CPU_FREQ_MIN);
-        }
-    } else set_arm_clock(cpu_freq);  // 600 MHz (default)
-}
 
 uint8_t odometer_reset_sequence = 0;
 
@@ -193,18 +112,6 @@ void odometer_reset_callback(const std_msgs::Int32& msg) {
 
 // Setup ros subscriber for odometer reset it is an int32 message
 ros::Subscriber<std_msgs::Int32> odometer_reset_sub("/odometer_reset", odometer_reset_callback);
-
-uint32_t spin_time = 0;
-
-void watchdog_violation() {
-    // If the watchdog timer is triggered then reset the system
-    // This will only happen if the loop takes longer than MAX_LOOP_TIME
-    // This is a hard limit
-    wdt.reset();
-    EEPROM.write(WATCHDOG_FLAG_ADDR, 0x5A); // Set the watchdog flag in eeprom
-    // write to the restart register (Application Restart and Control Register) to hard reset the system
-    *(volatile uint32_t *)RESTART_ADDR = 0x5FA0004;
-}
 
 enum start_flags {
     CLEAN_START,
@@ -251,75 +158,12 @@ void setup() {
     // Setup the test output publisher
     node_handle.advertise(test_output_pub);
 
-    for (int i = 0; i < 7; i++) {
-        odrives[i] = new ODrivePro(i, &can1, &node_handle);
-        odrives[i]->pass_odometer_data(odometers.get_odometer(i));
-    }
-
-    odrives[5]->set_feedforward(&trencher_ff);
 
     for (ODrivePro* odrive : odrives) {
         if (odrive == nullptr) continue;
     }
 
-    system_diagnostics.status_length = SYSTEM_DIAGNOSTICS_COUNT;
-    system_diagnostics.status = new diagnostic_msgs::DiagnosticStatus[SYSTEM_DIAGNOSTICS_COUNT];
-
-    odrive_ros[0] = new ODrive_ROS(odrives[0],
-                                   static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[0]->message),
-                                   "Front_Left");
-    odrive_ros[1] = new ODrive_ROS(odrives[1],
-                                   static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[1]->message),
-                                   "Front_Right");
-    odrive_ros[2] = new ODrive_ROS(odrives[2],
-                                   static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[2]->message),
-                                   "Rear_Left");
-    odrive_ros[3] = new ODrive_ROS(odrives[3],
-                                   static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[3]->message),
-                                   "Rear_Right");
-    odrive_ros[4] = new ODrive_ROS(odrives[4],
-                                   static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[4]->message),
-                                      "Trencher");
-    odrive_ros[5] = new ODrive_ROS(odrives[5],
-                                   static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[5]->message),
-                                   "Conveyor");
-    odrive_ros[6] = new ODrive_ROS(odrives[6],
-                                   static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[6]->message),
-                                   "Hopper");
-
-    actuators[0] = new ActuatorUnit(128,
-                                    new SteeringEncoders(0),
-                                    new SuspensionEncoders(0x01)); // Slot 3L
-
-    actuators[1] = new ActuatorUnit(129,
-                                    new SteeringEncoders(4),
-                                    new SuspensionEncoders(0x02)); // Slot 2R
-    actuators[1]->set_inverted(true,0); // Set the motor to run in the opposite direction (for the conveyor
-    actuators[1]->set_inverted(true,1);
-
-    actuators[2] = new ActuatorUnit(130,
-                                    new SteeringEncoders(10),
-                                    new SuspensionEncoders(0x03)); // Slot 2L
-    actuators[2]->set_inverted(true,0);
-    actuators[2]->set_inverted(true,1);
-
-    actuators[3] = new ActuatorUnit(131,
-                                    new SteeringEncoders(24),
-                                    new SuspensionEncoders(0x04)); // Slot 3R
-    actuators[3]->set_inverted(true,0);
-
-    actuators_ros[0] = new ActuatorsROS(actuators[0],
-                                        static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[0]->message),
-                                        "Front_Left");
-    actuators_ros[1] = new ActuatorsROS(actuators[1],
-                                        static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[1]->message),
-                                        "Front_Right");
-    actuators_ros[2] = new ActuatorsROS(actuators[2],
-                                        static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[2]->message),
-                                        "Rear_Left");
-    actuators_ros[3] = new ActuatorsROS(actuators[3],
-                                        static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[3]->message),
-                                        "Rear_Right");
+    allocate_hardware_objects();  // Allocate memory for all the hardware objects
 
     load_cells[0] = new LoadCells(0x05, "Suspen",
                                   static_cast<std_msgs::Int32MultiArray*>(load_cell_topics[0]->message));
@@ -354,35 +198,6 @@ void setup() {
     ros_nodes[ros_node_count++] = accessory_power;
     ros_nodes[ros_node_count++] = imu;
 
-    // Allocate memory for the system diagnostics strings
-    for (auto & system_info_string : system_info_strings) system_info_string = new char[55];
-    for (auto & system_status_message : system_status_messages) system_status_message = new char[20];
-
-    system_info = &system_diagnostics.status[SYSTEM_DIAGNOSTICS_COUNT - 1];
-    system_info->values_length = SYSTEM_INFO_COUNT;
-    system_info->values = new diagnostic_msgs::KeyValue[SYSTEM_INFO_COUNT];
-    system_info->values[0].key = "Temperature";
-    system_info->values[1].key = "System Freq";
-    system_info->values[2].key = "System Load";
-    system_info->values[3].key = "Loop Time";
-    system_info->values[4].key = "Remaining Memory";
-    system_info->values[5].key = "CAN TX Overflow";
-    system_info->values[6].key = "Actuator Buffer Info";
-    system_info->values[7].key = "Actuator Response Time";
-    system_info->values[8].key = "MCIU Uptime";
-    system_info->values[9].key = "Firmware Build Date";
-    sprintf(system_info_strings[9], "%s, %s", __DATE__, __TIME__);
-    system_info->level = diagnostic_msgs::DiagnosticStatus::OK;
-    system_info->name = "System";
-    system_info->message = system_status_msg;
-    system_info->hardware_id = "MCIU";
-
-    for (int i = 0; i < SYSTEM_INFO_COUNT; i++) system_info->values[i].value = system_info_strings[i];
-    // For each ODrive add its diagnostic serial_message
-
-    node_handle.advertise(sys_diag_pub);
-    sys_diag_pub.publish(&system_diagnostics);
-
     node_handle.advertise(*estop_topic.publisher);
     estop_topic.publisher->publish(estop_topic.message);
 
@@ -412,7 +227,6 @@ void loop() {
     freeram();  // Calculate the amount of space left in the heap
     
     uint32_t loop_start = micros(); // Get the time at the start of the loop
-//    digitalWriteFast(LED_BUILTIN, LOW); // Turn on the LED
 
     adauTester->run();
 
@@ -420,16 +234,9 @@ void loop() {
 
     ADAU_BUS_INTERFACE.parse_buffer(); // Update the ADAU bus
 
-    system_message_count = 0;
-    for (char *string: system_status_messages) {
-        string[0] = '\0';  // Clear the system status messages
-    }
-    system_info->level = diagnostic_msgs::DiagnosticStatus::OK;
     ACTUATOR_BUS_INTERFACE.sent_last_cycle = 0;
 
     // Get the teensy temperature
-
-    sprintf(system_info_strings[0], "%.1fC", tempmonGetTemp());
     check_temp();
 
     for (ODrivePro *odrive: odrives) {
@@ -453,7 +260,6 @@ void loop() {
         }
     }
 
-
     // Calculate the bus voltage by averaging the voltages of all the ODrives
     float_t bus_voltage = 0;
     uint32_t odrive_count = 0;
@@ -472,9 +278,6 @@ void loop() {
     e_stop_controller->update();
 
     odometers.refresh();  // Save the updated odometer data to the EEPROM if necessary
-
-    system_diagnostics.header.stamp = node_handle.now(); // Update the timestamp of the diagnostics message
-    system_diagnostics.header.seq++;  // Increment the sequence number for the diagnostics message
 
     if (e_stop_controller->estop_message_updated())
         estop_topic.publisher->publish(estop_topic.message);
@@ -520,73 +323,20 @@ void loop() {
             node_handle.logerror(log_msg.c_str());
             break;
     }
-    // Allow the actuator bus to preform serial communication for the remaining time in the loop
-    sprintf(system_info_strings[6], "S:%02d, F:%05lu, E:%05lu",
-            ACTUATOR_BUS_INTERFACE.get_queue_size(),
-            ACTUATOR_BUS_INTERFACE.total_messages_sent - ACTUATOR_BUS_INTERFACE.total_messages_received,
-            ACTUATOR_BUS_INTERFACE.total_messages_received - ACTUATOR_BUS_INTERFACE.total_messages_processed);
 
     while (ACTUATOR_BUS_INTERFACE.spin() && micros() - loop_start < 45000) {
         yield();  // Yield to other tasks
     }
 
-    uint32_t remaining_memory = freeram();
-
-    if (ram_usage_rate() > 100) {
-        set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::WARN);
-        sprintf(system_status_messages[system_message_count++], "Memory Leak");
-    }
-
-    if (remaining_memory < 100000) {
-        if (remaining_memory < 30000) {
-            set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::ERROR);
-            sprintf(system_status_messages[system_message_count++], "Out of Memory");
-        }
-        set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::WARN);
-        sprintf(system_status_messages[system_message_count++], "Low Memory");
-    }
     uint32_t execution_time = micros() - loop_start;
-    sprintf(system_info_strings[1], "%.2f Mhz (%.2f%%)", F_CPU_ACTUAL / 1000000.0,
-            100.0 * F_CPU_ACTUAL / F_CPU);
-    sprintf(system_info_strings[2], "%.5luus (%05.2f%%)", execution_time,
-            (execution_time / 50000.0) * 100.0);
-    sprintf(system_info_strings[4], "%.2fKiB (%.2f%%), %dKib/s", remaining_memory / 1024.0,
-            100.0 * remaining_memory / 512000.0, ram_usage_rate());
-    sprintf(system_info_strings[5], "%lu", can1.getTXQueueCount());
-    sprintf(system_info_strings[7], "%lums (Sent %lu)",
-            ACTUATOR_BUS_INTERFACE.round_trip_time(),
-            ACTUATOR_BUS_INTERFACE.sent_last_cycle);
-    // Update the uptime
-    sprintf(system_info_strings[8], "%.2luh %.2lum %.2lus",
-            millis() / 3600000, (millis() / 60000) % 60, (millis() / 1000) % 60);
-
-    if (can1.getTXQueueCount() > 5){
-        set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::WARN);
-        sprintf(system_status_messages[system_message_count++], "CAN BUS Saturation");
-    }
 
     uint32_t loop_time = micros() - loop_start;
     if (loop_time > 50000) {
-        set_mciu_level_max(diagnostic_msgs::DiagnosticStatus::WARN);
-        sprintf(system_status_messages[system_message_count++], "Slow Loop");
-        // Set the CPU to the overclocked velocity
+
     } else {
         // Wait for the remaining time in the loop to maintain a 20Hz loop
         delayMicroseconds(50000 - loop_time);
     }
 
-    sprintf(system_info_strings[3], "%0.5luus (%05.2fHz)", micros() - loop_start, 1000000.0 / (micros() - loop_start));
-
-    if (system_message_count == 0) {
-        sprintf(system_status_msg, "All Ok");
-    } else {
-        for (int i = 0; i < system_message_count; i++) {
-            if (i == 0) {
-                sprintf(system_status_msg, "%s", system_status_messages[i]);
-            } else {
-                sprintf(system_status_msg, "%s, %s", system_status_msg, system_status_messages[i]);
-            }
-        }
-    }
     wdt.feed();  // Feed the watchdog timer to prevent a reset
 }

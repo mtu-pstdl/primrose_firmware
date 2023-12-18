@@ -26,11 +26,11 @@ def get_machine_name():
 
 # if build_info.h doesn't exist, create it with no content
 try:
-    open('src/build_info.h')
+    open('src/Main_Helpers/build_info.h')
 except IOError:
-    open('src/build_info.h', 'w').close()
+    open('src/Main_Helpers/build_info.h', 'w').close()
 
-with open('src/build_info.h') as f:
+with open('src/Main_Helpers/build_info.h') as f:
     lines = f.readlines() # Read the first line to get the build number
     if len(lines) == 0:
         build_number = 1
@@ -44,7 +44,7 @@ with open('src/build_info.h') as f:
     build_machine_name = get_machine_name()
 
 # Write the build info to build_info.h
-with open('src/build_info.h', 'w') as f:
+with open('src/Main_Helpers/build_info.h', 'w') as f:
     f.write("#pragma once\n")
     f.write("#define BUILD_NUMBER " + str(build_number) + "\n")
     f.write("#define BUILD_NUMBER_STR \"" + str(build_number) + "\"\n")
