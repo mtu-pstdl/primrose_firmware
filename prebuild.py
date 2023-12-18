@@ -1,4 +1,5 @@
 from datetime import datetime
+from platformio import util
 
 # Add build info to build_info.h so it can be included in the firmware
 
@@ -19,14 +20,15 @@ def get_git_hash():
 def get_git_branch():
     import subprocess
     return subprocess.check_output(['git', 'rev-parse', '--abbrev-ref', 'HEAD']).decode('ascii').strip()
-
-def get_compiler_version():
-    import subprocess
-    return subprocess.check_output(['gcc', '--version']).decode('ascii').strip()
-
 def get_machine_name():
     import socket
     return socket.gethostname()
+
+# if build_info.h doesn't exist, create it with no content
+try:
+    open('src/build_info.h')
+except IOError:
+    open('src/build_info.h', 'w').close()
 
 with open('src/build_info.h') as f:
     lines = f.readlines() # Read the first line to get the build number
@@ -39,7 +41,6 @@ with open('src/build_info.h') as f:
     build_type = "DEBUG" # TODO: Get this from the build system
     build_git_hash = get_git_hash()
     build_git_branch = get_git_branch()
-    build_compiler_version = "TODO" # TODO: Get this from the build system
     build_machine_name = get_machine_name()
 
 # Write the build info to build_info.h
@@ -52,7 +53,6 @@ with open('src/build_info.h', 'w') as f:
     f.write("#define BUILD_TYPE \"" + build_type + "\"\n")
     f.write("#define BUILD_GIT_HASH \"" + build_git_hash + "\"\n")
     f.write("#define BUILD_GIT_BRANCH \"" + build_git_branch + "\"\n")
-    f.write("#define BUILD_COMPILER_VERSION \"" + build_compiler_version + "\"\n")
     f.write("#define BUILD_MACHINE_NAME \"" + build_machine_name + "\"\n")
 
 print("Build number: " + str(build_number))
@@ -61,5 +61,4 @@ print("Build time: " + build_time)
 print("Build type: " + build_type)
 print("Build git hash: " + build_git_hash)
 print("Build git branch: " + build_git_branch)
-print("Build compiler version: " + build_compiler_version)
 print("Build machine name: " + build_machine_name)

@@ -85,16 +85,16 @@ public:
                         NO_CORRUPTION);
         this->send_data(11, &test_data, sizeof(test_data),
                         CORRUPT_START_BYTE);
-//        this->send_data(12, &test_data, sizeof(test_data),
-//                        CORRUPT_SENSOR_ID);
+        this->send_data(12, &test_data, sizeof(test_data),
+                        CORRUPT_SENSOR_ID);
         this->send_data(13, &test_data, sizeof(test_data),
                         CORRUPT_DATA_LENGTH);
-//        this->send_data(14, &test_data, sizeof(test_data),
-//                        CORRUPT_CHECKSUM);
-//        this->send_data(15, &test_data, sizeof(test_data),
-//                        CORRUPT_DATA);
-//        this->send_data(16, &test_data, sizeof(test_data),
-//                        CORRUPT_END_BYTE);
+        this->send_data(14, &test_data, sizeof(test_data),
+                        CORRUPT_CHECKSUM);
+        this->send_data(15, &test_data, sizeof(test_data),
+                        CORRUPT_DATA);
+        this->send_data(16, &test_data, sizeof(test_data),
+                        CORRUPT_END_BYTE);
 
         // For now we just send data to suspension encoders 1 2 3 4
         this->send_data(0x01, &suspension_data, sizeof(suspension_data));

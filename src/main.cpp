@@ -28,6 +28,7 @@
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/String.h"
 #include "ADAU_Interfaces/ADAU_Tester.h"
 #include "Watchdog_t4.h"
+#include <EEPROM.h>
 #include "build_info.h"
 
 // Motor configurations
@@ -49,6 +50,7 @@ uint32_t cpu_boost_time = 0;
 
 // If a loop takes longer than MAX_LOOP_TIME then the whole system will be reset so this is a hard limit
 #define MAX_LOOP_TIME 1 // 1 second
+#define WATCHDOG_FLAG_ADDR 4282 // The address in eeprom where if a watchdog was triggered it will be set
 WDT_T4<WDT1> wdt;
 
 ros::NodeHandle node_handle;
@@ -110,7 +112,13 @@ int last_ram_usage = 0;
 int starting_actuator = 0;
 
 int freeram() {
-    return (char *)&_heap_end - __brkval;
+    uint32_t free = (char *)&_heap_end - __brkval;
+    // If free is less than 1000 then we restart the system and set the memory exhaustion flag
+    if (free < 1000) {
+        EEPROM.write(WATCHDOG_FLAG_ADDR, 0x5B);
+        *(volatile uint32_t *)RESTART_ADDR = 0x5FA0004;
+    }
+    return free;
 }
 
 int ram_usage_rate(){
@@ -193,14 +201,33 @@ void watchdog_violation() {
     // This will only happen if the loop takes longer than MAX_LOOP_TIME
     // This is a hard limit
     wdt.reset();
+    EEPROM.write(WATCHDOG_FLAG_ADDR, 0x5A); // Set the watchdog flag in eeprom
     // write to the restart register (Application Restart and Control Register) to hard reset the system
     *(volatile uint32_t *)RESTART_ADDR = 0x5FA0004;
 }
 
+enum start_flags {
+    CLEAN_START,
+    WATCHDOG_VIOLATION,
+    MEMORY_EXHAUSTION
+};
+uint8_t startup_type = CLEAN_START;
+
 void setup() {
 
-//    pinMode(LED_BUILTIN, OUTPUT);
-//    digitalWrite(LED_BUILTIN, HIGH);
+    // Read the watchdog flag from eeprom
+    uint8_t restart_flag = EEPROM.read(WATCHDOG_FLAG_ADDR);
+    if (restart_flag == 0x5A) {
+        // If the watchdog flag is set then the system was restarted by the watchdog
+        // Clear the watchdog flag
+        EEPROM.write(WATCHDOG_FLAG_ADDR, 0x00);
+        startup_type = WATCHDOG_VIOLATION;
+    } else if (restart_flag == 0x5B) {
+        // If the memory exhaustion flag is set then the system ran out of memory
+        // Clear the memory exhaustion flag
+        EEPROM.write(WATCHDOG_FLAG_ADDR, 0x00);
+        startup_type = MEMORY_EXHAUSTION;
+    }
 
     node_handle.getHardware()->setBaud(4000000); // ~4Mbps
     node_handle.setSpinTimeout(100); // 50ms
@@ -223,8 +250,6 @@ void setup() {
 
     // Setup the test output publisher
     node_handle.advertise(test_output_pub);
-
-//    steering_encoder = new SteeringEncoders(10);
 
     for (int i = 0; i < 7; i++) {
         odrives[i] = new ODrivePro(i, &can1, &node_handle);
@@ -381,12 +406,11 @@ void setup() {
     config.callback = watchdog_violation;
     wdt.begin(config);
 
-
-
 }
 
 void loop() {
-
+    freeram();  // Calculate the amount of space left in the heap
+    
     uint32_t loop_start = micros(); // Get the time at the start of the loop
 //    digitalWriteFast(LED_BUILTIN, LOW); // Turn on the LED
 
@@ -463,12 +487,6 @@ void loop() {
     int8_t spin_result = 0;
     spin_result = node_handle.spinOnce(); // 50ms timeout
 
-    static boolean first_run = true;
-    if (first_run) {
-        first_run = false;
-
-    }
-
     switch (spin_result) {
         case ros::SPIN_OK:
             break;
@@ -477,8 +495,21 @@ void loop() {
             node_handle.logwarn("BUILD TYPE: " BUILD_TYPE);
             node_handle.logwarn("BUILD GIT HASH: " BUILD_GIT_HASH);
             node_handle.logwarn("BUILD GIT BRANCH: " BUILD_GIT_BRANCH);
-            node_handle.logwarn("BUILD COMPILER VERSION: " BUILD_COMPILER_VERSION);
             node_handle.logwarn("BUILD MACHINE NAME: " BUILD_MACHINE_NAME);
+            switch (startup_type) {
+                case CLEAN_START:
+                    node_handle.logwarn("SYSTEM EXITED NORMALLY, CLEAN_START");
+                    break;
+                case WATCHDOG_VIOLATION:
+                    node_handle.logerror("SYSTEM EXITED ABNORMALLY - CAUSE: WATCHDOG_VIOLATION");
+                    break;
+                case MEMORY_EXHAUSTION:
+                    node_handle.logerror("SYSTEM EXITED ABNORMALLY - CAUSE: MEMORY_EXHAUSTION");
+                    break;
+                default:
+                    node_handle.logerror("SYSTEM EXITED ABNORMALLY - CAUSE: UNKNOWN");
+                    break;
+            }
             break;
         case ros::SPIN_TIMEOUT:
             log_msg = "Spin timeout";

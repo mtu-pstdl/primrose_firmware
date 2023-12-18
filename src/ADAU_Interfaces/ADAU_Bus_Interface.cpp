@@ -139,6 +139,15 @@ void ADAU_Bus_Interface::finish_message() {
 
 void ADAU_Bus_Interface::process_message() {
     // Find the sensor that sent the message
+
+    // Validate the checksum
+    if (!this->validate_checksum()) {
+        // The checksum is invalid
+        // Increment the failed message count
+        this->failed_message_count++;
+        this->cleanup();
+        return;
+    }
     boolean found_sensor = false;
     ADAU_Sensor_List* current = this->sensor_list;
     while (current != nullptr) {
@@ -149,12 +158,6 @@ void ADAU_Bus_Interface::process_message() {
             // Check if the checksum is signal_valid
             if (this->message_header.data_length != current->sensor->get_data_size()) {
                 // The data length is invalid
-                // Increment the failed message count
-                this->failed_message_count++;
-                continue;
-            }
-            if (!this->validate_checksum()) {
-                // The checksum is invalid
                 // Increment the failed message count
                 this->failed_message_count++;
                 continue;
