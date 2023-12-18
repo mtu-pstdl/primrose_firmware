@@ -31,10 +31,12 @@ class LoadCells : public ROSNode, public EStopDevice {
 
     ADAU_Sensor* sensor;
 
+    #pragma pack(push, 1) // Remove all padding from the data structure to reduce transmission size
     struct data_struct {
         int32_t sensor[4];
         uint8_t flags;      // First 4 bits are error flags for each sensor
     };
+    #pragma pack(pop) // End of data structure
 
     data_struct data = {
             .sensor = {0, 0, 0, 0},

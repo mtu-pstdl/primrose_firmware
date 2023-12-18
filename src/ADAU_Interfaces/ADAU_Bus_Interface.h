@@ -7,7 +7,7 @@
 #include <Arduino.h>
 
 #define ADAU_INTERFACE  Serial4
-#define ADAU_BAUD_RATE  115200  // 115.2 kbps
+#define ADAU_BAUD_RATE  4000000  // 115.2 kbps
 #define ADAU_RESET_PIN  3
 
 // Message parameters

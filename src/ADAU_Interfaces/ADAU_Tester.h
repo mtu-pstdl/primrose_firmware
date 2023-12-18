@@ -25,17 +25,21 @@ private:
         float    float_32   = 0;
     } test_data = {};
 
+    #pragma pack(push, 1) // Remove all padding from the data structure to reduce transmission size
     struct susp_data {
         float_t  position = 0;
         float_t  velocity = 0;
         uint32_t sequence = 0;
         boolean  fault = false;
     } suspension_data = {};
+    #pragma pack(pop) // End of data structure
 
+    #pragma pack(push, 1) // Remove all padding from the data structure to reduce transmission size
     struct loadcell_data {
         float_t sensor[4];  // Fixed point, x100
         uint8_t flags;      // First 4 bits are error flags for each sensor
     } loadcell_data = {};
+    #pragma pack(pop) // End of data structure
 
     enum corruption_types {
         NO_CORRUPTION,

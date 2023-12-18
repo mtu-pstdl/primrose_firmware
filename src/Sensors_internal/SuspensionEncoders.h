@@ -14,13 +14,16 @@ private:
 
     /**
      * @brief The data structure that a analog linear position sensor sends
+     * @note  This is a packed data structure
      */
+    #pragma pack(push, 1) // Remove all padding from the data structure to reduce transmission size
     struct data {
         float_t  position = 0;  // The position of the suspension encoder in units of (unit)
         float_t  velocity = 0;  // The velocity of the suspension encoder in units of (unit)/s
         uint32_t sequence = 0;  // The sequence number of the message (always incrementing)
         uint8_t  fault = false; // Indicates if something is wrong with the sensor
     } data = {};
+    #pragma pack(pop) // End of data structure
 
     ADAU_Sensor* sensor;
 
