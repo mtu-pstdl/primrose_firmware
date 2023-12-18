@@ -22,6 +22,14 @@
 // Forward declaration
 class ADAU_Sensor;
 
+/**
+ * @brief This class is used to interface with the Analog Data Acquisition Unit (ADAU)
+ * @details ADAU_Sensors attach themselves to this class automatically and are updated
+ * automatically when new data is received from the ADAU. This class is a singleton and
+ * only one instance of it should exist.
+ * @warning This class is not thread safe and should only be used in the main thread.
+ * @warning This class is not interrupt safe and should not be used in an interrupt
+ */
 class ADAU_Bus_Interface {
 
     // Data sent by the ADAU is formatted as follows:
@@ -79,6 +87,8 @@ private:
 
     void cleanup();
 
+    void prevalidate_data_length();
+
 public:
 
     /**
@@ -96,8 +106,7 @@ public:
     char output_string[1000] = {0};
 
     /**
-     * This constructor initializes the serial interface to the Analog Data Acquisition Unit (ADAU)
-     * and resets the ADAU to a known state. And begins reading data from the ADAU.
+     * @brief Initializes the serial interface and triggers a reset of the ADAU
      */
     ADAU_Bus_Interface(){
         ADAU_INTERFACE.begin(ADAU_BAUD_RATE, SERIAL_8N1);
@@ -111,15 +120,9 @@ public:
 
     void parse_buffer();
 
-//    void serialEvent1(){
-//        this->parse_buffer();
-//    }
-
     // The number of sensors attached to this bus interface
     int num_sensors = 0;
     int parse_count = 0;
-
-    void prevalidate_data_length();
 };
 
 #endif //PRIMROSE_MCIU_ADAU_BUS_INTERFACE_H

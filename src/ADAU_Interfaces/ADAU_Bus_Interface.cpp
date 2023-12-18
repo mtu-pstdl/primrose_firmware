@@ -5,6 +5,11 @@
 #include "ADAU_Bus_Interface.h"
 #include "ADAU_Sensor.h"
 
+/**
+ * @brief The default constructor for the ADAU_Bus_Interface class
+ * @warning The ADAU_Bus_Interface class is a singleton and should not be instantiated directly
+ * @warning This object should only be accessed by the ADAU_SENSOR class and should not be used directly
+ */
 ADAU_Bus_Interface ADAU_BUS_INTERFACE = ADAU_Bus_Interface();
 
 /**
@@ -33,6 +38,14 @@ void ADAU_Bus_Interface::attachSensor(ADAU_Sensor *sensor) {
     }
 }
 
+/**
+ * @brief  Load the first 3 bytes of the message which is the header
+ * @details The header contains the sensor id, data length, and checksum
+ *          If this process is interrupted due to either a timeout or the buffer being empty it will just pick up
+ *          where it left off next time it is called
+ * @previous_step waiting_for_start_byte or waiting_for_header
+ * @next_step prevalidate_data_length()
+ */
 void ADAU_Bus_Interface::load_header() {
     while (ADAU_INTERFACE.available() && this->parse_start_time + 2500 > micros()) {
         // Read the next byte
@@ -68,6 +81,13 @@ void ADAU_Bus_Interface::load_header() {
     this->prevalidate_data_length();
 }
 
+/**
+ * @brief  Check if the data length matches the expected data length of the sensor it supposedly is for
+ * @details If the data length does not match the expected data length then we have received either a corrupted message
+ *          or a message from a sensor that we did not expect to exist and therefor have no way to decode
+ * @previous_step load_header()
+ * @next_step load_data()
+ */
 void ADAU_Bus_Interface::prevalidate_data_length() {
     // Check if the data length matches the expected data length of the sensor it supposedly is for
     ADAU_Sensor_List* current = this->sensor_list;
@@ -98,6 +118,13 @@ void ADAU_Bus_Interface::prevalidate_data_length() {
     }
 }
 
+/**
+ * @brief  Load the data bytes of the message into the message buffer
+ * @details If this process is interrupted due to either a timeout or the buffer being empty it will just pick up
+ *          where it left off next time it is called
+ * @previous_step prevalidate_data_length()
+ * @next_step finish_message()
+ */
 void ADAU_Bus_Interface::load_data(){
     // If the header has been received keep reading bytes until we get all the expected bytes
     if (!ADAU_INTERFACE.available()) return;
@@ -115,6 +142,13 @@ void ADAU_Bus_Interface::load_data(){
     }
 }
 
+/**
+ * @brief  Finish the message by reading the trailing end message bytes
+ * @details If this process is interrupted due to either a timeout or the buffer being empty it will just pick up
+ *          where it left off next time it is called
+ * @previous_step load_data()
+ * @next_step process_message()
+ */
 void ADAU_Bus_Interface::finish_message() {
     // When this function is called the message buffer should contain the entire message
     if (!ADAU_INTERFACE.available()) return;
@@ -137,6 +171,12 @@ void ADAU_Bus_Interface::finish_message() {
     }
 }
 
+/**
+ * @brief  Process the message by validating the checksum and then updating the sensors memory location
+ * @details If the checksum is invalid then the message is discarded
+ * @previous_step finish_message()
+ * @next_step cleanup()
+ */
 void ADAU_Bus_Interface::process_message() {
     // Find the sensor that sent the message
 
@@ -194,6 +234,12 @@ boolean ADAU_Bus_Interface::validate_checksum() {
     return checksum == this->message_header.checksum;
 }
 
+/**
+ * @brief  Cleanup the bus interface by resetting all the variables and flags
+ * @details This function is called after a message has been processed or if the message is invalid
+ * @previous_step process_message() or finish_message()
+ * @next_step waiting_for_start_byte
+ */
 void ADAU_Bus_Interface::cleanup() {
     // Reset the header received flag
     this->current_state = waiting_for_start_byte;
@@ -209,26 +255,33 @@ void ADAU_Bus_Interface::cleanup() {
     memset(this->message_buffer, 0, 254);
 }
 
+/**
+ * @brief  Parse the serial buffer and update the sensors
+ * @details This function is called in the main loop and will parse the serial buffer and update the sensors
+ *          as long as there is time or data left to parse
+ * @warning This function will block the main loop for up to 2.5 ms while it parses the serial buffer
+ * @warning If the buffer is not cleared fast enough then the buffer will overflow and data will be lost
+ */
 void ADAU_Bus_Interface::parse_buffer() {
     this->parse_start_time = micros(); // Record the time that the parse started so we don't overrun the allotted time
     // Print the contents of the buffer to the temp string in hex
     this->parse_count = 0;
     this->failed_message_count = 0;
-    uint32_t ignored_bytes = 0;
-    memset(this->output_string, 0, 999);
-    sprintf(this->output_string, "Starting parse, entry state: %d, buffer length: %d\n",
-            this->current_state, ADAU_INTERFACE.available());
+//    uint32_t ignored_bytes = 0;
+//    memset(this->output_string, 0, 999);
+//    sprintf(this->output_string, "Starting parse, entry state: %d, buffer length: %d\n",
+//            this->current_state, ADAU_INTERFACE.available());
     while (this->parse_start_time + 2500 > micros()) {
         if (!ADAU_INTERFACE.available()) break;
         switch (this->current_state) {
             case waiting_for_start_byte:
                 // Wait for the start byte
-                ignored_bytes++;
+//                ignored_bytes++;
                 if (ADAU_INTERFACE.read() == MESSAGE_START_BYTE) {
                    // We have received the start byte
                    // Set the current state to waiting for header
                    this->current_state = waiting_for_header;
-                   ignored_bytes--;
+//                   ignored_bytes--;
                 }
                 break;
             case waiting_for_header:
@@ -248,10 +301,10 @@ void ADAU_Bus_Interface::parse_buffer() {
                this->cleanup();
        }
     }
-    sprintf(this->output_string, "%sFinished parse, exit state: %d, buffer length: %d,"
-                                 " parse count: %d, failed count: %lu, ignored bytes: %lu, "
-                                 "time elapsed: %lu us\n",
-            this->output_string, this->current_state, ADAU_INTERFACE.available(),
-            this->parse_count, this->failed_message_count, ignored_bytes,
-            micros() - this->parse_start_time);
+//    sprintf(this->output_string, "%sFinished parse, exit state: %d, buffer length: %d,"
+//                                 " parse count: %d, failed count: %lu, ignored bytes: %lu, "
+//                                 "time elapsed: %lu us\n",
+//            this->output_string, this->current_state, ADAU_INTERFACE.available(),
+//            this->parse_count, this->failed_message_count, ignored_bytes,
+//            micros() - this->parse_start_time);
 }

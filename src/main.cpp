@@ -101,7 +101,7 @@ void odometer_reset_callback(const std_msgs::Int32& msg) {
                 for (int i = 0; i < 14; i++){
                     odometers.reset_odometer(i);
                 }
-                battery_monitor->reset_data();
+//                battery_monitor->reset_data();
             }
             break;
         default:
@@ -215,6 +215,8 @@ void setup() {
 
     adauTester = new ADAU_Tester(&test_output_msg);
 
+    test_output_msg.data = battery_monitor->debug_string;
+
     WDT_timings_t config;
     config.trigger = MAX_LOOP_TIME;
     config.timeout = 5;
@@ -229,8 +231,6 @@ void loop() {
     uint32_t loop_start = micros(); // Get the time at the start of the loop
 
     adauTester->run();
-
-    test_output_pub.publish(&test_output_msg);
 
     ADAU_BUS_INTERFACE.parse_buffer(); // Update the ADAU bus
 
@@ -273,7 +273,7 @@ void loop() {
     if (odrive_count == 0) {
         bus_voltage = NAN;  // If there are no ODrives connected set the bus voltage to NAN
     } else bus_voltage /= odrive_count;
-    battery_monitor->update_bus_voltage(bus_voltage);
+//    battery_monitor->update_bus_voltage(bus_voltage);
 
     e_stop_controller->update();
 
@@ -337,6 +337,8 @@ void loop() {
         // Wait for the remaining time in the loop to maintain a 20Hz loop
         delayMicroseconds(50000 - loop_time);
     }
+
+    test_output_pub.publish(&test_output_msg);
 
     wdt.feed();  // Feed the watchdog timer to prevent a reset
 }
