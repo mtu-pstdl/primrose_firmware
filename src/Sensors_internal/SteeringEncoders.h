@@ -23,6 +23,11 @@
 #define MAX_ATTEMPTS_PER_UPDATE 5
 #define MAX_INCREMENT_JITTER    2000
 
+/**
+ * @brief This class is used to interface with the steering encoders
+ * @details The steering encoders are AMT22 absolute encoders that are connected to the SPI bus
+ * @note This class is a derived class of the PositionSensor class
+ */
 class SteeringEncoders : public PositionSensor {
 
 private:
@@ -84,7 +89,7 @@ private:
 public:
 
     /**
-     * Constructor for the Steering Encoders
+     * @brief Construct a new Steering Encoders object with the given chip select pin
      * @param cs_pin
      * @note This constructor assumes that the SPI bus has already been initialized
      */
@@ -96,8 +101,7 @@ public:
 
     /**
      * Updates the steering encoders
-     * @return true if update was successful
-     * @return false if update was unsuccessful
+     * @note This function must be called once every loop in order to have up to date data
      */
     void update() override {
 //        if (this->cs_pin == 0) {
@@ -130,13 +134,17 @@ public:
     }
 
     /**
-     * Gets the position of the steering encoders
-     * @return the position of the steering encoders
+     * Gets the last valid position of the steering encoders,
+     * @return The position of the steering encoders in ticks (0 - 16383)
      */
     int32_t get_position() const override {
         return this->position;
     }
 
+    /**
+     * Gets the raw position of the steering encoders
+     * @return The raw position of the steering encoders in ticks (0 - 16383)
+     */
     int32_t get_raw_position() const {
         return this->raw_position;
     }

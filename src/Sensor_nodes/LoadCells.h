@@ -32,7 +32,7 @@ class LoadCells : public ROSNode, public EStopDevice {
     ADAU_Sensor* sensor;
 
     struct data_struct {
-        int32_t sensor[4];  // Fixed point, x100
+        int32_t sensor[4];
         uint8_t flags;      // First 4 bits are error flags for each sensor
     };
 
@@ -56,7 +56,9 @@ public:
         this->sensor = new ADAU_Sensor(sensor_id, &data, sizeof(data_struct));
     }
 
-//    void update() override;
+    void update() override {
+
+    }
 
     void publish() override;
 

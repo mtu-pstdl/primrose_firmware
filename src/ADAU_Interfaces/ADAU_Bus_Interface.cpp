@@ -267,21 +267,21 @@ void ADAU_Bus_Interface::parse_buffer() {
     // Print the contents of the buffer to the temp string in hex
     this->parse_count = 0;
     this->failed_message_count = 0;
-//    uint32_t ignored_bytes = 0;
-//    memset(this->output_string, 0, 999);
-//    sprintf(this->output_string, "Starting parse, entry state: %d, buffer length: %d\n",
-//            this->current_state, ADAU_INTERFACE.available());
+    uint32_t ignored_bytes = 0;
+    memset(this->output_string, 0, 999);
+    sprintf(this->output_string, "Starting parse, entry state: %d, buffer length: %d\n",
+            this->current_state, ADAU_INTERFACE.available());
     while (this->parse_start_time + 2500 > micros()) {
         if (!ADAU_INTERFACE.available()) break;
         switch (this->current_state) {
             case waiting_for_start_byte:
                 // Wait for the start byte
-//                ignored_bytes++;
+                ignored_bytes++;
                 if (ADAU_INTERFACE.read() == MESSAGE_START_BYTE) {
                    // We have received the start byte
                    // Set the current state to waiting for header
                    this->current_state = waiting_for_header;
-//                   ignored_bytes--;
+                   ignored_bytes--;
                 }
                 break;
             case waiting_for_header:
@@ -301,10 +301,10 @@ void ADAU_Bus_Interface::parse_buffer() {
                this->cleanup();
        }
     }
-//    sprintf(this->output_string, "%sFinished parse, exit state: %d, buffer length: %d,"
-//                                 " parse count: %d, failed count: %lu, ignored bytes: %lu, "
-//                                 "time elapsed: %lu us\n",
-//            this->output_string, this->current_state, ADAU_INTERFACE.available(),
-//            this->parse_count, this->failed_message_count, ignored_bytes,
-//            micros() - this->parse_start_time);
+    sprintf(this->output_string, "%sFinished parse, exit state: %d, buffer length: %d,"
+                                 " parse count: %d, failed count: %lu, ignored bytes: %lu, "
+                                 "time elapsed: %lu us\n",
+            this->output_string, this->current_state, ADAU_INTERFACE.available(),
+            this->parse_count, this->failed_message_count, ignored_bytes,
+            micros() - this->parse_start_time);
 }

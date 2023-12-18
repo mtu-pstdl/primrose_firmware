@@ -10,13 +10,18 @@
 // Use the global bus interface object to prevent conflicts
 extern ADAU_Bus_Interface ADAU_BUS_INTERFACE;
 
+/**
+ * @brief This class is used to define a sensor that is attached to the ADAU bus interface
+ * @details Sensor data is updated automatically by the bus interface whenever a new message is received
+ * @note When using this class the user must define a data structure that will be used to store the sensor data and
+ *       pass a pointer to that data structure to the constructor
+ * @warning This class preforms no validation on the data structure that is passed to it. It is up to the user to
+ *          ensure that the data structure is valid otherwise undefined behavior will occur
+ */
 class ADAU_Sensor {
 
 private:
 
-    // Each sensor instance can have a unique data format which is defined by the user
-    // This pointer points to the data structure that the user wants to use
-    // There is no way for the bus interface to know what the data structure is so it is void*
     uint8_t sensor_id = 0;
     void* data_ptr = nullptr;
     // The size of the data structure in bytes
@@ -29,13 +34,20 @@ private:
 
 public:
 
+    /**
+     * @brief Attaches a ADAU_Sensor object to the bus interface with the given sensor id and data pointer
+     * @param sensor_id  A value between 0x00 and 0xFF that is used to identify this sensor
+     * @param data_ptr   A pointer to the data structure that will be used to store the sensor data
+     * @param data_size  The size of the data structure in bytes (sizeof(data_structure))
+     */
     ADAU_Sensor(uint8_t sensor_id, void* data_ptr, uint8_t data_size){
-        // Attach pointer of self to the bus interface
-        ADAU_BUS_INTERFACE.attachSensor(this);
         // Set the data pointer and size
         this->sensor_id = sensor_id;
         this->data_ptr = data_ptr;
         this->data_size = data_size;
+
+        // Attach pointer of self to the bus interface
+        ADAU_BUS_INTERFACE.attachSensor(this);
     }
 
     uint8_t get_data_size() const{
@@ -44,14 +56,6 @@ public:
 
     void* get_data_ptr(){
         return this->data_ptr;
-    }
-
-    void is_attached_properly(){  // Debugging function, remove later
-        this->attached_properly = true;
-    }
-
-    boolean is_attached(){
-        return this->attached_properly;
     }
 
     void set_last_update_time(uint32_t time){

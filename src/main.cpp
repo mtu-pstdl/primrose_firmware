@@ -215,7 +215,7 @@ void setup() {
 
     adauTester = new ADAU_Tester(&test_output_msg);
 
-    test_output_msg.data = battery_monitor->debug_string;
+//    test_output_msg.data = battery_monitor->debug_string;
 
     WDT_timings_t config;
     config.trigger = MAX_LOOP_TIME;
