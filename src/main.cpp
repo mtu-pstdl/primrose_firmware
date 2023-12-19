@@ -32,6 +32,7 @@
 #include "Main_Helpers/build_info.h"
 #include "Main_Helpers/hardware_objects.h"
 #include "Main_Helpers/utility_functions.h"
+#include "Main_Helpers/CrashParser.h"
 
 // If a loop takes longer than MAX_LOOP_TIME then the whole system will be reset so this is a hard limit
 #define MAX_LOOP_TIME 1 // 1 second
@@ -63,6 +64,8 @@ HopperDoor* hopper_door;
 AccessoryPower* accessory_power;
 
 ADAU_Tester* adauTester;
+
+CrashParser parser;
 
 //SteeringEncoders* steering_encoder;
 
@@ -116,11 +119,15 @@ ros::Subscriber<std_msgs::Int32> odometer_reset_sub("/odometer_reset", odometer_
 enum start_flags {
     CLEAN_START,
     WATCHDOG_VIOLATION,
-    MEMORY_EXHAUSTION
+    MEMORY_EXHAUSTION,
+    SYSTEM_PANIC
 };
 uint8_t startup_type = CLEAN_START;
 
 void setup() {
+
+    // Seed the random number generator
+    randomSeed(analogRead(0));
 
     // Read the watchdog flag from eeprom
     uint8_t restart_flag = EEPROM.read(WATCHDOG_FLAG_ADDR);
@@ -134,6 +141,8 @@ void setup() {
         // Clear the memory exhaustion flag
         EEPROM.write(WATCHDOG_FLAG_ADDR, 0x00);
         startup_type = MEMORY_EXHAUSTION;
+    } else if (parser) {
+        startup_type = SYSTEM_PANIC;
     }
 
     node_handle.getHardware()->setBaud(4000000); // ~4Mbps
@@ -226,6 +235,13 @@ void setup() {
 }
 
 void loop() {
+
+    // After 100 loops write to a random memory location to test crash reports
+    static uint8_t crash_test_counter = 0;
+    if (crash_test_counter++ > 100) {
+//        odrives[10]->tripped(nullptr, nullptr);
+    }
+
     freeram();  // Calculate the amount of space left in the heap
     
     uint32_t loop_start = micros(); // Get the time at the start of the loop
@@ -288,6 +304,7 @@ void loop() {
 
     String log_msg = "";
     int8_t spin_result = 0;
+    char* line = nullptr;
     spin_result = node_handle.spinOnce(); // 50ms timeout
 
     switch (spin_result) {
@@ -301,16 +318,23 @@ void loop() {
             node_handle.logwarn("BUILD MACHINE NAME: " BUILD_MACHINE_NAME);
             switch (startup_type) {
                 case CLEAN_START:
-                    node_handle.logwarn("SYSTEM EXITED NORMALLY, CLEAN_START");
+                    node_handle.logwarn("MCIU EXITED NORMALLY, CLEAN_START");
                     break;
                 case WATCHDOG_VIOLATION:
-                    node_handle.logerror("SYSTEM EXITED ABNORMALLY - CAUSE: WATCHDOG_VIOLATION");
+                    node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: WATCHDOG_VIOLATION");
                     break;
                 case MEMORY_EXHAUSTION:
-                    node_handle.logerror("SYSTEM EXITED ABNORMALLY - CAUSE: MEMORY_EXHAUSTION");
+                    node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: MEMORY_EXHAUSTION");
+                    break;
+                case SYSTEM_PANIC:
+                    node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: SYSTEM_PANIC");
+                    parser.generate_crash_dump();
+                    while ((line = parser.crash_dump()) != nullptr) {
+                        node_handle.logerror(line);
+                    }
                     break;
                 default:
-                    node_handle.logerror("SYSTEM EXITED ABNORMALLY - CAUSE: UNKNOWN");
+                    node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: UNKNOWN");
                     break;
             }
             break;

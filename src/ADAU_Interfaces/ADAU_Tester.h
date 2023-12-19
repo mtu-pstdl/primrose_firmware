@@ -84,7 +84,7 @@ public:
         this->send_data(0x02, &suspension_data, sizeof(suspension_data));
         this->send_data(0x03, &suspension_data, sizeof(suspension_data));
         this->send_data(0x04, &suspension_data, sizeof(suspension_data));
-        this->send_data(0x05, &loadcell_data, sizeof(loadcell_data));
+        this->send_data(0x05, &loadcell_data, sizeof(suspension_data));
         this->send_data(0x06, &loadcell_data, sizeof(loadcell_data));
 
 //        for (int i = 0; i < 20; i++) {

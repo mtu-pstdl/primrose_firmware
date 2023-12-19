@@ -9,6 +9,7 @@
 #include "ROSNode.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/sensor_msgs/Imu.h"
 #include <SPI.h>
+#define ICM_20948_USE_DMP
 #include "../../.pio/libdeps/teensy40/SparkFun 9DoF IMU Breakout - ICM 20948 - Arduino Library/src/ICM_20948.h"
 #include "Misc/EStopDevice.h"
 
