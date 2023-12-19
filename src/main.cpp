@@ -1,3 +1,6 @@
+/**
+ * @author Jay Sweeney, email: ajsweene@mtu.edu
+ */
 
 #include <Arduino.h>
 #include <Actuators/Actuator_Bus_Interface.h>
@@ -69,8 +72,6 @@ ADAU_Tester* adauTester;
 
 CrashParser parser;
 
-//SteeringEncoders* steering_encoder;
-
 int starting_actuator = 0;
 
 
@@ -119,19 +120,19 @@ void odometer_reset_callback(const std_msgs::Int32& msg) {
 ros::Subscriber<std_msgs::Int32> odometer_reset_sub("/odometer_reset", odometer_reset_callback);
 
 enum start_flags {
-    COLD_START,
-    WARM_START,
-    WATCHDOG_VIOLATION,
-    MEMORY_EXHAUSTION,
-    SYSTEM_PANIC,
-    SETUP_FAILURE,
+    COLD_START,             // The system was started from a cold boot (power on)
+    WARM_START,             // The system was started from a warm boot (reset)
+    WATCHDOG_VIOLATION,     // The watchdog timer expired and the system was restarted automatically
+    MEMORY_EXHAUSTION,      // The system ran out of memory in the heap and was restarted automatically
+    SYSTEM_PANIC,           // The CPU encountered an unrecoverable error and restarted the system (hard fault)
+    SETUP_FAILURE,          // The CPU encountered an error during setup and entered safe mode to prevent a boot loop
 };
 uint8_t startup_type = WARM_START;
 
 enum safe_mode_flags : uint32_t {
-    SAFE_MODE_ARM,
-    NORMAL_BOOT,
-    SAFE_MODE_EXIT,
+    SAFE_MODE_ARM,          // The system is in safe mode and will not execute any hardware commands
+    NORMAL_BOOT,            // The system is not in safe mode and will run as normal
+    SAFE_MODE_EXIT,         // The system is in safe mode and will exit safe mode on the next boot
 };
 
 void setup() {
@@ -144,9 +145,6 @@ void setup() {
         startup_type = COLD_START;
     }
     if (safe_mode_flag == SAFE_MODE_EXIT) safe_mode_flag = NORMAL_BOOT; // This is the exit condition for safe mode
-
-    // Seed the random number generator
-    randomSeed(analogRead(0));
 
     // Read the watchdog flag from eeprom
     uint8_t restart_flag = EEPROM.read(WATCHDOG_FLAG_ADDR);
@@ -171,8 +169,10 @@ void setup() {
     node_handle.initNode();
     node_handle.requestSyncTime();  // Sync time with ROS master
 
-    if (!safe_mode_flag) return;  // If execution is not allowed then don't do anything
+    // If we are starting in safe mode exit here to prevent us from encountering the same error again and again
+    if (!safe_mode_flag) return;
     safe_mode_flag = SAFE_MODE_ARM;  // Arm the safe mode flag in case initialization fails
+
     // Set up the CAN bus
     can1.begin();
     can1.setBaudRate(500000); // 500kbps
@@ -189,10 +189,6 @@ void setup() {
 
     // Setup the test output publisher
     node_handle.advertise(test_output_pub);
-
-    for (ODrivePro* odrive : odrives) {
-        if (odrive == nullptr) continue;
-    }
 
     allocate_hardware_objects();  // Allocate memory for all the hardware objects
 
@@ -259,10 +255,9 @@ void setup() {
 
 void loop() {
     uint32_t loop_start = micros(); // Get the time at the start of the loop
+    freeram();  // Calculate the amount of space left in the heap
 
     if (safe_mode_flag == NORMAL_BOOT) {
-
-        freeram();  // Calculate the amount of space left in the heap
 
         adauTester->run();
 
@@ -294,21 +289,6 @@ void loop() {
             }
         }
 
-        // Calculate the bus voltage by averaging the voltages of all the ODrives
-//        float_t bus_voltage = 0;
-//        uint32_t odrive_count = 0;
-//        for (ODrivePro *odrive: odrives) {
-//            if (odrive == nullptr) continue;
-//            float_t voltage = odrive->get_vbus_voltage();
-//            if (isnanf(voltage)) continue;
-//            bus_voltage += voltage;
-//            odrive_count++;
-//        }
-//        if (odrive_count == 0) {
-//            bus_voltage = NAN;  // If there are no ODrives connected set the bus voltage to NAN
-//        } else bus_voltage /= odrive_count;
-//    battery_monitor->update_bus_voltage(bus_voltage);
-
         e_stop_controller->update();
 
         odometers.refresh();  // Save the updated odometer data to the EEPROM if necessary
@@ -329,7 +309,7 @@ void loop() {
 
     String log_msg = "";
     int8_t spin_result = 0;
-    char *line = nullptr;
+    char *line;
     spin_result = node_handle.spinOnce(); // 50ms timeout
 
     switch (spin_result) {
@@ -361,6 +341,7 @@ void loop() {
                         node_handle.logerror(line);
                     }
                     break;
+                // Safe mode exists to ensure that we can send the crash dump instead of just crashing again and again
                 case SETUP_FAILURE:
                     node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: SETUP_FAILURE");
                     parser.generate_crash_dump();
