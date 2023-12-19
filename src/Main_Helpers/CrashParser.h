@@ -6,6 +6,9 @@
 #define PRIMROSE_MCIU_CRASHPARSER_H
 
 #include <cstdint>
+#include "build_info.h"
+
+uint32_t last_dump_time __attribute__ ((section(".noinit")));
 
 class CrashParser {
 
@@ -104,7 +107,8 @@ class CrashParser {
         return true;
     }
 
-    bool isvalid(const struct fault_info_struct *info) {
+    static bool isvalid(const struct fault_info_struct *info) {
+
         uint32_t i, crc;
         const uint32_t *data, *end;
 
@@ -146,6 +150,8 @@ public:
     CrashParser() = default;
 
     explicit operator bool() {
+        if (crash_info->time == last_dump_time) return false;
+        last_dump_time = crash_info->time;
         return isvalid(crash_info);
     }
 
@@ -162,10 +168,15 @@ public:
         sprintf(current_line->line, "Executing from address: 0x%08lX", crash_info->ret);
         // Add how to find what method is at that address
         next_line();
+#ifdef BUILD_DEBUG
         sprintf(current_line->line, "To find the method at this address, use the following command:");
         next_line();
         sprintf(current_line->line, "addr2line -e .pio/build/teensy40/firmware.elf 0x%08lX", crash_info->ret);
         next_line();
+#else
+        sprintf(current_line->line, "NOT BUILT WITH -g, ADD -g TO BUILD_FLAGS IN platformio.ini TO ENABLE DEBUGGING");
+        next_line();
+#endif
         if (!csfr_to_string(crash_info)) {
             sprintf(current_line->line, "Fault type: (UNKNWN) Unknown fault type");
         }
