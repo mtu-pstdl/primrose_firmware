@@ -160,6 +160,11 @@ public:
                 (crash_info->time / 3600) % 24, (crash_info->time / 60) % 60, crash_info->time % 60);
         next_line();
         sprintf(current_line->line, "Executing from address: 0x%08lX", crash_info->ret);
+        // Add how to find what method is at that address
+        next_line();
+        sprintf(current_line->line, "To find the method at this address, use the following command:");
+        next_line();
+        sprintf(current_line->line, "addr2line -e .pio/build/teensy40/firmware.elf 0x%08lX", crash_info->ret);
         next_line();
         if (!csfr_to_string(crash_info)) {
             sprintf(current_line->line, "Fault type: (UNKNWN) Unknown fault type");

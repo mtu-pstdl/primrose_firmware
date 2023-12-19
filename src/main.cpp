@@ -12,8 +12,6 @@
 #include <std_msgs/Float32.h>
 #include <math.h>
 #include "ROS_Publishers.h"
-#include "ROS_Subscribers.h"
-#include "ROS_Services.h"
 
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticArray.h"
@@ -239,7 +237,7 @@ void loop() {
     // After 100 loops write to a random memory location to test crash reports
     static uint8_t crash_test_counter = 0;
     if (crash_test_counter++ > 100) {
-//        odrives[10]->tripped(nullptr, nullptr);
+        odrives[10]->tripped(nullptr, nullptr);
     }
 
     freeram();  // Calculate the amount of space left in the heap
