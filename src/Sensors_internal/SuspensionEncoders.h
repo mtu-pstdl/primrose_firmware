@@ -56,13 +56,15 @@ public:
 
     /**
      * @brief Get the sequence number of the message (always incrementing)
-     * @return
+     * @return The time in microseconds since the last update
      */
     uint32_t get_last_update_time() override{
         return sensor->get_last_update_time();
     }
 
     boolean is_valid() override{
+        // Check if it's been more than 100ms since the last update
+        if (sensor->get_last_update_time() > 100000) return false;
         return sensor->is_valid();
     }
 

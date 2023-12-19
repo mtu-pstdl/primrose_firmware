@@ -124,20 +124,26 @@ enum start_flags {
     WATCHDOG_VIOLATION,
     MEMORY_EXHAUSTION,
     SYSTEM_PANIC,
-    INITIALIZATION_FAILURE,
+    SETUP_FAILURE,
 };
 uint8_t startup_type = WARM_START;
+
+enum safe_mode_flags : uint32_t {
+    SAFE_MODE_ARM,
+    NORMAL_BOOT,
+    SAFE_MODE_EXIT,
+};
 
 void setup() {
 
     // Check if this is the first boot
     if (first_boot != 0xDEADBEEF) {
         // If this is the first boot then set the execution allowed flag to true no matter what
-        safe_mode_flag = 1;
+        safe_mode_flag = NORMAL_BOOT;
         first_boot = 0xDEADBEEF;
         startup_type = COLD_START;
     }
-    if (safe_mode_flag == 2) safe_mode_flag = 1; // This is the exit condition for safe mode
+    if (safe_mode_flag == SAFE_MODE_EXIT) safe_mode_flag = NORMAL_BOOT; // This is the exit condition for safe mode
 
     // Seed the random number generator
     randomSeed(analogRead(0));
@@ -155,7 +161,7 @@ void setup() {
         EEPROM.write(WATCHDOG_FLAG_ADDR, 0x00);
         startup_type = MEMORY_EXHAUSTION;
     } else if (!safe_mode_flag) {
-        startup_type = INITIALIZATION_FAILURE;
+        startup_type = SETUP_FAILURE;
     } else if (parser) {
         startup_type = SYSTEM_PANIC;
     }
@@ -166,7 +172,7 @@ void setup() {
     node_handle.requestSyncTime();  // Sync time with ROS master
 
     if (!safe_mode_flag) return;  // If execution is not allowed then don't do anything
-    safe_mode_flag = 0;  // Set execution allowed to false to prevent the system from crashing again
+    safe_mode_flag = SAFE_MODE_ARM;  // Arm the safe mode flag in case initialization fails
     // Set up the CAN bus
     can1.begin();
     can1.setBaudRate(500000); // 500kbps
@@ -183,7 +189,6 @@ void setup() {
 
     // Setup the test output publisher
     node_handle.advertise(test_output_pub);
-
 
     for (ODrivePro* odrive : odrives) {
         if (odrive == nullptr) continue;
@@ -249,13 +254,13 @@ void setup() {
     config.callback = watchdog_violation;
     wdt.begin(config);
 
-    safe_mode_flag = 1;
+    safe_mode_flag = NORMAL_BOOT;
 }
 
 void loop() {
     uint32_t loop_start = micros(); // Get the time at the start of the loop
 
-    if (safe_mode_flag == 1) {
+    if (safe_mode_flag == NORMAL_BOOT) {
 
         freeram();  // Calculate the amount of space left in the heap
 
@@ -290,18 +295,18 @@ void loop() {
         }
 
         // Calculate the bus voltage by averaging the voltages of all the ODrives
-        float_t bus_voltage = 0;
-        uint32_t odrive_count = 0;
-        for (ODrivePro *odrive: odrives) {
-            if (odrive == nullptr) continue;
-            float_t voltage = odrive->get_vbus_voltage();
-            if (isnanf(voltage)) continue;
-            bus_voltage += voltage;
-            odrive_count++;
-        }
-        if (odrive_count == 0) {
-            bus_voltage = NAN;  // If there are no ODrives connected set the bus voltage to NAN
-        } else bus_voltage /= odrive_count;
+//        float_t bus_voltage = 0;
+//        uint32_t odrive_count = 0;
+//        for (ODrivePro *odrive: odrives) {
+//            if (odrive == nullptr) continue;
+//            float_t voltage = odrive->get_vbus_voltage();
+//            if (isnanf(voltage)) continue;
+//            bus_voltage += voltage;
+//            odrive_count++;
+//        }
+//        if (odrive_count == 0) {
+//            bus_voltage = NAN;  // If there are no ODrives connected set the bus voltage to NAN
+//        } else bus_voltage /= odrive_count;
 //    battery_monitor->update_bus_voltage(bus_voltage);
 
         e_stop_controller->update();
@@ -356,14 +361,14 @@ void loop() {
                         node_handle.logerror(line);
                     }
                     break;
-                case INITIALIZATION_FAILURE:
-                    node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: INITIALIZATION_FAILURE");
+                case SETUP_FAILURE:
+                    node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: SETUP_FAILURE");
                     parser.generate_crash_dump();
                     while ((line = parser.crash_dump()) != nullptr) {
                         node_handle.logerror(line);
                     }
                     node_handle.logerror("MCIU ENTERED SAFE MODE, NO HARDWARE INITIALIZED");
-                    safe_mode_flag = 2;
+                    safe_mode_flag = SAFE_MODE_EXIT;
                     node_handle.logerror("MCIU MUST BE RESTARTED TO EXIT SAFE MODE");
                     break;
                 default:

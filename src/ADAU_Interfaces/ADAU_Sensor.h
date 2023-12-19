@@ -40,7 +40,7 @@ public:
      * @param data_ptr   A pointer to the data structure that will be used to store the sensor data
      * @param data_size  The size of the data structure in bytes (sizeof(data_structure))
      */
-    ADAU_Sensor(uint8_t sensor_id, void* data_ptr, uint8_t data_size){
+    ADAU_Sensor(uint8_t sensor_id, void* data_ptr, uint8_t data_size) {
         // Set the data pointer and size
         this->sensor_id = sensor_id;
         this->data_ptr = data_ptr;
@@ -50,31 +50,31 @@ public:
         ADAU_BUS_INTERFACE.attachSensor(this);
     }
 
-    uint8_t get_data_size() const{
+    uint8_t get_data_size() const {
         return this->data_size;
     }
 
-    void* get_data_ptr(){
+    void* get_data_ptr() {
         return this->data_ptr;
     }
 
-    void set_last_update_time(uint32_t time){
+    void set_last_update_time(uint32_t time) {
         this->last_update_time = time;
     }
 
-    void set_valid(boolean valid){
+    void set_valid(boolean valid) {
         this->valid_data = valid;
     }
 
-    uint8_t get_sensor_id() const{
+    uint8_t get_sensor_id() const {
         return this->sensor_id;
     }
 
-    uint32_t get_last_update_time() const{
-        return this->last_update_time;
+    uint32_t get_last_update_time() const {
+        return micros() - this->last_update_time;
     }
 
-    boolean is_valid() const{
+    boolean is_valid() const {
         return this->valid_data;
     }
 

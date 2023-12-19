@@ -71,6 +71,16 @@ public:
     void control_callback(const std_msgs::Int32MultiArray& msg);
 
     boolean tripped(char* tripped_device_name, char* tripped_device_message) override {
+        if (!sensor->is_valid()) {
+            sprintf(tripped_device_name, "Load Cells: %s", this->name);
+            sprintf(tripped_device_message, "ADAU Data Invalid");
+            return true;
+        }
+        if (sensor->get_last_update_time() > 100000) {
+            sprintf(tripped_device_name, "Load Cells: %s", this->name);
+            sprintf(tripped_device_message, "ADAU Data Stale");
+            return true;
+        }
         if (data.flags != 0) {
             sprintf(tripped_device_name, "Load Cells: %s", this->name);
             sprintf(tripped_device_message, "ERROR FLAGS: ");

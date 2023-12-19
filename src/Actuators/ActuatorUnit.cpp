@@ -253,7 +253,6 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
     sprintf(device_name, "Actuator Unit: %d", this->id);
     sprintf(device_message, "");
     char temp[100];
-//    memset(temp-100, 69, 100);
     if (!this->connected) {
         sprintf(temp, "CONN LOST-");
         strlcat(device_message, temp, 99);
