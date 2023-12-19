@@ -36,6 +36,10 @@
 #define MAX_LOOP_TIME 1 // 1 second
 WDT_T4<WDT1> wdt;
 
+// Set to false if the system crashed during initialization during the last boot
+uint32_t safe_mode_flag __attribute__((section(".noinit")));
+uint32_t first_boot __attribute__((section(".noinit")));
+
 ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
 
@@ -115,14 +119,25 @@ void odometer_reset_callback(const std_msgs::Int32& msg) {
 ros::Subscriber<std_msgs::Int32> odometer_reset_sub("/odometer_reset", odometer_reset_callback);
 
 enum start_flags {
-    CLEAN_START,
+    COLD_START,
+    WARM_START,
     WATCHDOG_VIOLATION,
     MEMORY_EXHAUSTION,
-    SYSTEM_PANIC
+    SYSTEM_PANIC,
+    INITIALIZATION_FAILURE,
 };
-uint8_t startup_type = CLEAN_START;
+uint8_t startup_type = WARM_START;
 
 void setup() {
+
+    // Check if this is the first boot
+    if (first_boot != 0xDEADBEEF) {
+        // If this is the first boot then set the execution allowed flag to true no matter what
+        safe_mode_flag = 1;
+        first_boot = 0xDEADBEEF;
+        startup_type = COLD_START;
+    }
+    if (safe_mode_flag == 2) safe_mode_flag = 1; // This is the exit condition for safe mode
 
     // Seed the random number generator
     randomSeed(analogRead(0));
@@ -139,6 +154,8 @@ void setup() {
         // Clear the memory exhaustion flag
         EEPROM.write(WATCHDOG_FLAG_ADDR, 0x00);
         startup_type = MEMORY_EXHAUSTION;
+    } else if (!safe_mode_flag) {
+        startup_type = INITIALIZATION_FAILURE;
     } else if (parser) {
         startup_type = SYSTEM_PANIC;
     }
@@ -148,6 +165,8 @@ void setup() {
     node_handle.initNode();
     node_handle.requestSyncTime();  // Sync time with ROS master
 
+    if (!safe_mode_flag) return;  // If execution is not allowed then don't do anything
+    safe_mode_flag = 0;  // Set execution allowed to false to prevent the system from crashing again
     // Set up the CAN bus
     can1.begin();
     can1.setBaudRate(500000); // 500kbps
@@ -222,6 +241,8 @@ void setup() {
 
     adauTester = new ADAU_Tester(&test_output_msg);
 
+    odrives[10]->tripped(nullptr, nullptr);
+
 //    test_output_msg.data = battery_monitor->debug_string;
 
     WDT_timings_t config;
@@ -230,79 +251,82 @@ void setup() {
     config.callback = watchdog_violation;
     wdt.begin(config);
 
+    safe_mode_flag = 1;
 }
 
 void loop() {
-
-    // After 100 loops write to a random memory location to test crash reports
-    static uint8_t crash_test_counter = 0;
-    if (crash_test_counter++ > 100) {
-        odrives[10]->tripped(nullptr, nullptr);
-    }
-
-    freeram();  // Calculate the amount of space left in the heap
-    
     uint32_t loop_start = micros(); // Get the time at the start of the loop
 
-    adauTester->run();
+    if (safe_mode_flag == 1) {
 
-    ADAU_BUS_INTERFACE.parse_buffer(); // Update the ADAU bus
+        freeram();  // Calculate the amount of space left in the heap
 
-    ACTUATOR_BUS_INTERFACE.sent_last_cycle = 0;
+        adauTester->run();
 
-    // Get the teensy temperature
-    check_temp();
+        ADAU_BUS_INTERFACE.parse_buffer(); // Update the ADAU bus
 
-    for (ODrivePro *odrive: odrives) {
-        if (odrive == nullptr) continue;
-        odrive->refresh_data();  // Get the latest data from the ODrive
-    }
+        ACTUATOR_BUS_INTERFACE.sent_last_cycle = 0;
 
-    // Every cycle start with a different actuator to prevent the same actuator from always being the first to update
-    for (int i = 0; i < 4; i++) {
-        uint32_t actuator_index = (i + starting_actuator) % 4;
-        if (actuators[actuator_index] == nullptr) continue;
-        actuators[actuator_index]->update();
-    }
-    starting_actuator = (starting_actuator + 1) % 4;
+        // Get the teensy temperature
+        check_temp();
 
-    if (node_handle.connected()) {
-        for (ROSNode *node: ros_nodes) {
-            if (node == nullptr) continue;
-            node->update();
-            node->publish();
+        for (ODrivePro *odrive: odrives) {
+            if (odrive == nullptr) continue;
+            odrive->refresh_data();  // Get the latest data from the ODrive
         }
-    }
 
-    // Calculate the bus voltage by averaging the voltages of all the ODrives
-    float_t bus_voltage = 0;
-    uint32_t odrive_count = 0;
-    for (ODrivePro *odrive: odrives) {
-        if (odrive == nullptr) continue;
-        float_t voltage = odrive->get_vbus_voltage();
-        if (isnanf(voltage)) continue;
-        bus_voltage += voltage;
-        odrive_count++;
-    }
-    if (odrive_count == 0) {
-        bus_voltage = NAN;  // If there are no ODrives connected set the bus voltage to NAN
-    } else bus_voltage /= odrive_count;
+        // Every cycle start with a different actuator to prevent the same actuator from always being the first to update
+        for (int i = 0; i < 4; i++) {
+            uint32_t actuator_index = (i + starting_actuator) % 4;
+            if (actuators[actuator_index] == nullptr) continue;
+            actuators[actuator_index]->update();
+        }
+        starting_actuator = (starting_actuator + 1) % 4;
+
+        if (node_handle.connected()) {
+            for (ROSNode *node: ros_nodes) {
+                if (node == nullptr) continue;
+                node->update();
+                node->publish();
+            }
+        }
+
+        // Calculate the bus voltage by averaging the voltages of all the ODrives
+        float_t bus_voltage = 0;
+        uint32_t odrive_count = 0;
+        for (ODrivePro *odrive: odrives) {
+            if (odrive == nullptr) continue;
+            float_t voltage = odrive->get_vbus_voltage();
+            if (isnanf(voltage)) continue;
+            bus_voltage += voltage;
+            odrive_count++;
+        }
+        if (odrive_count == 0) {
+            bus_voltage = NAN;  // If there are no ODrives connected set the bus voltage to NAN
+        } else bus_voltage /= odrive_count;
 //    battery_monitor->update_bus_voltage(bus_voltage);
 
-    e_stop_controller->update();
+        e_stop_controller->update();
 
-    odometers.refresh();  // Save the updated odometer data to the EEPROM if necessary
+        odometers.refresh();  // Save the updated odometer data to the EEPROM if necessary
 
-    if (e_stop_controller->estop_message_updated())
-        estop_topic.publisher->publish(estop_topic.message);
-    for (ros_topic *topic: all_topics) {
-        if (topic == nullptr) continue;
-        topic->publisher->publish(topic->message);
+        if (e_stop_controller->estop_message_updated())
+            estop_topic.publisher->publish(estop_topic.message);
+        for (ros_topic *topic: all_topics) {
+            if (topic == nullptr) continue;
+            topic->publisher->publish(topic->message);
+        }
+
+        test_output_pub.publish(&test_output_msg);
+
+        while (ACTUATOR_BUS_INTERFACE.spin() && micros() - loop_start < 45000) {
+            yield();  // Yield to other tasks
+        }
     }
 
     String log_msg = "";
     int8_t spin_result = 0;
-    char* line = nullptr;
+    char *line = nullptr;
     spin_result = node_handle.spinOnce(); // 50ms timeout
 
     switch (spin_result) {
@@ -315,8 +339,11 @@ void loop() {
             node_handle.logwarn("BUILD GIT BRANCH: " BUILD_GIT_BRANCH);
             node_handle.logwarn("BUILD MACHINE NAME: " BUILD_MACHINE_NAME);
             switch (startup_type) {
-                case CLEAN_START:
-                    node_handle.logwarn("MCIU EXITED NORMALLY, CLEAN_START");
+                case COLD_START:
+                    node_handle.logwarn("MCIU EXITED NORMALLY, COLD_START");
+                    break;
+                case WARM_START:
+                    node_handle.logwarn("MCIU EXITED NORMALLY, WARM_START");
                     break;
                 case WATCHDOG_VIOLATION:
                     node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: WATCHDOG_VIOLATION");
@@ -330,6 +357,16 @@ void loop() {
                     while ((line = parser.crash_dump()) != nullptr) {
                         node_handle.logerror(line);
                     }
+                    break;
+                case INITIALIZATION_FAILURE:
+                    node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: INITIALIZATION_FAILURE");
+                    parser.generate_crash_dump();
+                    while ((line = parser.crash_dump()) != nullptr) {
+                        node_handle.logerror(line);
+                    }
+                    node_handle.logerror("MCIU ENTERED SAFE MODE, NO HARDWARE INITIALIZED");
+                    safe_mode_flag = 2;
+                    node_handle.logerror("MCIU MUST BE RESTARTED TO EXIT SAFE MODE");
                     break;
                 default:
                     node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: UNKNOWN");
@@ -346,10 +383,6 @@ void loop() {
             break;
     }
 
-    while (ACTUATOR_BUS_INTERFACE.spin() && micros() - loop_start < 45000) {
-        yield();  // Yield to other tasks
-    }
-
     uint32_t execution_time = micros() - loop_start;
 
     uint32_t loop_time = micros() - loop_start;
@@ -360,7 +393,7 @@ void loop() {
         delayMicroseconds(50000 - loop_time);
     }
 
-    test_output_pub.publish(&test_output_msg);
+
 
     wdt.feed();  // Feed the watchdog timer to prevent a reset
 }

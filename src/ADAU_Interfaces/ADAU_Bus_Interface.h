@@ -16,6 +16,8 @@
 #define MESSAGE_MAX_LENGTH 254
 #define END_MESSAGE_COUNT  3
 
+#define MAX_PARSE_TIME 1000 // 1ms
+
 // There is only one ADAU on the bus and we want all ADAU_Sensors to share this object
 // We want this object to be a singleton and exist only once automatically
 
@@ -101,7 +103,8 @@ public:
 
     ADAU_Sensor_List* sensor_list = nullptr;
 
-    uint8_t serial_buffer[1024] = {0};
+    // Increase the size of the serial buffer to 2kb, so we don't miss any messages when the main thread is busy
+    uint8_t serial_buffer[2048] = {0};
 
     char output_string[1000] = {0};
 
@@ -110,7 +113,7 @@ public:
      */
     ADAU_Bus_Interface(){
         ADAU_INTERFACE.begin(ADAU_BAUD_RATE, SERIAL_8N1);
-        ADAU_INTERFACE.addMemoryForRead(serial_buffer, 1024);
+        ADAU_INTERFACE.addMemoryForRead(serial_buffer, sizeof(serial_buffer));
         pinMode(ADAU_RESET_PIN, OUTPUT);
         reset(); // Put the ADAU in a known state
         // Attach to the serialEvent interrupt for whatever serial port is being used

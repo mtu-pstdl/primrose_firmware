@@ -47,7 +47,7 @@ void ADAU_Bus_Interface::attachSensor(ADAU_Sensor *sensor) {
  * @next_step prevalidate_data_length()
  */
 void ADAU_Bus_Interface::load_header() {
-    while (ADAU_INTERFACE.available() && this->parse_start_time + 2500 > micros()) {
+    while (ADAU_INTERFACE.available() && this->parse_start_time + MAX_PARSE_TIME > micros()) {
         // Read the next byte
         uint8_t byte = ADAU_INTERFACE.read();
         this->header_buffer[this->header_length] = byte;
@@ -271,7 +271,7 @@ void ADAU_Bus_Interface::parse_buffer() {
     memset(this->output_string, 0, 999);
     sprintf(this->output_string, "Starting parse, entry state: %d, buffer length: %d\n",
             this->current_state, ADAU_INTERFACE.available());
-    while (this->parse_start_time + 2500 > micros()) {
+    while (this->parse_start_time + MAX_PARSE_TIME > micros()) {
         if (!ADAU_INTERFACE.available()) break;
         switch (this->current_state) {
             case waiting_for_start_byte:

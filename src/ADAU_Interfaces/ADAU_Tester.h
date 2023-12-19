@@ -19,10 +19,13 @@ class ADAU_Tester {
 
 private:
 
-    struct Test_Data {
+    struct BigData {
+        uint8_t  integer_8  = 0;
+        uint16_t integer_16 = 0;
         uint32_t integer_32 = 0;
         int64_t  integer_64 = 0;
         float    float_32   = 0;
+        double   float_64   = 0;
     } test_data = {};
 
     #pragma pack(push, 1) // Remove all padding from the data structure to reduce transmission size
@@ -46,6 +49,8 @@ private:
         CORRUPT_START_BYTE,
         CORRUPT_SENSOR_ID,
         CORRUPT_DATA_LENGTH,
+        MORE_DATA_THAN_LENGTH,
+        LESS_DATA_THAN_LENGTH,
         CORRUPT_CHECKSUM,
         CORRUPT_DATA,
         CORRUPT_END_BYTE,
@@ -74,6 +79,7 @@ public:
     explicit ADAU_Tester(std_msgs::String* output_msg) {
         this->output_msg = output_msg;
         this->output_msg->data = ADAU_BUS_INTERFACE.output_string;
+        sensors[0] = new ADAU_Sensor(0x10, &test_data, sizeof(BigData));
     }
 
     void run() {
@@ -87,8 +93,12 @@ public:
         this->send_data(0x05, &loadcell_data, sizeof(suspension_data));
         this->send_data(0x06, &loadcell_data, sizeof(loadcell_data));
 
-//        for (int i = 0; i < 20; i++) {
-//            this->send_data(0x06, &loadcell_data, sizeof(loadcell_data));
+//        this->send_data(0x10, &test_data, sizeof(BigData), LESS_DATA_THAN_LENGTH);
+//        this->send_data(0x10, &test_data, sizeof(BigData), MORE_DATA_THAN_LENGTH);
+
+
+//        for (int i = 0; i < 34; i++) {
+//            this->send_data(0x10, &test_data, sizeof(BigData));
 //        }
 
         last_test = millis();
@@ -98,7 +108,7 @@ public:
         suspension_data.position += suspension_data.velocity;
 
         ADAU_SERIAL_BUS.write(virtual_serial_buffer, virtual_serial_buffer_len);
-        ADAU_SERIAL_BUS.flush();
+//        ADAU_SERIAL_BUS.flush();
 
     }
 

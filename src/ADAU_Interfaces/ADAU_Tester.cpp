@@ -61,6 +61,7 @@ void ADAU_Tester::send_data(uint8_t sensor_id, void* data, uint8_t data_length,
     }
     memset(&temp[4 + data_length], 0, 6);  // End bytes (6 bytes)
 
+    uint32_t added_bytes = 0;
     // Corrupt the data
     switch (corrupt) {
         case NO_CORRUPTION:
@@ -88,6 +89,16 @@ void ADAU_Tester::send_data(uint8_t sensor_id, void* data, uint8_t data_length,
         case CORRUPT_DATA:
             // Pick a random byte in the data and change it to a random value
             temp[4 + random(0, data_length)] = random(0x00, 0xFF);
+            break;
+        case MORE_DATA_THAN_LENGTH:
+            // Add more data in the data section than the data length indicates but don't change the data length value
+            added_bytes = random(1, 100);
+            for (int i = 0; i < added_bytes; i++) {
+                temp[4 + data_length + i] = random(0x00, 0xFF);
+            }
+            // Add the termination back
+            memset(&temp[4 + data_length + added_bytes], 0, 6);
+            data_length += added_bytes + 6;
             break;
     }
 

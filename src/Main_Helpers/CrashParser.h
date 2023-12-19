@@ -171,7 +171,7 @@ public:
         }
 
         // Clear the crash info
-        crash_info->len = 0;
+        memset(crash_info, 0, sizeof(fault_info_struct));
     }
 
     // Create iterator for crash dump
