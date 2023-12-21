@@ -52,7 +52,7 @@ public:
             battery_sub("/mciu/battery_monitor", &BatteryMonitor::battery_callback, this) {
 
         this->battery_interface = new VeDirectFrameHandler();
-        VE_DIRECT_SERIAL.begin(19200);
+        VE_DIRECT_SERIAL.begin(19200, SERIAL_8N1);
         VE_DIRECT_SERIAL.addMemoryForRead(data_buffer, 255);
 
         this->estop_controller = estop_controller;

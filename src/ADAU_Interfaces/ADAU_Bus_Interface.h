@@ -112,7 +112,7 @@ public:
      * @brief Initializes the serial interface and triggers a reset of the ADAU
      */
     ADAU_Bus_Interface(){
-        ADAU_INTERFACE.begin(ADAU_BAUD_RATE, SERIAL_8N1);
+        ADAU_INTERFACE.begin(ADAU_BAUD_RATE, SERIAL_8E1);
         ADAU_INTERFACE.addMemoryForRead(serial_buffer, sizeof(serial_buffer));
         pinMode(ADAU_RESET_PIN, OUTPUT);
         reset(); // Put the ADAU in a known state

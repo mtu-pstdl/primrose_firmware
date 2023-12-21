@@ -58,9 +58,9 @@ ActuatorsROS* actuators_ros[4];
 LoadCells* load_cells[2];
 
 BatteryMonitor* battery_monitor;
-IMU* imu;
+IMU* imu_class;
 
-ROSNode* ros_nodes[16];
+ROSNode* ros_nodes[24];
 
 Odometers odometers;
 
@@ -182,7 +182,7 @@ void setup() {
     can1.enableFIFOInterrupt();
 
     SPI.begin();
-    SPI1.begin();
+//    SPI1.begin();
 
     // Setup the odometer reset subscriber
     node_handle.subscribe(odometer_reset_sub);
@@ -204,7 +204,7 @@ void setup() {
 
     battery_monitor = new BatteryMonitor(e_stop_controller,
                                          static_cast<sensor_msgs::BatteryState*>(all_topics[BATTERY_TOPIC_NUM]->message));
-    imu = new IMU(static_cast<sensor_msgs::Imu*>(all_topics[IMU_TOPIC_NUM]->message));
+    imu_class = new IMU(static_cast<sensor_msgs::Imu*>(all_topics[IMU_TOPIC_NUM]->message));
 
     accessory_power = new AccessoryPower();
 
@@ -212,7 +212,7 @@ void setup() {
     for (auto & actuator : actuators) e_stop_controller->add_estop_device(actuator);
     for (auto & load_cell : load_cells) e_stop_controller->add_estop_device(load_cell);
     e_stop_controller->add_estop_device(battery_monitor);
-    e_stop_controller->add_estop_device(imu);
+    e_stop_controller->add_estop_device(imu_class);
 
     // Add all ros nodes to the ros node array
     int ros_node_count = 0;
@@ -223,7 +223,7 @@ void setup() {
     ros_nodes[ros_node_count++] = hopper_door;
     ros_nodes[ros_node_count++] = battery_monitor;
     ros_nodes[ros_node_count++] = accessory_power;
-    ros_nodes[ros_node_count++] = imu;
+    ros_nodes[ros_node_count++] = imu_class;
 
     node_handle.advertise(*estop_topic.publisher);
     estop_topic.publisher->publish(estop_topic.message);
@@ -242,7 +242,7 @@ void setup() {
 
     adauTester = new ADAU_Tester(&test_output_msg);
 
-//    test_output_msg.data = battery_monitor->debug_string;
+    test_output_msg.data = battery_monitor->debug_string;
 
     WDT_timings_t config;
     config.trigger = MAX_LOOP_TIME;
@@ -376,8 +376,6 @@ void loop() {
         // Wait for the remaining time in the loop to maintain a 20Hz loop
         delayMicroseconds(50000 - loop_time);
     }
-
-
 
     wdt.feed();  // Feed the watchdog timer to prevent a reset
 }
