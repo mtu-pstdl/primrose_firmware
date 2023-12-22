@@ -3,6 +3,7 @@
 //
 
 #include "ActuatorsROS.h"
+#include "Main_Helpers/BreadCrumbs.h"
 
 void ActuatorsROS::control_callback(const std_msgs::Int32MultiArray &msg) {
     // First element is the command and the second is the target actuator
@@ -28,6 +29,7 @@ int32_t ActuatorsROS::to_fixed_point(float value, float scale) {
 }
 
 void ActuatorsROS::update() {
+    DROP_CRUMB();
     this->actuator->update();
     this->output_topic->data[1] = this->actuator->get_position(0);
     this->output_topic->data[2] = this->to_fixed_point(this->actuator->get_velocity(0), UNIT_SCALE);

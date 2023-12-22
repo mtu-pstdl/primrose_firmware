@@ -4,6 +4,7 @@
 
 #include <functional>
 #include "ActuatorUnit.h"
+#include "Main_Helpers/BreadCrumbs.h"
 
 
 void ActuatorUnit::build_telemetry_messages() {
@@ -249,6 +250,7 @@ void ActuatorUnit::estop() {
  * @return True if the device is tripped, false otherwise
  */
 bool ActuatorUnit::tripped(char* device_name, char* device_message) {
+    DROP_CRUMB();
     bool tripped = false;
     sprintf(device_name, "Actuator Unit: %d", this->id);
     sprintf(device_message, "");

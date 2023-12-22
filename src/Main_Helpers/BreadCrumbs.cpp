@@ -13,14 +13,14 @@ void save_breadcrumbs() {
     bread_crumbs.has_crumbs = false;
 }
 
-void add_breadcrumb(const char *pretty_name, const char *file) {
+void add_breadcrumb(const char *file, uint32_t line) {
     if (bread_crumbs.index >= 16) {
         bread_crumbs.index = 0;
     }
     breadcrumb *current = &bread_crumbs.crumbs[bread_crumbs.index];
-    sprintf(current->pretty_name, "%s", pretty_name);
     sprintf(current->file, "%s", file);
-    current->time = millis();
+    current->line = line;
+    current->time = micros();
     bread_crumbs.index++;
     bread_crumbs.total++;
     bread_crumbs.has_crumbs = true;
@@ -31,7 +31,7 @@ boolean has_breadcrumbs() {
 }
 
 void print_breadcrumb(breadcrumb *crumb, char* buffer) {
-    sprintf(buffer, "%s: %s", crumb->file, crumb->pretty_name);
+    sprintf(buffer, "%lu - %s:%lu", crumb->time, crumb->file, crumb->line);
 }
 
 breadcrumb* get_breadcrumb() {
@@ -44,12 +44,13 @@ breadcrumb* get_breadcrumb() {
     static uint32_t current_index = 0;
     static uint32_t remaining = last_breadcrumbs.total;
     if (remaining == 0) return nullptr;
-    breadcrumb* current = &last_breadcrumbs.crumbs[current_index];
+    if (remaining > 16) remaining = 16;
     if (current_index >= 15) {
         current_index = 0;
     } else {
         current_index++;
     }
+    breadcrumb* current = &last_breadcrumbs.crumbs[current_index];
     remaining--;
     return current;
 }

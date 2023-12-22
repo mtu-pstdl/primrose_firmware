@@ -3,6 +3,7 @@
 //
 
 #include "Actuator_Bus_Interface.h"
+#include "Main_Helpers/BreadCrumbs.h"
 
 Actuator_Bus_Interface ACTUATOR_BUS_INTERFACE = Actuator_Bus_Interface();
 
@@ -27,6 +28,7 @@ uint16_t Actuator_Bus_Interface::crc16(const uint8_t *packet, uint32_t nBytes) {
  * @param msg The serial message to process
  */
 void Actuator_Bus_Interface::process_no_data_serial(serial_message* msg){
+    DROP_CRUMB();
     if (Serial2.available() >= 1) {
         this->total_messages_received++;
         if (Serial2.read() == 0xFF) {
@@ -59,6 +61,7 @@ void Actuator_Bus_Interface::process_no_data_serial(serial_message* msg){
  * @param msg The serial message to process
  */
 void Actuator_Bus_Interface::process_data_serial(serial_message *msg) {
+    DROP_CRUMB();
     if (Serial2.available() == msg->data_length + sizeof(uint16_t)){
         this->total_messages_received++; // Increment the total messages received
         Serial2.readBytes(this->response_buffer, msg->data_length + sizeof(uint16_t));

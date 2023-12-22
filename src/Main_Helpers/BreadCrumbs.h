@@ -9,8 +9,8 @@
 #include "build_info.h"
 
 struct breadcrumb {
-    char pretty_name[100];
     char file[100];
+    uint32_t line;
     uint32_t time;
 };
 
@@ -27,7 +27,7 @@ static breadcrumbs last_breadcrumbs __attribute__ ((section(".noinit")));
 
 void save_breadcrumbs();
 
-void add_breadcrumb(const char *pretty_name, const char *file);
+void add_breadcrumb(const char *file, uint32_t line);
 
 boolean has_breadcrumbs();
 
@@ -36,7 +36,7 @@ breadcrumb* get_breadcrumb();
 void print_breadcrumb(breadcrumb *crumb, char* buffer);
 
 #ifdef BUILD_DEBUG
-#define DROP_CRUMB() add_breadcrumb(__PRETTY_FUNCTION__, __FILE__);
+#define DROP_CRUMB() add_breadcrumb(__FILE__, __LINE__)
 #else
 #define DROP_CRUMB()
 #endif

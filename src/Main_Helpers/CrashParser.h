@@ -10,7 +10,7 @@
 #include "BreadCrumbs.h"
 
 uint32_t last_dump_time __attribute__ ((section(".noinit")));
-
+extern uint32_t loop_count __attribute__ ((section(".noinit")));
 
 
 /**
@@ -171,6 +171,8 @@ public:
         sprintf(current_line->line, "MCIU exited at time: %02lu:%02lu:%02lu",
                 (crash_info->time / 3600) % 24, (crash_info->time / 60) % 60, crash_info->time % 60);
         next_line();
+        sprintf(current_line->line, "MCIU exited after %lu loops", loop_count);
+        next_line();
         sprintf(current_line->line, "Executing from address: 0x%08lX", crash_info->ret);
         // Add how to find what method is at that address
         next_line();
@@ -199,7 +201,6 @@ public:
                 next_line();
                 crumb = get_breadcrumb();
             }
-            next_line();
             sprintf(current_line->line, "----- END OF BREADCRUMBS -----");
         } else {
             sprintf(current_line->line, "No breadcrumbs available");

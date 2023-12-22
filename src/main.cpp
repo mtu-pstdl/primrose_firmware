@@ -44,6 +44,7 @@ WDT_T4<WDT1> wdt;
 // Set to false if the system crashed during initialization during the last boot
 uint32_t safe_mode_flag __attribute__((section(".noinit")));
 uint32_t first_boot __attribute__((section(".noinit")));
+uint32_t loop_count __attribute__((section(".noinit")));
 
 ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
@@ -165,6 +166,8 @@ void setup() {
         startup_type = SETUP_FAILURE;
     } else if (parser) {
         startup_type = SYSTEM_PANIC;
+    } else {
+        loop_count = 0;
     }
 
     node_handle.getHardware()->setBaud(4000000); // ~4Mbps
@@ -386,4 +389,5 @@ void loop() {
     }
 
     wdt.feed();  // Feed the watchdog timer to prevent a reset
+    loop_count++;
 }
