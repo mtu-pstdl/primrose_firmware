@@ -3,6 +3,7 @@
 //
 
 #include "EStopController.h"
+#include "Main_Helpers/BreadCrumbs.h"
 
 void EStopController::check_for_faults() {
     // Copy the value from the estop message buffer to the last estop message buffer
@@ -114,6 +115,7 @@ void EStopController::resume() {
 }
 
 void EStopController::update() {
+    DROP_CRUMB();
     // Check how many devices are in the linked list
     if (!estop_triggered) {
         if (millis() - estop_resume_time > 3000) this->automatic_estop_inhibited = false;

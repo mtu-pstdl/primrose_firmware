@@ -4,6 +4,7 @@
 
 #include "ADAU_Bus_Interface.h"
 #include "ADAU_Sensor.h"
+#include "Main_Helpers/BreadCrumbs.h"
 
 /**
  * @brief The default constructor for the ADAU_Bus_Interface class
@@ -263,6 +264,7 @@ void ADAU_Bus_Interface::cleanup() {
  * @warning If the buffer is not cleared fast enough then the buffer will overflow and data will be lost
  */
 void ADAU_Bus_Interface::parse_buffer() {
+    DROP_CRUMB();
     this->parse_start_time = micros(); // Record the time that the parse started so we don't overrun the allotted time
     // Print the contents of the buffer to the temp string in hex
     this->parse_count = 0;

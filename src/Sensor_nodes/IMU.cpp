@@ -3,6 +3,7 @@
 //
 
 #include "IMU.h"
+#include "Main_Helpers/BreadCrumbs.h"
 
 Adafruit_BNO08x imu(RST_PIN);
 
@@ -65,6 +66,7 @@ void IMU::enable_reporting() {
 }
 
 void IMU::update() {
+    DROP_CRUMB();
     if (!this->config_success) return;
     if (imu.wasReset()) {
         this->enable_reporting();

@@ -5,7 +5,7 @@
 #include "ODriveROS.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/time.h"
-
+#include "Main_Helpers/BreadCrumbs.h"
 
 
 /**
@@ -57,6 +57,7 @@ float_t ODriveROS::from_fixed_point(int32_t value, float scale) {
 }
 
 void ODriveROS::update() {
+    DROP_CRUMB();
     // Publish the condition topic
     this->output_topic->data[1] =  this->to_fixed_point(this->odrive->get_pos_estimate(), UNIT_SCALE);
     this->output_topic->data[2] =  this->to_fixed_point(this->odrive->get_vel_estimate(), UNIT_SCALE);

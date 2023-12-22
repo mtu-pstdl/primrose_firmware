@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include "build_info.h"
+#include "BreadCrumbs.h"
 
 uint32_t last_dump_time __attribute__ ((section(".noinit")));
 
@@ -184,6 +185,25 @@ public:
 #endif
         if (!csfr_to_string(crash_info)) {
             sprintf(current_line->line, "Fault type: (UNKNWN) Unknown fault type");
+        }
+
+        // Check if there are crumbs available
+        if (has_breadcrumbs()) {
+            sprintf(current_line->line, "----- BREADCRUMBS -----");
+            next_line();
+            breadcrumb *crumb = get_breadcrumb();
+            while (crumb != nullptr) {
+                char buffer[100];
+                print_breadcrumb(crumb, buffer);
+                sprintf(current_line->line, "%s", buffer);
+                next_line();
+                crumb = get_breadcrumb();
+            }
+            next_line();
+            sprintf(current_line->line, "----- END OF BREADCRUMBS -----");
+        } else {
+            sprintf(current_line->line, "No breadcrumbs available");
+            next_line();
         }
 
         // Clear the crash info

@@ -33,9 +33,9 @@
 #include "Main_Helpers/build_info.h"
 #include "Main_Helpers/initialize_objects.h"
 #include "Main_Helpers/utility_functions.h"
+#include "Main_Helpers/BreadCrumbs.h"
 #include "Main_Helpers/CrashParser.h"
 #include "Misc/SystemMonitor.h"
-#include "Main_Helpers/BreadCrumbs.h"
 
 // If a loop takes longer than MAX_LOOP_TIME then the whole system will be reset so this is a hard limit
 #define MAX_LOOP_TIME 1 // 1 second
@@ -138,6 +138,7 @@ enum safe_mode_flags : uint32_t {
 };
 
 void setup() {
+    save_breadcrumbs(); // Copy the breadcrumbs from the previous boot into a separate buffer
 
     // Check if this is the first boot
     if (first_boot != 0xDEADBEEF) {
