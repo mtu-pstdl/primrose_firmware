@@ -7,7 +7,7 @@
 #include <FlexCAN_T4.h>
 #include <ros.h>
 #include "ODrive/ODrivePro.h"
-#include "ODrive/ODrive_ROS.h"
+#include "ODrive/ODriveROS.h"
 #include "Actuators/ActuatorUnit.h"
 #include "Actuators/ActuatorsROS.h"
 #include "ADAU_Interfaces/ADAU_Sensor.h"
@@ -34,6 +34,7 @@
 #include "Main_Helpers/hardware_objects.h"
 #include "Main_Helpers/utility_functions.h"
 #include "Main_Helpers/CrashParser.h"
+#include "Misc/SystemMonitor.h"
 
 // If a loop takes longer than MAX_LOOP_TIME then the whole system will be reset so this is a hard limit
 #define MAX_LOOP_TIME 1 // 1 second
@@ -49,8 +50,8 @@ FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
 std_msgs::String test_output_msg;
 ros::Publisher test_output_pub("/test_output", &test_output_msg);
 
-ODrivePro* odrives[7];
-ODrive_ROS* odrive_ros[7];
+ODrivePro* odrives[num_odrives];
+ODriveROS* odrive_ros[num_odrives];
 
 ActuatorUnit* actuators[4];
 ActuatorsROS* actuators_ros[4];
@@ -70,6 +71,7 @@ AccessoryPower* accessory_power;
 
 ADAU_Tester* adauTester;
 
+SystemMonitor* system_monitor;
 CrashParser parser;
 
 int starting_actuator = 0;
@@ -168,6 +170,9 @@ void setup() {
     node_handle.setSpinTimeout(100); // 50ms
     node_handle.initNode();
     node_handle.requestSyncTime();  // Sync time with ROS master
+    system_monitor = new SystemMonitor(
+            static_cast<std_msgs::UInt32MultiArray*>(all_topics[SYSTEM_MONITOR_TOPIC_NUM]->message));
+
 
     // If we are starting in safe mode exit here to prevent us from encountering the same error again and again
     if (!safe_mode_flag) return;
@@ -213,6 +218,7 @@ void setup() {
     for (auto & load_cell : load_cells) e_stop_controller->add_estop_device(load_cell);
     e_stop_controller->add_estop_device(battery_monitor);
     e_stop_controller->add_estop_device(imu_class);
+    e_stop_controller->add_estop_device(system_monitor);
 
     // Add all ros nodes to the ros node array
     int ros_node_count = 0;
@@ -224,6 +230,7 @@ void setup() {
     ros_nodes[ros_node_count++] = battery_monitor;
     ros_nodes[ros_node_count++] = accessory_power;
     ros_nodes[ros_node_count++] = imu_class;
+    ros_nodes[ros_node_count++] = system_monitor;
 
     node_handle.advertise(*estop_topic.publisher);
     estop_topic.publisher->publish(estop_topic.message);

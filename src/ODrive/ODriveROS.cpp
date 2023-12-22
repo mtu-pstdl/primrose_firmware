@@ -2,7 +2,7 @@
 // Created by Jay on 12/20/2022.
 //
 
-#include "ODrive_ROS.h"
+#include "ODriveROS.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/time.h"
 
@@ -11,16 +11,16 @@
 /**
  * This method sets up the ROS publishers and subscribers
  */
-void ODrive_ROS::subscribe(ros::NodeHandle *nh) {
+void ODriveROS::subscribe(ros::NodeHandle *nh) {
     nh->subscribe(this->setpoint_sub);
 }
 
 /**
  * This function is called when a serial_message is received on the setpoint topic
  */
-void ODrive_ROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
+void ODriveROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
     this->last_ros_command = millis();
-    switch (static_cast<ODrive_ROS::ROS_COMMANDS>(msg.data[0])) {
+    switch (static_cast<ODriveROS::ROS_COMMANDS>(msg.data[0])) {
         case E_STOP:
             this->odrive->emergency_stop();
             break;
@@ -37,26 +37,26 @@ void ODrive_ROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
                     static_cast<odrive::input_modes>(msg.data[2]));
             break;
         case SET_POINT:
-            this->odrive->set_setpoint(ODrive_ROS::from_fixed_point(msg.data[1], UNIT_SCALE));
+            this->odrive->set_setpoint(ODriveROS::from_fixed_point(msg.data[1], UNIT_SCALE));
             break;
         case CALIBRATE:
             this->odrive->calibrate();
     }
 }
 
-int32_t ODrive_ROS::to_fixed_point(double_t value, float scale) {
+int32_t ODriveROS::to_fixed_point(double_t value, float scale) {
     return (int32_t)(value * scale);
 }
 
-int32_t ODrive_ROS::to_fixed_point(float value, float scale) {
+int32_t ODriveROS::to_fixed_point(float value, float scale) {
     return (int32_t)(value * scale);
 }
 
-float_t ODrive_ROS::from_fixed_point(int32_t value, float scale) {
+float_t ODriveROS::from_fixed_point(int32_t value, float scale) {
     return (float)value / scale;
 }
 
-void ODrive_ROS::update() {
+void ODriveROS::update() {
     // Publish the condition topic
     this->output_topic->data[1] =  this->to_fixed_point(this->odrive->get_pos_estimate(), UNIT_SCALE);
     this->output_topic->data[2] =  this->to_fixed_point(this->odrive->get_vel_estimate(), UNIT_SCALE);
@@ -82,6 +82,6 @@ void ODrive_ROS::update() {
     }
 }
 
-ODrivePro* ODrive_ROS::get_odrive() {
+ODrivePro* ODriveROS::get_odrive() {
     return this->odrive;
 }

@@ -24,7 +24,7 @@
 #define UNIT_SCALE 100
 //#define VEL_UNIT_SCALE 10000
 
-class ODrive_ROS : public ROSNode {
+class ODriveROS : public ROSNode {
 
     ODrivePro *odrive = nullptr;
     String name = ""; // The name of the ODrive
@@ -42,7 +42,7 @@ private:
         CALIBRATE = 5,         // 0 Arguments
     };
 
-    ros::Subscriber<std_msgs::Int32MultiArray, ODrive_ROS> setpoint_sub;
+    ros::Subscriber<std_msgs::Int32MultiArray, ODriveROS> setpoint_sub;
 
     // Publishes the values of POS_ESTIMATE, VEL_ESTIMATE, IQ_SETPOINT, IQ_MEASURED
     std_msgs::Int32MultiArray* output_topic;
@@ -58,10 +58,10 @@ private:
 public:
 
 
-    ODrive_ROS(ODrivePro* odrive,
+    ODriveROS(ODrivePro* odrive,
                std_msgs::Int32MultiArray* encoder_topic,
                String disp_name) :
-            setpoint_sub("template1", &ODrive_ROS::setpoint_callback, this) {
+            setpoint_sub("template1", &ODriveROS::setpoint_callback, this) {
         this->odrive = odrive;
         this->output_topic = encoder_topic;
         this->output_topic->data_length = 20;

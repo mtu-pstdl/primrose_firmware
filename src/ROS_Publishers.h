@@ -12,14 +12,15 @@
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/sensor_msgs/BatteryState.h"
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/msg.h"
 #include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/String.h"
+#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticArray.h"
 
 /**
  * @file ROS_Publishers.h
  * @brief This file contains the declarations of all the ROS publishers used in the project.
  *
  * All publishers need to be declared at compile time, so they can't be dynamically created within
- * the ODrive_ROS class nor the Actuator_ROS class. Instead, they are declared here and then
- * their pointers are passed to the ODrive_ROS and Actuator_ROS classes.
+ * the ODriveROS class nor the Actuator_ROS class. Instead, they are declared here and then
+ * their pointers are passed to the ODriveROS and Actuator_ROS classes.
  */
 
 struct ros_topic {
@@ -176,6 +177,14 @@ ros_topic hopper_load_cell_topic = {
         .message = &hopper_load_cell_msg
 };
 
+#define SYSTEM_MONITOR_TOPIC_NUM 17
+std_msgs::UInt32MultiArray system_monitor_msg;
+ros::Publisher system_monitor_pub("/mciu/System_monitor", &system_monitor_msg);
+ros_topic system_monitor_topic = {
+        .publisher = &system_monitor_pub,
+        .message = &system_monitor_msg
+};
+
 ros_topic* odrive_encoder_topics[7] = {
         &odrive1_encoder_topic,
         &odrive2_encoder_topic,
@@ -216,7 +225,8 @@ ros_topic* all_topics[ALL_TOPICS_LENGTH] = {
 //        &estop_topic,
         &estop_status_topic,
         &suspension_load_cell_topic,
-        &hopper_load_cell_topic
+        &hopper_load_cell_topic,
+        &system_monitor_topic
 };
 
 #endif //TEENSYCANTRANSCEIVER_ROS_PUBLISHERS_H

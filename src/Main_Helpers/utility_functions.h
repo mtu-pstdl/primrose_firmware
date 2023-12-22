@@ -8,12 +8,13 @@
 #include <cstdint>
 #include <Arduino.h>
 #include <EEPROM.h>
+#include "../../.pio/libdeps/teensy40/WDT_T4/Watchdog_t4.h"
 
 #define WATCHDOG_FLAG_ADDR 4282 // The address in eeprom where if a watchdog was triggered it will be set
 #define RESTART_ADDR 0xE000ED0C  // Application Restart and Control Register
 extern unsigned long _heap_start;  // start of heap
-extern unsigned long _heap_end;  // end of heap
-extern char          *__brkval;  // current top of heap
+extern unsigned long _heap_end;    // end of heap
+extern char          *__brkval;    // current top of heap
 
 #define CPU_FREQ_BASE 300000000
 #define CPU_FREQ_MIN 24000000 // 24 MHz
@@ -41,7 +42,7 @@ void watchdog_violation() {
     *(volatile uint32_t *)RESTART_ADDR = 0x5FA0004;
 }
 
-int freeram() {
+uint32_t freeram() {
     uint32_t free = (char *)&_heap_end - __brkval;
     // If free is less than 1000 then we restart the system and set the memory exhaustion flag
     if (free < 1000) {
