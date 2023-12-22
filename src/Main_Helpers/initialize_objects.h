@@ -2,8 +2,8 @@
 // Created by Jay on 12/18/2023.
 //
 
-#ifndef PRIMROSE_MCIU_HARDWARE_OBJECTS_H
-#define PRIMROSE_MCIU_HARDWARE_OBJECTS_H
+#ifndef PRIMROSE_MCIU_INITIALIZE_OBJECTS_H
+#define PRIMROSE_MCIU_INITIALIZE_OBJECTS_H
 
 #include "ODrive/ODriveROS.h"
 #include "ROS_Publishers.h"
@@ -87,18 +87,23 @@ void allocate_actuators(){
                          new SuspensionEncoders(0x04)); // Slot 3R
     actuators[3]->set_inverted(true,0);
 
-    actuators_ros[0] = new ActuatorsROS(actuators[0],
-                                        static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[0]->message),
-                                        "Front_Left");
-    actuators_ros[1] = new ActuatorsROS(actuators[1],
-                                        static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[1]->message),
-                                        "Front_Right");
-    actuators_ros[2] = new ActuatorsROS(actuators[2],
-                                        static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[2]->message),
-                                        "Rear_Left");
-    actuators_ros[3] = new ActuatorsROS(actuators[3],
-                                        static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[3]->message),
-                                        "Rear_Right");
+    actuator_num = 0;  // Reset the actuator_num variable
+    actuators_ros[0] = new (&actuators_ros_memory[sizeof(ActuatorsROS) * actuator_num++])
+            ActuatorsROS(actuators[0],
+                         static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[0]->message),
+                         "Front_Left");
+    actuators_ros[1] = new (&actuators_ros_memory[sizeof(ActuatorsROS) * actuator_num++])
+            ActuatorsROS(actuators[1],
+                         static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[1]->message),
+                         "Front_Right");
+    actuators_ros[2] = new (&actuators_ros_memory[sizeof(ActuatorsROS) * actuator_num++])
+            ActuatorsROS(actuators[2],
+                         static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[2]->message),
+                         "Rear_Left");
+    actuators_ros[3] = new (&actuators_ros_memory[sizeof(ActuatorsROS) * actuator_num++])
+            ActuatorsROS(actuators[3],
+                         static_cast<std_msgs::Int32MultiArray*>(actuator_encoder_topics[3]->message),
+                         "Rear_Right");
 }
 
 void allocate_hardware_objects(){
@@ -106,4 +111,4 @@ void allocate_hardware_objects(){
     allocate_actuators();
 }
 
-#endif //PRIMROSE_MCIU_HARDWARE_OBJECTS_H
+#endif //PRIMROSE_MCIU_INITIALIZE_OBJECTS_H

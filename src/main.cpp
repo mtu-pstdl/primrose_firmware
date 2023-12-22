@@ -31,10 +31,11 @@
 #include "Watchdog_t4.h"
 #include <EEPROM.h>
 #include "Main_Helpers/build_info.h"
-#include "Main_Helpers/hardware_objects.h"
+#include "Main_Helpers/initialize_objects.h"
 #include "Main_Helpers/utility_functions.h"
 #include "Main_Helpers/CrashParser.h"
 #include "Misc/SystemMonitor.h"
+#include "Main_Helpers/BreadCrumbs.h"
 
 // If a loop takes longer than MAX_LOOP_TIME then the whole system will be reset so this is a hard limit
 #define MAX_LOOP_TIME 1 // 1 second
@@ -71,7 +72,6 @@ AccessoryPower* accessory_power;
 
 ADAU_Tester* adauTester;
 
-SystemMonitor* system_monitor;
 CrashParser parser;
 
 int starting_actuator = 0;
@@ -170,8 +170,8 @@ void setup() {
     node_handle.setSpinTimeout(100); // 50ms
     node_handle.initNode();
     node_handle.requestSyncTime();  // Sync time with ROS master
-    system_monitor = new SystemMonitor(
-            static_cast<std_msgs::UInt32MultiArray*>(all_topics[SYSTEM_MONITOR_TOPIC_NUM]->message));
+//    system_monitor = new SystemMonitor(
+//            static_cast<std_msgs::UInt32MultiArray*>(all_topics[SYSTEM_MONITOR_TOPIC_NUM]->message));
 
 
     // If we are starting in safe mode exit here to prevent us from encountering the same error again and again
@@ -218,7 +218,7 @@ void setup() {
     for (auto & load_cell : load_cells) e_stop_controller->add_estop_device(load_cell);
     e_stop_controller->add_estop_device(battery_monitor);
     e_stop_controller->add_estop_device(imu_class);
-    e_stop_controller->add_estop_device(system_monitor);
+//    e_stop_controller->add_estop_device(system_monitor);
 
     // Add all ros nodes to the ros node array
     int ros_node_count = 0;
@@ -230,7 +230,7 @@ void setup() {
     ros_nodes[ros_node_count++] = battery_monitor;
     ros_nodes[ros_node_count++] = accessory_power;
     ros_nodes[ros_node_count++] = imu_class;
-    ros_nodes[ros_node_count++] = system_monitor;
+//    ros_nodes[ros_node_count++] = system_monitor;
 
     node_handle.advertise(*estop_topic.publisher);
     estop_topic.publisher->publish(estop_topic.message);
@@ -263,7 +263,7 @@ void setup() {
 void loop() {
     uint32_t loop_start = micros(); // Get the time at the start of the loop
     freeram();  // Calculate the amount of space left in the heap
-
+    DROP_CRUMB();
     if (safe_mode_flag == NORMAL_BOOT) {
 
         adauTester->run();
