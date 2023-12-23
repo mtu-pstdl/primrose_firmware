@@ -19,7 +19,12 @@ void ODriveROS::subscribe(ros::NodeHandle *nh) {
  * This function is called when a serial_message is received on the setpoint topic
  */
 void ODriveROS::setpoint_callback(const std_msgs::Int32MultiArray &msg) {
+    DROP_CRUMB();
     this->last_ros_command = millis();
+
+    if (msg.data_length > sizeof (this->input_data.raw_array) / sizeof (int32_t)) return;
+    memcpy(this->input_data.raw_array, msg.data, msg.data_length * sizeof(int32_t));
+
     switch (static_cast<ODriveROS::ROS_COMMANDS>(msg.data[0])) {
         case E_STOP:
             this->odrive->emergency_stop();

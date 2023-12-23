@@ -93,8 +93,8 @@ public:
 
     boolean tripped(char* tripped_device_name, char* tripped_device_message) override {
         sprintf(tripped_device_name, "Battery Monitor");
-        sprintf(tripped_device_message, "NOT IMPLEMENTED");
-        return false;
+        sprintf(tripped_device_message, "No VE.Direct Data");
+        return true;
     }
 
     char debug_string[1000] = {0};

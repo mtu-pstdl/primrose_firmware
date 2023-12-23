@@ -105,7 +105,7 @@ public:
         last_test = millis();
 
         // Change the values of the data
-        suspension_data.velocity += 0.5f;
+        suspension_data.velocity += random(-100, 100) / 100.0f;
         suspension_data.position += suspension_data.velocity;
 
         ADAU_SERIAL_BUS.write(virtual_serial_buffer, virtual_serial_buffer_len);

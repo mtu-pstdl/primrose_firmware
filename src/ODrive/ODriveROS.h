@@ -58,9 +58,7 @@ private:
         int32_t raw_array[20]{};  // The raw array of data to be sent over the serial bus
     } output_data = {};
 
-    uint32_t last_ros_command = 0;
-
-    enum ROS_COMMANDS {
+    enum ROS_COMMANDS : int32_t {
         E_STOP = 0,            // 0 Arguments
         DISARM = 1,            // 0 Arguments
         CLEAR_ERRORS = 2,      // 0 Argument
@@ -68,6 +66,26 @@ private:
         SET_POINT = 4,         // 1 Argument  (setpoint)
         CALIBRATE = 5,         // 0 Arguments
     };
+
+    /**
+     * A named union for storing the input data from the Int32MultiArray message
+     * The start of the array is the ROS_COMMANDS enum which determines the layout of the rest of the array
+     */
+    union InputArray {
+        struct InputData {
+            ROS_COMMANDS command;
+            union Arguments {  // Contains the possible data layouts for each command type
+                struct SetClosedLoop {
+                    int32_t control_mode;
+                    int32_t input_mode;
+                } set_closed_loop;
+                int32_t set_point;
+            } arguments;
+        } data;
+        int32_t raw_array[sizeof (InputData) / sizeof (int32_t)];
+    } input_data = {};
+
+    uint32_t last_ros_command = 0;
 
     ros::Subscriber<std_msgs::Int32MultiArray, ODriveROS> setpoint_sub;
 

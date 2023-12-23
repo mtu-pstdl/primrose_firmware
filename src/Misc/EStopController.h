@@ -41,6 +41,16 @@ private:
     std_msgs::Int32MultiArray* estop_status_topic;
 //    diagnostic_msgs::DiagnosticStatus* diagnostic_topic;
 
+    union OutputArray {
+        struct OutputData {
+            int32_t estop_state;  // 0 = Not triggered, 1 = Triggered, 2 = Inhibited
+            int32_t flags;        // 0 = Automatic E-Stop enabled, 1 = Remote heartbeat received, 2 = PI heartbeat received
+            int32_t number_of_tripped_devices;
+            int32_t time_since_last_heartbeat;
+        } data;
+        int32_t raw_array[4];  // The raw array of data to be sent over the serial bus
+    } output_data = {};
+
     void estop_callback(const std_msgs::Int32& msg);
 
     /**
