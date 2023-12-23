@@ -42,8 +42,12 @@ public:
      * @note  The internal floating point representation is multiplied by 1000 and cast to an int32_t
      * @return The position of the suspension encoder in units of (unit)
      */
-    int32_t get_position() const override{
-        return (int32_t) (data.position * 1000);
+    int32_t get_position() const override {
+        if (isnanf(data.position)) return INT32_MIN;
+        // Check if casting to int32_t will overflow or underflow
+        if (data.position > INT32_MAX / 100) return INT32_MAX;
+        if (data.position < INT32_MIN / 100) return INT32_MIN;
+        return (int32_t) (data.position * 100);
     }
 
     /**

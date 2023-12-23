@@ -31,36 +31,38 @@ int32_t ActuatorsROS::to_fixed_point(float value, float scale) {
 void ActuatorsROS::update() {
     DROP_CRUMB();
     this->actuator->update();
-    this->output_topic->data[1] = this->actuator->get_position(0);
-    this->output_topic->data[2] = this->to_fixed_point(this->actuator->get_velocity(0), UNIT_SCALE);
-    this->output_topic->data[3] = this->actuator->get_position(1);
-    this->output_topic->data[4] = this->to_fixed_point(this->actuator->get_velocity(1), UNIT_SCALE);
 
-    this->output_topic->data[5] = this->to_fixed_point(this->actuator->get_duty_cycle(0), UNIT_SCALE);
-    this->output_topic->data[6] = this->to_fixed_point(this->actuator->get_duty_cycle(1), UNIT_SCALE);
+    this->output_data.data.m1_position = this->actuator->get_position(0);
+    this->output_data.data.m1_velocity = this->to_fixed_point(this->actuator->get_velocity(0), UNIT_SCALE);
+    this->output_data.data.m2_position = this->actuator->get_position(1);
+    this->output_data.data.m2_velocity = this->to_fixed_point(this->actuator->get_velocity(1), UNIT_SCALE);
+
+    // End of data used by LaRP controller, remaining data is for diagnostics
+    this->output_data.data.m1_duty_cycle = this->to_fixed_point(this->actuator->get_duty_cycle(0), UNIT_SCALE);
+    this->output_data.data.m2_duty_cycle = this->to_fixed_point(this->actuator->get_duty_cycle(1), UNIT_SCALE);
 
     // Controller information
-    this->output_topic->data[7] = this->actuator->get_target_position(0);
-    this->output_topic->data[8] = this->actuator->get_target_position(1);
+    this->output_data.data.m1_target_position = this->actuator->get_target_position(0);
+    this->output_data.data.m2_target_position = this->actuator->get_target_position(1);
 
     // Get the current mode
-    this->output_topic->data[9] = this->actuator->get_control_mode(0);
-    this->output_topic->data[10] = this->actuator->get_control_mode(1);
+    this->output_data.data.m1_control_mode = this->actuator->get_control_mode(0);
+    this->output_data.data.m2_control_mode = this->actuator->get_control_mode(1);
 
-    this->output_topic->data[11] = to_fixed_point(this->actuator->get_current(0), UNIT_SCALE);
-    this->output_topic->data[12] = to_fixed_point(this->actuator->get_current(1), UNIT_SCALE);
+    // Current information
+    this->output_data.data.m1_current = this->to_fixed_point(this->actuator->get_current(0), UNIT_SCALE);
+    this->output_data.data.m2_current = this->to_fixed_point(this->actuator->get_current(1), UNIT_SCALE);
 
     // Fault information
-    this->output_topic->data[13]  = this->actuator->get_fault_flags(0);
-    this->output_topic->data[14]  = this->actuator->get_fault_flags(1);
+    this->output_data.data.m1_fault_flags = this->actuator->get_fault_flags(0);
+    this->output_data.data.m2_fault_flags = this->actuator->get_fault_flags(1);
 
-    this->output_topic->data[15] = to_fixed_point(this->actuator->get_main_battery_voltage(), UNIT_SCALE);
-    this->output_topic->data[16] = to_fixed_point(this->actuator->get_logic_battery_voltage(), UNIT_SCALE);
+    // Power information
+    this->output_data.data.main_battery_voltage = this->to_fixed_point(this->actuator->get_main_battery_voltage(), UNIT_SCALE);
+    this->output_data.data.logic_battery_voltage = this->to_fixed_point(this->actuator->get_logic_battery_voltage(), UNIT_SCALE);
 
-    this->output_topic->data[17] = to_fixed_point(this->actuator->get_temperature(), UNIT_SCALE);
-
-
-    this->output_topic->data[19]  = this->increment++;
+    // Temperature information
+    this->output_data.data.controller_temperature = this->to_fixed_point(this->actuator->get_temperature(), UNIT_SCALE);
 }
 
 void ActuatorsROS::publish() {
