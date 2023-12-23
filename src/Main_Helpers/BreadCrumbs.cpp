@@ -41,7 +41,7 @@ breadcrumb* get_breadcrumb() {
 
     // Keep track of where we are in the buffer (this method returns a null pointer once all breadcrumbs have been read)
     if (last_breadcrumbs.total == 0) return nullptr;
-    static uint32_t current_index = 0;
+    static uint32_t current_index = last_breadcrumbs.index - 1;
     static uint32_t remaining = last_breadcrumbs.total;
     if (remaining == 0) return nullptr;
     if (remaining > 16) remaining = 16;

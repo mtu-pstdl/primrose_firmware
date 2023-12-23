@@ -260,8 +260,6 @@ void setup() {
     config.timeout = 5;
     config.callback = watchdog_violation;
     wdt.begin(config);
-
-    safe_mode_flag = NORMAL_BOOT;
 }
 
 void loop() {
@@ -269,6 +267,13 @@ void loop() {
     freeram();  // Calculate the amount of space left in the heap
     DROP_CRUMB();
     if (safe_mode_flag == NORMAL_BOOT) {
+
+        static uint32_t crash_timer = 0;
+        if (crash_timer++ > 200) {
+            // Crash
+            int *ptr = nullptr;
+            *ptr = 0xDEADBEEF;
+        }
 
         adauTester->run();
 
@@ -335,15 +340,19 @@ void loop() {
             switch (startup_type) {
                 case COLD_START:
                     node_handle.logwarn("MCIU EXITED NORMALLY, COLD_START");
+                    safe_mode_flag = NORMAL_BOOT;
                     break;
                 case WARM_START:
                     node_handle.logwarn("MCIU EXITED NORMALLY, WARM_START");
+                    safe_mode_flag = NORMAL_BOOT;
                     break;
                 case WATCHDOG_VIOLATION:
                     node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: WATCHDOG_VIOLATION");
+                    safe_mode_flag = NORMAL_BOOT;
                     break;
                 case MEMORY_EXHAUSTION:
                     node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: MEMORY_EXHAUSTION");
+                    safe_mode_flag = NORMAL_BOOT;
                     break;
                 case SYSTEM_PANIC:
                     node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: SYSTEM_PANIC");
@@ -351,6 +360,8 @@ void loop() {
                     while ((line = parser.crash_dump()) != nullptr) {
                         node_handle.logerror(line);
                     }
+                    loop_count = 0;
+                    safe_mode_flag = NORMAL_BOOT;
                     break;
                 // Safe mode exists to ensure that we can send the crash dump instead of just crashing again and again
                 case SETUP_FAILURE:
@@ -362,6 +373,7 @@ void loop() {
                     node_handle.logerror("MCIU ENTERED SAFE MODE, NO HARDWARE INITIALIZED");
                     safe_mode_flag = SAFE_MODE_EXIT;
                     node_handle.logerror("MCIU MUST BE RESTARTED TO EXIT SAFE MODE");
+                    loop_count = 0;
                     break;
                 default:
                     node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: UNKNOWN");

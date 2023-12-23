@@ -202,6 +202,7 @@ public:
                 crumb = get_breadcrumb();
             }
             sprintf(current_line->line, "----- END OF BREADCRUMBS -----");
+            next_line();
         } else {
             sprintf(current_line->line, "No breadcrumbs available");
             next_line();
