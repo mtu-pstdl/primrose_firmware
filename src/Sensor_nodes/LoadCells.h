@@ -24,6 +24,17 @@ class LoadCells : public ROSNode, public EStopDevice {
 
     uint8_t sensor_id;
 
+    union OutputArray {
+        struct OutputData {
+            int32_t sensor1;  // Fixed point, x100
+            int32_t sensor2;
+            int32_t sensor3;
+            int32_t sensor4;
+            uint8_t flags;      // First 4 bits are error flags for each sensor
+        } data;
+        int32_t raw_array[5];  // The raw array of data to be sent over the serial bus
+    } output_data = {};
+
     char* topic_name = new char[30];
     char* name = new char[30];
 
@@ -49,7 +60,7 @@ public:
             command_sub("template_for_later", &LoadCells::control_callback, this){
         this->sensor_id = sensor_id;
         this->output_topic = output_topic;
-        this->output_topic->data_length = 4;
+        this->output_topic->data_length = sizeof (output_data.raw_array) / sizeof (output_data.raw_array[0]);
         this->output_topic->data = data.sensor;
         // Change the name of the command topic to the correct name
         command_sub.topic_ = this->topic_name;

@@ -50,7 +50,7 @@ private:
             int32_t main_battery_voltage = 0;
             int32_t logic_battery_voltage = 0;
             int32_t controller_temperature = 0;
-            int32_t reserved = 0;
+            int32_t reserved[2] = {0, 0};  // Reserved for future use
         } data;
         int32_t raw_array[20];  // The raw array of data to be sent over the serial bus
     } output_data = {};

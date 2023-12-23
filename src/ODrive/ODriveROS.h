@@ -31,6 +31,33 @@ class ODriveROS : public ROSNode {
 
 private:
 
+    /**
+     * A named union for storing the output data into the Int32MultiArray message
+     */
+    union OutputArray {
+        struct OutputData {
+            int32_t can_id = 0;
+            int32_t pos_estimate = 0;
+            int32_t vel_estimate = 0;
+            int32_t current_setpoint = 0;
+            int32_t control_mode = 0;
+            int32_t axis_state = 0;
+            int32_t axis_error = 0;
+            int32_t active_errors = 0;
+            int32_t disarm_reason = 0;
+            int32_t procedure_result = 0;
+            int32_t torque_estimate = 0;
+            int32_t vbus_voltage = 0;
+            int32_t vbus_current = 0;
+            int32_t odometer_distance = 0;
+            int32_t odometer_power = 0;
+            int32_t iq_measured = 0;
+            int32_t iq_setpoint = 0;
+            int32_t reserved[3] = {0, 0, 0};  // Reserved for future use
+        } data;
+        int32_t raw_array[20]{};  // The raw array of data to be sent over the serial bus
+    } output_data = {};
+
     uint32_t last_ros_command = 0;
 
     enum ROS_COMMANDS {
@@ -47,9 +74,6 @@ private:
     // Publishes the values of POS_ESTIMATE, VEL_ESTIMATE, IQ_SETPOINT, IQ_MEASURED
     std_msgs::Int32MultiArray* output_topic;
 
-    // Publishes the values of AXIS_STATE, AXIS_ERROR, ACTIVE_ERRORS, DISARM_REASON
-    diagnostic_msgs::DiagnosticStatus* state_topic;
-
 #define NUM_CONDITIONS 13
     char* strings[NUM_CONDITIONS]{};
     char* status_string = new char[25];
@@ -64,25 +88,8 @@ public:
             setpoint_sub("template1", &ODriveROS::setpoint_callback, this) {
         this->odrive = odrive;
         this->output_topic = encoder_topic;
-        this->output_topic->data_length = 20;
-        this->output_topic->data = new int32_t[20];
-        this->output_topic->data[0]  = this->odrive->can_id;  // CAN ID (is static)
-        this->output_topic->data[1]  = 0;  // POS_ESTIMATE
-        this->output_topic->data[2]  = 0;  // VEL_ESTIMATE
-        this->output_topic->data[3]  = 0;  // CURRENT_SETPOINT
-        this->output_topic->data[4]  = 0;  // CONTROL_MODE
-        this->output_topic->data[5]  = 0;  // AXIS_STATE
-        this->output_topic->data[6]  = 0;  // AXIS_ERROR
-        this->output_topic->data[7]  = 0;  // ACTIVE_ERRORS
-        this->output_topic->data[8]  = 0;  // DISARM_REASON
-        this->output_topic->data[9]  = 0;  // PROCEDURE_RESULT
-        this->output_topic->data[10] = 0;  // TORQUE_ESTIMATE
-        this->output_topic->data[11] = 0;  // VBUS_VOLTAGE
-        this->output_topic->data[12] = 0;  // VBUS_CURRENT
-        this->output_topic->data[13] = 0;  // ODOMETER_DISTANCE
-        this->output_topic->data[14] = 0;  // ODOMETER_POWER
-        this->output_topic->data[15] = 0;  // IQ_MEASURED
-        this->output_topic->data[16] = 0;  // IQ_SETPOINT
+        this->output_topic->data_length = sizeof (this->output_data.raw_array) / sizeof (int32_t);
+        this->output_topic->data = this->output_data.raw_array;
         this->name = disp_name.c_str();
         this->setpoint_sub.topic_ = setpoint_topic_name;
         sprintf(setpoint_topic_name, "/mciu/%s/odrive/input", disp_name.c_str());

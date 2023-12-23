@@ -59,22 +59,22 @@ float_t ODriveROS::from_fixed_point(int32_t value, float scale) {
 void ODriveROS::update() {
     DROP_CRUMB();
     // Publish the condition topic
-    this->output_topic->data[1] =  this->to_fixed_point(this->odrive->get_pos_estimate(), UNIT_SCALE);
-    this->output_topic->data[2] =  this->to_fixed_point(this->odrive->get_vel_estimate(), UNIT_SCALE);
-    this->output_topic->data[3] =  this->to_fixed_point(this->odrive->get_setpoint(), UNIT_SCALE);
-    this->output_topic->data[4] =  this->odrive->get_control_mode();
-    this->output_topic->data[5] =  this->odrive->get_axis_state();
-    this->output_topic->data[6] =  static_cast<int32_t>(this->odrive->get_axis_error());
-    this->output_topic->data[7] =  static_cast<int32_t>(this->odrive->get_active_errors());
-    this->output_topic->data[8] =  static_cast<int32_t>(this->odrive->get_disarm_reason());
-    this->output_topic->data[9] =  static_cast<int32_t>(this->odrive->get_procedure_results());
-    this->output_topic->data[10] = this->to_fixed_point(this->odrive->get_torque_estimate(), UNIT_SCALE);
-    this->output_topic->data[11] = this->to_fixed_point(this->odrive->get_vbus_voltage(), UNIT_SCALE);
-    this->output_topic->data[12] = this->to_fixed_point(this->odrive->get_vbus_current(), UNIT_SCALE);
-    this->output_topic->data[13] = this->to_fixed_point(this->odrive->get_odometer(), UNIT_SCALE);
-    this->output_topic->data[14] = this->to_fixed_point(this->odrive->get_power_consumption(), UNIT_SCALE);
-    this->output_topic->data[15] = this->to_fixed_point(this->odrive->get_Iq_measured(), UNIT_SCALE);
-    this->output_topic->data[16] = this->to_fixed_point(this->odrive->get_Iq_setpoint(), UNIT_SCALE);
+    this->output_data.data.pos_estimate  = this->to_fixed_point(this->odrive->get_pos_estimate(), UNIT_SCALE);
+    this->output_data.data.vel_estimate  = this->to_fixed_point(this->odrive->get_vel_estimate(), UNIT_SCALE);
+    this->output_data.data.current_setpoint = this->to_fixed_point(this->odrive->get_setpoint(), UNIT_SCALE);
+    this->output_data.data.control_mode  = this->odrive->get_control_mode();
+    this->output_data.data.axis_state    = this->odrive->get_axis_state();
+    this->output_data.data.axis_error    = static_cast<int32_t>(this->odrive->get_axis_error());
+    this->output_data.data.active_errors = static_cast<int32_t>(this->odrive->get_active_errors());
+    this->output_data.data.disarm_reason = static_cast<int32_t>(this->odrive->get_disarm_reason());
+    this->output_data.data.procedure_result = static_cast<int32_t>(this->odrive->get_procedure_results());
+    this->output_data.data.torque_estimate = this->to_fixed_point(this->odrive->get_torque_estimate(), UNIT_SCALE);
+    this->output_data.data.vbus_voltage  = this->to_fixed_point(this->odrive->get_vbus_voltage(), UNIT_SCALE);
+    this->output_data.data.vbus_current  = this->to_fixed_point(this->odrive->get_vbus_current(), UNIT_SCALE);
+    this->output_data.data.odometer_distance = this->to_fixed_point(this->odrive->get_odometer(), UNIT_SCALE);
+    this->output_data.data.odometer_power = this->to_fixed_point(this->odrive->get_power_consumption(), UNIT_SCALE);
+    this->output_data.data.iq_measured   = this->to_fixed_point(this->odrive->get_Iq_measured(), UNIT_SCALE);
+    this->output_data.data.iq_setpoint   = this->to_fixed_point(this->odrive->get_Iq_setpoint(), UNIT_SCALE);
 
     if (odrive->get_axis_state() == odrive::axis_states::CLOSED_LOOP_CONTROL &&
        this->last_ros_command < millis() - 2500) {
