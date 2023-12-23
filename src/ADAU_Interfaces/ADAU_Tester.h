@@ -14,6 +14,7 @@
 /**
  * @brief A class to test the ADAU bus interface without the need for an actual ADAU
  *        This class will send fake data to the serial bus and then read it back
+ * @note Remove for release version
  */
 class ADAU_Tester {
 

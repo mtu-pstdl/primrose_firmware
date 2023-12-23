@@ -12,6 +12,9 @@
 #define STARTING_ODOMETER_ADDRESS 0
 #define SAVE_ODOMETER_INTERVAL 30  // Unit: seconds
 
+/**
+ * @deprecated This class needs to be rewritten for the new odometer system
+ */
 class Odometers {
 
     struct saved_odometer_value {  // stores odometer data in EEPROM
