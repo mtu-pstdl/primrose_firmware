@@ -265,15 +265,8 @@ void setup() {
 void loop() {
     uint32_t loop_start = micros(); // Get the time at the start of the loop
     freeram();  // Calculate the amount of space left in the heap
-    DROP_CRUMB();
+    DROP_CRUMB_VALUE('STRT', breadcrumb_type::CHAR4);  // Drop a breadcrumb to indicate the start of the loop
     if (safe_mode_flag == NORMAL_BOOT) {
-
-        static uint32_t crash_timer = 0;
-        if (crash_timer++ > 200) {
-            // Crash
-            int *ptr = nullptr;
-            *ptr = 0xDEADBEEF;
-        }
 
         adauTester->run();
 
@@ -393,9 +386,8 @@ void loop() {
     uint32_t execution_time = micros() - loop_start;
 
     uint32_t loop_time = micros() - loop_start;
-    if (loop_time > 50000) {
-
-    } else {
+    DROP_CRUMB_VALUE_IF(loop_time > MAX_LOOP_TIME, 'SLOW', breadcrumb_type::CHAR4);  // Drop a breadcrumb if the loop took too long
+    if (loop_time < 50000) {
         // Wait for the remaining time in the loop to maintain a 20Hz loop
         delayMicroseconds(50000 - loop_time);
     }

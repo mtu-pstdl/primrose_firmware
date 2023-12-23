@@ -61,7 +61,7 @@ void Actuator_Bus_Interface::process_no_data_serial(serial_message* msg){
  * @param msg The serial message to process
  */
 void Actuator_Bus_Interface::process_data_serial(serial_message *msg) {
-    DROP_CRUMB();
+    DROP_CRUMB_VALUE('DTIN', breadcrumb_type::CHAR4);
     if (Serial2.available() == msg->data_length + sizeof(uint16_t)){
         this->total_messages_received++; // Increment the total messages received
         Serial2.readBytes(this->response_buffer, msg->data_length + sizeof(uint16_t));
