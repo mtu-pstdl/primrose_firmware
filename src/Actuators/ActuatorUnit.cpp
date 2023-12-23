@@ -8,12 +8,6 @@
 
 
 void ActuatorUnit::build_telemetry_messages() {
-//    reocurring_messages[0] = *build_message(
-//            Actuator_Bus_Interface::serial_commands::read_encoder_count_m1,
-//            50, 5, &ActuatorUnit::encoder_count_callback);
-//    reocurring_messages[1] = *build_message(
-//            Actuator_Bus_Interface::serial_commands::read_encoder_count_m2,
-//            50, 5, &ActuatorUnit::encoder_count_callback);
     reocurring_messages[2] = *build_message(
             Actuator_Bus_Interface::serial_commands::read_main_battery_voltage,
             100, 2, &ActuatorUnit::main_battery_voltage_callback);
@@ -154,7 +148,10 @@ void ActuatorUnit::queue_telemetry_messages() {
             if (!command_bus->space_available()) return;
             // When in position control mode, the actuator sends its command message immediately after
             // receiving a position control message. This keeps command messages in sync with the current state
-            if (this->motors[i].control_mode == control_modes::POSITION) continue;
+            if (this->motors[i].control_mode == control_modes::POSITION) {
+                this->position_control_callback(i);
+                continue;
+            }
             command_bus->queue_message(this->command_messages[i].msg);
             command_messages[i].last_send_time = millis();
         }
@@ -352,6 +349,10 @@ uint16_t ActuatorUnit::get_fault_flags(uint8_t motor) {
     if (this->motors[motor].encoder->fault()) flags |= fault_flags::ENCODER_FAILURE;
     if (!this->motors[motor].encoder->is_valid()) flags |= fault_flags::ENCODER_INVALID;
     return flags;
+}
+
+ActuatorUnit::control_modes ActuatorUnit::get_control_mode(uint8_t motor) {
+    return this->motors[motor].control_mode;
 }
 
 

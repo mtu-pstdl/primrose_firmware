@@ -86,7 +86,7 @@ private:
     }
 
     // Automatic E-Stop variables
-    boolean         automatic_estop_enabled = true;
+    boolean         automatic_estop_enabled = false;
     boolean         automatic_estop_inhibited = false;
     boolean         should_trigger_estop = false;
     uint32_t        number_of_tripped_devices = 0;

@@ -21,8 +21,6 @@ class IMU: public ROSNode, public EStopDevice {
 
 private:
 
-    sh2_SensorValue_t sensor_value{};
-
     sensor_msgs::Imu* imu_msg;
 
     char log_buffer[256]{}; // For sending ros log messages

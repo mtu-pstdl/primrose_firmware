@@ -286,6 +286,8 @@ public:
 
     int32_t get_target_position(uint8_t motor);
 
+    control_modes get_control_mode(uint8_t motor);
+
     uint16_t get_status() const;
 
     int32_t get_position(uint8_t motor);

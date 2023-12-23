@@ -386,7 +386,6 @@ void loop() {
     uint32_t execution_time = micros() - loop_start;
 
     uint32_t loop_time = micros() - loop_start;
-    DROP_CRUMB_VALUE_IF(loop_time > MAX_LOOP_TIME, 'SLOW', breadcrumb_type::CHAR4);  // Drop a breadcrumb if the loop took too long
     if (loop_time < 50000) {
         // Wait for the remaining time in the loop to maintain a 20Hz loop
         delayMicroseconds(50000 - loop_time);

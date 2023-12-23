@@ -6,15 +6,19 @@
 #include "Main_Helpers/BreadCrumbs.h"
 
 Adafruit_BNO08x imu(RST_PIN);
+sh2_SensorValue_t sensor_value;
 
 void IMU::initialize(){
+    DROP_CRUMB();
     imu.hardwareReset();
+    delay(10);
     if (!imu.begin_SPI(CS_PIN, IRQ_PIN, &SPI_BUS)){
         this->imu_msg->header.frame_id = "imu_link_failed";
         return;
     } else {
         this->imu_msg->header.frame_id = "imu_link_up";
     }
+    this->enable_reporting();
     for (int n = 0; n < imu.prodIds.numEntries; n++) {
         sprintf(log_buffer, "%sProduct ID: %lu, Version: %d.%d.%d Build: %lu\n",
                 log_buffer,
@@ -24,9 +28,6 @@ void IMU::initialize(){
                 imu.prodIds.entry[n].swVersionPatch,
                 imu.prodIds.entry[n].swBuildNumber);
         this->last_report_time = millis();
-    }
-    if (imu.wasReset()) {
-        sprintf(log_buffer, "%sSensor reset detected\n", log_buffer);
     }
     this->imu_msg->header.frame_id = log_buffer;
     this->imu_msg->orientation.x = nanf("");
@@ -39,10 +40,10 @@ void IMU::initialize(){
     this->imu_msg->linear_acceleration.x = nanf("");
     this->imu_msg->linear_acceleration.y = nanf("");
     this->imu_msg->linear_acceleration.z = nanf("");
-    this->enable_reporting();
 }
 
 void IMU::enable_reporting() {
+    DROP_CRUMB();
     sprintf(failure_message, "IMU initialization failed: ");
     this->config_success = true;
     // Enable desired reports
@@ -69,7 +70,8 @@ void IMU::update() {
     DROP_CRUMB();
     if (!this->config_success) return;
     if (imu.wasReset()) {
-        this->enable_reporting();
+        DROP_CRUMB_VALUE('RST ', breadcrumb_type::CHAR4);
+//        this->initialize();
     }
     char temp[100]{};
     if (!imu.getSensorEvent(&sensor_value)) return;
@@ -118,6 +120,11 @@ boolean IMU::tripped(char* tripped_device_name, char* tripped_device_message) {
     }
     if (this->last_report_time < millis() - 1000) {
         sprintf(temp, "Not Reporting-");
+        strcat(tripped_device_message, temp);
+        tripped = true;
+    }
+    if (imu.wasReset()) {
+        sprintf(temp, "Reset-");
         strcat(tripped_device_message, temp);
         tripped = true;
     }

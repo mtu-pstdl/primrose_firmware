@@ -36,24 +36,28 @@ void ActuatorsROS::update() {
     this->output_topic->data[3] = this->actuator->get_position(1);
     this->output_topic->data[4] = this->to_fixed_point(this->actuator->get_velocity(1), UNIT_SCALE);
 
-    this->output_topic->data[5] = this->actuator->get_duty_cycle(0) * 100;
-    this->output_topic->data[6] = this->actuator->get_duty_cycle(1) * 100;
+    this->output_topic->data[5] = this->to_fixed_point(this->actuator->get_duty_cycle(0), UNIT_SCALE);
+    this->output_topic->data[6] = this->to_fixed_point(this->actuator->get_duty_cycle(1), UNIT_SCALE);
 
     // Controller information
     this->output_topic->data[7] = this->actuator->get_target_position(0);
     this->output_topic->data[8] = this->actuator->get_target_position(1);
 
+    // Get the current mode
+    this->output_topic->data[9] = this->actuator->get_control_mode(0);
+    this->output_topic->data[10] = this->actuator->get_control_mode(1);
+
     this->output_topic->data[11] = to_fixed_point(this->actuator->get_current(0), UNIT_SCALE);
     this->output_topic->data[12] = to_fixed_point(this->actuator->get_current(1), UNIT_SCALE);
 
-    this->output_topic->data[13] = to_fixed_point(this->actuator->get_main_battery_voltage(), UNIT_SCALE);
-    this->output_topic->data[14] = to_fixed_point(this->actuator->get_logic_battery_voltage(), UNIT_SCALE);
-
-    this->output_topic->data[15] = to_fixed_point(this->actuator->get_temperature(), UNIT_SCALE);
-
     // Fault information
-    this->output_topic->data[16]  = this->actuator->get_fault_flags(0);
-    this->output_topic->data[17]  = this->actuator->get_fault_flags(1);
+    this->output_topic->data[13]  = this->actuator->get_fault_flags(0);
+    this->output_topic->data[14]  = this->actuator->get_fault_flags(1);
+
+    this->output_topic->data[15] = to_fixed_point(this->actuator->get_main_battery_voltage(), UNIT_SCALE);
+    this->output_topic->data[16] = to_fixed_point(this->actuator->get_logic_battery_voltage(), UNIT_SCALE);
+
+    this->output_topic->data[17] = to_fixed_point(this->actuator->get_temperature(), UNIT_SCALE);
 
 
     this->output_topic->data[19]  = this->increment++;
