@@ -28,8 +28,8 @@ uint16_t Actuator_Bus_Interface::crc16(const uint8_t *packet, uint32_t nBytes) {
  * @param msg The serial message to process
  */
 void Actuator_Bus_Interface::process_no_data_serial(serial_message* msg){
-    DROP_CRUMB();
     if (Serial2.available() >= 1) {
+        DROP_CRUMB();
         this->total_messages_received++;
         if (Serial2.read() == 0xFF) {
             this->waiting_for_response = false;
@@ -61,8 +61,8 @@ void Actuator_Bus_Interface::process_no_data_serial(serial_message* msg){
  * @param msg The serial message to process
  */
 void Actuator_Bus_Interface::process_data_serial(serial_message *msg) {
-    DROP_CRUMB_VALUE('DTIN', breadcrumb_type::CHAR4);
     if (Serial2.available() == msg->data_length + sizeof(uint16_t)){
+        DROP_CRUMB();
         this->total_messages_received++; // Increment the total messages received
         Serial2.readBytes(this->response_buffer, msg->data_length + sizeof(uint16_t));
         memcpy(msg->data, this->response_buffer, msg->data_length); // Copy the data into the serial_message
@@ -107,6 +107,7 @@ void Actuator_Bus_Interface::process_data_serial(serial_message *msg) {
  */
 void Actuator_Bus_Interface::check_for_response(){
     serial_message* msg = this->message_queue[this->message_queue_dequeue_position];
+    if (msg == nullptr) return;
     if(msg->expect_response) { // Determine if we are waiting for data or just a success serial_message
         this->process_data_serial(msg);   // This checks for a data serial_message
     } else {
@@ -145,13 +146,10 @@ boolean Actuator_Bus_Interface::spin() {
         if (this->spin_start_time == 0){
             this->spin_start_time = millis();
         }
-//        if (finalSpin){  // If we have run out of spin time, then don't send another serial_message
-//            this->spin_total_time = millis() - this->spin_start_time;
-//            this->spin_start_time = 0;
-//            return false;
-//        }
         serial_message* next_message = this->get_next_message();
         if (next_message != nullptr){
+            DROP_CRUMB_VALUE((uint32_t) next_message, breadcrumb_type::ADDRESS);
+            // Drop the address of the next message ID
             this->sent_last_cycle++;
             // Clear the transmit buffer
             memset(this->transmit_buffer, 0, sizeof(this->transmit_buffer));
@@ -192,7 +190,9 @@ Actuator_Bus_Interface::serial_message *Actuator_Bus_Interface::get_next_message
         if (this->message_queue_dequeue_position >= MESSAGE_QUEUE_SIZE){
             this->message_queue_dequeue_position = 0;
         }
-        return this->message_queue[this->message_queue_dequeue_position];
+        serial_message* msg = this->message_queue[this->message_queue_dequeue_position];
+        this->message_queue[this->message_queue_dequeue_position] = nullptr;
+        return msg;
     }
 }
 

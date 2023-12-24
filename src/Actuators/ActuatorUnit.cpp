@@ -8,19 +8,19 @@
 
 
 void ActuatorUnit::build_telemetry_messages() {
-    reocurring_messages[2] = *build_message(
+    reoccurring_messages[2] = *build_message(
             Actuator_Bus_Interface::serial_commands::read_main_battery_voltage,
             100, 2, &ActuatorUnit::main_battery_voltage_callback);
-    reocurring_messages[3] = *build_message(
+    reoccurring_messages[3] = *build_message(
             Actuator_Bus_Interface::serial_commands::read_logic_battery_voltage,
             500, 2, &ActuatorUnit::logic_battery_voltage_callback);
-    reocurring_messages[4] = *build_message(
+    reoccurring_messages[4] = *build_message(
             Actuator_Bus_Interface::serial_commands::read_motor_currents,
             50, 4, &ActuatorUnit::motor_currents_callback);
-    reocurring_messages[5] = *build_message(
+    reoccurring_messages[5] = *build_message(
             Actuator_Bus_Interface::serial_commands::read_temperature,
             500, 2, &ActuatorUnit::controller_temp_callback);
-    reocurring_messages[6] = *build_message(
+    reoccurring_messages[6] = *build_message(
             Actuator_Bus_Interface::serial_commands::read_status,
             1000, 2, &ActuatorUnit::controller_status_callback);
 
@@ -158,11 +158,11 @@ void ActuatorUnit::queue_telemetry_messages() {
     }
     for (int i = 0; i < 7; i++) {  // Queue telemetry messages last so they get sent if there is space
         // Check for null pointers
-        if (reocurring_messages[i].msg == nullptr) continue;
-        if (millis() - reocurring_messages[i].last_send_time > reocurring_messages[i].send_interval) {
+        if (reoccurring_messages[i].msg == nullptr) continue;
+        if (millis() - reoccurring_messages[i].last_send_time > reoccurring_messages[i].send_interval) {
             if (!command_bus->space_available()) return;
-            command_bus->queue_message(this->reocurring_messages[i].msg);
-            reocurring_messages[i].last_send_time = millis();
+            command_bus->queue_message(this->reoccurring_messages[i].msg);
+            reoccurring_messages[i].last_send_time = millis();
         }
     }
 }
@@ -182,9 +182,9 @@ void ActuatorUnit::update() {
 void ActuatorUnit::check_connection() {
     // Queue a telemetry serial_message to check if the actuator unit is connected
     if (!this->connected) {
-        if (millis() - reocurring_messages[1].last_send_time > 100) {
-            this->command_bus->queue_message(reocurring_messages[2].msg);
-            reocurring_messages[1].last_send_time = millis();
+        if (millis() - reoccurring_messages[1].last_send_time > 100) {
+            this->command_bus->queue_message(reoccurring_messages[2].msg);
+            reoccurring_messages[1].last_send_time = millis();
         }
     }
 }

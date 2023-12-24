@@ -13,6 +13,7 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/KeyValue.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/String.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Int32MultiArray.h"
+#include "Main_Helpers/BreadCrumbs.h"
 #include <TimeLib.h>
 
 #define MAIN_CONTACTOR_PIN 0
@@ -165,6 +166,7 @@ public:
         pinMode(MAIN_CONTACTOR_PIN, OUTPUT);
         digitalWrite(MAIN_CONTACTOR_PIN, HIGH);
         // Check if the RTC has a time greater than 10 seconds
+        sprintf(this->last_estop_message, "[E-Stop Controller Initializing]");
         sprintf(this->estop_message, "[Firmware Start - Main Contactor Opened - E-Stop Triggered]");
 
         this->trigger_estop(false, false);
@@ -187,6 +189,7 @@ public:
     }
 
     boolean estop_message_updated(){
+        DROP_CRUMB();
         this->system_loops++;
         if (this->system_loops % 100 == 0) {
             return true;

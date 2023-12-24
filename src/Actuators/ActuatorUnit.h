@@ -212,8 +212,8 @@ private:
         uint32_t send_interval;  // The minimum time between sending the serial_message
     };
 
-    telemetry_message* reocurring_messages;
-    telemetry_message* command_messages;
+    telemetry_message reoccurring_messages[7];
+    telemetry_message command_messages[2];
 
     // Shared variables between motor 1 and motor 2
     uint16_t controller_temperature = UINT16_MAX;
@@ -241,19 +241,17 @@ public:
         this->motors[1].encoder = steering_encoder;
 
         // Setup all the required messages for gathering information from the object
-        this->reocurring_messages = new telemetry_message[7];
-        this->command_messages = new telemetry_message[2];
         this->command_messages[0].msg = new Actuator_Bus_Interface::serial_message();
         this->command_messages[1].msg = new Actuator_Bus_Interface::serial_message();
-        for (int i = 0; i < 2; i++) {
-            this->command_messages[i].send_interval = 100;
-            this->command_messages[i].msg->id = this->id;
-            this->command_messages[i].msg->object = this;
-            this->command_messages[i].msg->callback = &command_message_callback;
-            this->command_messages[i].msg->failure_callback = &command_failure_callback;
-            this->command_messages[i].msg->expect_response = false;
-            this->command_messages[i].msg->protected_action = true;
-            this->command_messages[i].msg->free_after_callback = false;
+        for (auto & command_message : this->command_messages) {
+            command_message.send_interval = 100;
+            command_message.msg->id = this->id;
+            command_message.msg->object = this;
+            command_message.msg->callback = &command_message_callback;
+            command_message.msg->failure_callback = &command_failure_callback;
+            command_message.msg->expect_response = false;
+            command_message.msg->protected_action = true;
+            command_message.msg->free_after_callback = false;
         }
         this->set_duty_cycle(0, 0);
         this->set_duty_cycle(0, 1);

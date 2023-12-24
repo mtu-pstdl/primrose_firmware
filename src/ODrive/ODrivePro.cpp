@@ -3,6 +3,7 @@
 //
 
 #include "ODrivePro.h"
+#include "Main_Helpers/BreadCrumbs.h"
 
 //#include <utility>
 //#include "odrive_constants.h"
@@ -12,7 +13,6 @@ ODrivePro::ODrivePro(uint8_t can_id, FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> *c
     this->can_id = can_id;
     this->can_bus = can_bus;
     this->estop_callback = estop_callback;
-    this->allocate_strings();
 }
 
 void ODrivePro::init() {
@@ -55,6 +55,7 @@ uint8_t ODrivePro::get_can_id() const {
  * @param msg A can serial_message received from the ODrive this object represents
  */
 void ODrivePro::on_message(const CAN_message_t &msg) {
+    DROP_CRUMB();
     uint8_t msg_type = msg.id & 0x1F; // Use bitmask of 0b00000011111 to get the last 5 bits
     // Bytes are sent little endian
     uint32_t upper_32 = 0;
@@ -339,40 +340,16 @@ odrive::axis_states ODrivePro::get_axis_state() const {
     return this->AXIS_STATE;
 }
 
-char* ODrivePro::get_axis_state_string() {
-    sprintf(this->axis_state_string, ""); // Clear the string
-    odrive::sprint_axis_state(this->axis_state_string, static_cast<odrive::axis_states>(this->AXIS_STATE));
-    return this->axis_state_string;
-}
-
 uint32_t ODrivePro::get_axis_error() const {
     return this->ACTIVE_ERRORS;
-}
-
-char* ODrivePro::get_axis_error_string() {
-    sprintf(this->axis_error_string, ""); // Clear the string
-    odrive::sprintf_error_code(this->axis_error_string, this->AXIS_ERROR);
-    return this->axis_error_string;
 }
 
 uint32_t ODrivePro::get_active_errors() const {
     return this->ACTIVE_ERRORS;
 }
 
-char* ODrivePro::get_active_errors_string() {
-    sprintf(this->active_errors_string, ""); // Clear the string
-    odrive::sprintf_error_code(this->active_errors_string, this->ACTIVE_ERRORS);
-    return this->active_errors_string;
-}
-
 uint32_t ODrivePro::get_disarm_reason() const {
     return this->DISARM_REASON;
-}
-
-char* ODrivePro::get_disarm_reason_string() {
-    sprintf(this->disarm_reason_string, ""); // Clear the string
-    odrive::sprintf_error_code(this->disarm_reason_string, this->DISARM_REASON);
-    return this->disarm_reason_string;
 }
 
 bool ODrivePro::is_connected() const {
@@ -391,12 +368,6 @@ odrive::procedure_results ODrivePro::get_procedure_results() const {
     return this->PROCEDURE_RESULT;
 }
 
-char *ODrivePro::get_procedure_results_string() {
-    sprintf(this->procedure_result_string, ""); // Clear the string
-    odrive::sprint_procedure_result(this->procedure_result_string, this->PROCEDURE_RESULT);
-    return this->procedure_result_string;
-}
-
 bool ODrivePro::has_error() const {
     if (this->ACTIVE_ERRORS != 0 || this->AXIS_ERROR != 0) {
         return true;
@@ -409,12 +380,6 @@ odrive::control_modes ODrivePro::get_control_mode() const {
     return this->control_mode;
 }
 
-char *ODrivePro::get_control_mode_string() {
-    sprintf(this->control_mode_string, ""); // Clear the string
-    odrive::sprint_control_mode(this->control_mode_string, this->control_mode);
-    return this->control_mode_string;
-}
-
 uint32_t ODrivePro::get_last_update() const {
     return millis() - this->last_message;
 }
@@ -424,20 +389,6 @@ void ODrivePro::set_control_mode(odrive::control_modes new_control_mode, odrive:
     this->input_mode = new_input_mode;
     this->send_command(odrive::Set_Controller_Mode, new_control_mode, new_input_mode);
     this->set_axis_state(odrive::axis_states::CLOSED_LOOP_CONTROL);
-}
-
-char *ODrivePro::get_setpoint_string() {
-    sprintf(this->setpoint_string, ""); // Clear the string
-    if (this->control_mode == odrive::control_modes::POSITION_CONTROL) {
-        sprintf(this->setpoint_string, "%.3f %s", this->get_setpoint(), this->pos_unit_string);
-    } else if (this->control_mode == odrive::control_modes::VELOCITY_CONTROL) {
-        sprintf(this->setpoint_string, "%.3f %s", this->get_setpoint(), this->vel_unit_string);
-    } else if (this->control_mode == odrive::control_modes::TORQUE_CONTROL) {
-        sprintf(this->setpoint_string, "%.3f Nm", this->get_setpoint());
-    } else {
-        sprintf(this->setpoint_string, "N/A");
-    }
-    return this->setpoint_string;
 }
 
 uint32_t ODrivePro::get_inflight_bitmask() const {
@@ -496,13 +447,7 @@ void ODrivePro::set_axis_state(odrive::axis_states state) {
 }
 
 void ODrivePro::pass_odometer_data(void *pointer) {
-    this->odometer = static_cast<ODrivePro::memory_odometer_value*>(pointer);
-}
-
-char *ODrivePro::get_input_mode_string() {
-    sprintf(this->input_mode_string, ""); // Clear the string
-    odrive::sprint_input_mode(this->input_mode_string, this->input_mode);
-    return this->input_mode_string;
+    this->odometer = static_cast<ODrivePro::memory_odometer_value *>(pointer);
 }
 
 double_t ODrivePro::get_odometer() const {
@@ -563,11 +508,12 @@ double_t ODrivePro::get_power_consumption() const {
     }
 }
 
-bool ODrivePro::tripped(char* name, char* reason) {
+bool ODrivePro::tripped(char* dev_name, char* reason) {
     // An ODrive will trip an estop if it ever exits closed loop control with an error as indicated in disarm_reason
     // The only trigger state is if we lose communication with the ODrive
+    DROP_CRUMB();
     if (!this->is_connected()) {
-        sprintf(name, "ODrive: %d", this->can_id);
+        sprintf(dev_name, "ODrive: %d", this->can_id);
         sprintf(reason, "CONN LOST");
         return true;
     }
@@ -578,7 +524,7 @@ bool ODrivePro::tripped(char* name, char* reason) {
         return false;
     }
     if (this->DISARM_REASON != 0x00 && this->AXIS_STATE != odrive::axis_states::CLOSED_LOOP_CONTROL){
-        sprintf(name, "ODrive: %d", this->can_id);
+        sprintf(dev_name, "ODrive: %d", this->can_id);
         odrive::sprintf_error_code(reason, this->DISARM_REASON);
         return true;
     }

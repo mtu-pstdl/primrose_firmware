@@ -111,6 +111,7 @@ void IMU::publish() {
 
 
 boolean IMU::tripped(char* tripped_device_name, char* tripped_device_message) {
+    DROP_CRUMB();
     char temp[100];
     bool tripped = false;
     sprintf(tripped_device_name, "IMU");

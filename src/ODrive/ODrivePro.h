@@ -44,38 +44,6 @@ private:
 
     FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64>* can_bus = nullptr; // The CAN bus pointer
 
-    char* axis_error_string; // The axis error string
-    char* axis_state_string; // The axis state string
-    char* procedure_result_string; // The procedure result string
-    char* active_errors_string; // The active errors string
-    char* disarm_reason_string; // The disarm reason string
-    char* control_mode_string; // The control mode string
-    char* input_mode_string; // The input mode string
-    char* setpoint_string; // The setpoint string
-
-    void allocate_strings() {
-        axis_error_string = new char[50];
-        sprintf(axis_error_string, "Not initialized");
-        axis_state_string = new char[50];
-        sprintf(axis_state_string, "Not initialized");
-        procedure_result_string = new char[50];
-        sprintf(procedure_result_string, "Not initialized");
-        active_errors_string = new char[50];
-        sprintf(active_errors_string, "Not initialized");
-        disarm_reason_string = new char[50];
-        sprintf(disarm_reason_string, "Not initialized");
-        control_mode_string = new char[25];
-        sprintf(control_mode_string, "Not initialized");
-        setpoint_string = new char[25];
-        sprintf(setpoint_string, "Not initialized");
-        input_mode_string = new char[25];
-        sprintf(input_mode_string, "Not initialized");
-        vel_unit_string = new char[5];
-        sprintf(vel_unit_string, "RPS");
-        pos_unit_string = new char[5];
-        sprintf(pos_unit_string, "Revs");
-    }
-
     uint32_t last_message = 0; // The last time a serial_message was received from the ODrive
     uint32_t in_flight_bitmask = 0; // The number of messages in flight
 
@@ -240,35 +208,19 @@ public:
 
     odrive::axis_states get_axis_state() const;
 
-    char* get_axis_state_string();
-
     uint32_t get_axis_error() const;
-
-    char* get_axis_error_string();
 
     uint32_t get_active_errors() const;
 
-    char* get_active_errors_string();
-
     uint32_t get_disarm_reason() const;
 
-    char* get_disarm_reason_string();
-
     odrive::procedure_results get_procedure_results() const;
-
-    char* get_procedure_results_string();
 
     odrive::control_modes get_control_mode() const;
 
     odrive::input_modes get_input_mode() const;
 
-    char* get_control_mode_string();
-
-    char* get_input_mode_string();
-
     float_t get_setpoint() const;
-
-    char* get_setpoint_string();
 
     bool has_error() const;
 

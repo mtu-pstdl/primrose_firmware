@@ -8,12 +8,14 @@
 #include <Arduino.h>
 #include "build_info.h"
 
+#define BREADCRUMB_BUFFER_SIZE 24
+
 /**
  * @brief The type of value stored in the breadcrumb
  * @note All values must be exactly 4 bytes long, hence the char4 type
  */
 enum breadcrumb_type: uint8_t {
-    NO_VALUE, INT, FLOAT, CHAR4
+    NO_VALUE, INT, FLOAT, CHAR4, ADDRESS
 };
 
 /**
@@ -29,9 +31,10 @@ struct breadcrumb {
     uint16_t line;
     uint32_t time;
     union {
-        int32_t int_value;
-        float_t float_value;
-        uint8_t char4_value[4];
+        int32_t  int_value;
+        uint32_t address_value;
+        float_t  float_value;
+        uint8_t  char4_value[4];
     } value;
 };
 
@@ -39,7 +42,7 @@ struct breadcrumb {
  * @brief Stores the collection of breadcrumbs
  */
 struct breadcrumbs {
-    breadcrumb crumbs[16];
+    breadcrumb crumbs[BREADCRUMB_BUFFER_SIZE];
     uint32_t index; // index of the next breadcrumb to be added
     uint32_t total; // total number of breadcrumbs
     boolean has_crumbs;

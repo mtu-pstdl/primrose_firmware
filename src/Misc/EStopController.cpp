@@ -6,6 +6,7 @@
 #include "Main_Helpers/BreadCrumbs.h"
 
 void EStopController::check_for_faults() {
+    DROP_CRUMB();
     // Copy the value from the estop message buffer to the last estop message buffer
     sprintf(this->estop_message, "");
     sprintf(this->tripped_device_name, "NULL");
@@ -115,12 +116,13 @@ void EStopController::resume() {
 }
 
 void EStopController::update() {
-    DROP_CRUMB();
     // Check how many devices are in the linked list
     if (!estop_triggered) {
+        DROP_CRUMB();
         if (millis() - estop_resume_time > 3000) this->automatic_estop_inhibited = false;
         this->check_for_faults();
     } else {
+        DROP_CRUMB();
         if (millis() - estop_triggered_time > ESTOP_CONTACTOR_DELAY)
         digitalWriteFast(MAIN_CONTACTOR_PIN, HIGH);  // Open the main contactor
     }

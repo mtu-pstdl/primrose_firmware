@@ -15,7 +15,7 @@ void save_breadcrumbs() {
 }
 
 void add_breadcrumb(const char *file, uint32_t line) {
-    if (bread_crumbs.index >= 16) bread_crumbs.index = 0; // Wrap the buffer when we reach the end
+    if (bread_crumbs.index >= BREADCRUMB_BUFFER_SIZE) bread_crumbs.index = 0; // Wrap the buffer when we reach the end
     breadcrumb *current = &bread_crumbs.crumbs[bread_crumbs.index];
     // Check if the file name is longer than 32 characters
     if (strlen(file) > 35) {
@@ -33,7 +33,7 @@ void add_breadcrumb(const char *file, uint32_t line) {
 }
 
 void add_breadcrumb(const char* file, uint32_t line, uint32_t value, breadcrumb_type value_type) {
-    if (bread_crumbs.index >= 16) bread_crumbs.index = 0; // Wrap the buffer when we reach the end
+    if (bread_crumbs.index >= BREADCRUMB_BUFFER_SIZE) bread_crumbs.index = 0; // Wrap the buffer when we reach the end
     breadcrumb *current = &bread_crumbs.crumbs[bread_crumbs.index];
     // Check if the file name is longer than 32 characters
     if (strlen(file) > 35) {
@@ -87,6 +87,9 @@ void print_breadcrumb(breadcrumb *crumb, char* buffer) {
                     crumb->value.char4_value[0], crumb->value.char4_value[1], crumb->value.char4_value[2],
                     crumb->value.char4_value[3]);
             break;
+        case ADDRESS:
+            sprintf(buffer, "%lu - %s:%hu - 0x%08lx", crumb->time, crumb->file, crumb->line, crumb->value.address_value);
+            break;
     }
 
 }
@@ -103,15 +106,14 @@ breadcrumb* get_breadcrumb() {
     // Keep track of where we are in the buffer (this method returns a null pointer once all breadcrumbs have been read)
     if (last_breadcrumbs.total == 0) return nullptr;
     static uint32_t current_index = last_breadcrumbs.index;
-    static uint32_t remaining = 16;
+    static uint32_t remaining = BREADCRUMB_BUFFER_SIZE - 1;
     if (remaining == 0) return nullptr;
-    if (remaining > 16) remaining = 16;
-    if (current_index >= 15) {
+    breadcrumb* current = &last_breadcrumbs.crumbs[current_index];
+    if (current_index >= BREADCRUMB_BUFFER_SIZE - 1) {
         current_index = 0;
     } else {
         current_index++;
     }
-    breadcrumb* current = &last_breadcrumbs.crumbs[current_index];
     remaining--;
     return current;
 }

@@ -265,7 +265,7 @@ void setup() {
 void loop() {
     uint32_t loop_start = micros(); // Get the time at the start of the loop
     freeram();  // Calculate the amount of space left in the heap
-    DROP_CRUMB_VALUE('STRT', breadcrumb_type::CHAR4);  // Drop a breadcrumb to indicate the start of the loop
+    DROP_CRUMB_VALUE(loop_count, breadcrumb_type::INT);
     if (safe_mode_flag == NORMAL_BOOT) {
 
         adauTester->run();
@@ -309,11 +309,14 @@ void loop() {
             topic->publisher->publish(topic->message);
         }
 
+
         test_output_pub.publish(&test_output_msg);
 
         while (ACTUATOR_BUS_INTERFACE.spin() && micros() - loop_start < 45000) {
             yield();  // Yield to other tasks
         }
+
+        DROP_CRUMB();
     }
 
     String log_msg = "";
@@ -393,4 +396,5 @@ void loop() {
 
     wdt.feed();  // Feed the watchdog timer to prevent a reset
     loop_count++;
+    DROP_CRUMB_VALUE('END ', breadcrumb_type::CHAR4);
 }

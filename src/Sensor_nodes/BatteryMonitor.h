@@ -48,6 +48,8 @@ private:
 
 public:
 
+    char debug_string[1000] = {0};
+
     explicit BatteryMonitor(EStopController* estop_controller, sensor_msgs::BatteryState* battery_state_msg) :
             battery_sub("/mciu/battery_monitor", &BatteryMonitor::battery_callback, this) {
 
@@ -97,8 +99,6 @@ public:
         sprintf(tripped_device_message, "No VE.Direct Data");
         return true;
     }
-
-    char debug_string[1000] = {0};
 };
 
 
