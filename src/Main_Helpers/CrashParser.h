@@ -191,7 +191,7 @@ public:
 
         // Check if there are crumbs available
         if (has_breadcrumbs()) {
-            sprintf(current_line->line, "----- BREADCRUMBS -----");
+            sprintf(current_line->line, "----- BREADCRUMBS %lu/%d -----", get_breadcrumb_count(), 16);
             next_line();
             breadcrumb *crumb = get_breadcrumb();
             while (crumb != nullptr) {

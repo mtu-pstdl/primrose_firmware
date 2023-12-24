@@ -7,6 +7,7 @@
 
 void save_breadcrumbs() {
     memcpy(&last_breadcrumbs, &bread_crumbs, sizeof(breadcrumbs));
+    memset(&bread_crumbs, 0, sizeof(breadcrumbs));
     // Clear the current breadcrumbs
     bread_crumbs.index = 0;
     bread_crumbs.total = 0;
@@ -73,21 +74,25 @@ boolean has_breadcrumbs() {
 void print_breadcrumb(breadcrumb *crumb, char* buffer) {
     switch (crumb->type) {
         case NO_VALUE:
-            sprintf(buffer, "%lu - %s:%lu", crumb->time, crumb->file, crumb->line);
+            sprintf(buffer, "%lu - %s:%hu", crumb->time, crumb->file, crumb->line);
             break;
         case INT:
-            sprintf(buffer, "%lu - %s:%lu - %ld", crumb->time, crumb->file, crumb->line, crumb->value.int_value);
+            sprintf(buffer, "%lu - %s:%hu - %ld", crumb->time, crumb->file, crumb->line, crumb->value.int_value);
             break;
         case FLOAT:
-            sprintf(buffer, "%lu - %s:%lu - %f", crumb->time, crumb->file, crumb->line, crumb->value.float_value);
+            sprintf(buffer, "%lu - %s:%hu - %f", crumb->time, crumb->file, crumb->line, crumb->value.float_value);
             break;
         case CHAR4:
-            sprintf(buffer, "%lu - %s:%lu - %c%c%c%c", crumb->time, crumb->file, crumb->line,
+            sprintf(buffer, "%lu - %s:%hu - %c%c%c%c", crumb->time, crumb->file, crumb->line,
                     crumb->value.char4_value[0], crumb->value.char4_value[1], crumb->value.char4_value[2],
                     crumb->value.char4_value[3]);
             break;
     }
 
+}
+
+uint32_t get_breadcrumb_count() {
+    return last_breadcrumbs.total;
 }
 
 breadcrumb* get_breadcrumb() {
@@ -97,8 +102,8 @@ breadcrumb* get_breadcrumb() {
 
     // Keep track of where we are in the buffer (this method returns a null pointer once all breadcrumbs have been read)
     if (last_breadcrumbs.total == 0) return nullptr;
-    static uint32_t current_index = last_breadcrumbs.index - 1;
-    static uint32_t remaining = last_breadcrumbs.total;
+    static uint32_t current_index = last_breadcrumbs.index;
+    static uint32_t remaining = 16;
     if (remaining == 0) return nullptr;
     if (remaining > 16) remaining = 16;
     if (current_index >= 15) {

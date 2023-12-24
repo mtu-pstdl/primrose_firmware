@@ -72,6 +72,8 @@ void add_breadcrumb(const char *file, uint32_t line, uint32_t value, breadcrumb_
 
 boolean has_breadcrumbs();
 
+uint32_t get_breadcrumb_count();
+
 breadcrumb* get_breadcrumb();
 
 void print_breadcrumb(breadcrumb *crumb, char* buffer);
