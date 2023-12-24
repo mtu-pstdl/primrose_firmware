@@ -75,6 +75,7 @@ public:
 
     void update() override {
         uint32_t parse_start = micros();
+        VE_DIRECT_SERIAL.write("V\r\n");
         sprintf(this->debug_string, "Battery Data: %d", VE_DIRECT_SERIAL.available());
         while (VE_DIRECT_SERIAL.available() && micros() - parse_start < 1000) {
             this->battery_interface->rxData(VE_DIRECT_SERIAL.read());
