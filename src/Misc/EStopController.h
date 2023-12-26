@@ -153,23 +153,18 @@ public:
 
         this->estop_msg_topic->data = this->last_estop_message;
 
-        this->estop_status_topic->data_length = 4;
-        this->estop_status_topic->data = new int32_t[4];
-        this->estop_status_topic->data[0] = 0;  // Current state
-        this->estop_status_topic->data[1] = 0;  // Flags
-        this->estop_status_topic->data[2] = 0;  // Number of tripped devices
-        this->estop_status_topic->data[3] = 0;  // Time since last heartbeat
+        this->estop_status_topic->data_length = sizeof (this->output_data.raw_array) / sizeof (int32_t);
+        this->estop_status_topic->data = this->output_data.raw_array;
 
         sprintf(this->tripped_device_name, "NULL");
         sprintf(this->tripped_device_message, "NULL");
 
         pinMode(MAIN_CONTACTOR_PIN, OUTPUT);
         digitalWrite(MAIN_CONTACTOR_PIN, HIGH);
-        // Check if the RTC has a time greater than 10 seconds
-        sprintf(this->last_estop_message, "[E-Stop Controller Initializing]");
-        sprintf(this->estop_message, "[Firmware Start - Main Contactor Opened - E-Stop Triggered]");
+//        sprintf(this->last_estop_message, "[E-Stop Controller Initializing]");
+//        sprintf(this->estop_message, "[Firmware Start - Main Contactor Opened - E-Stop Triggered]");
 
-        this->trigger_estop(false, false);
+//        this->trigger_estop(false, false);
     }
 
     /**

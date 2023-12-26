@@ -107,7 +107,8 @@ void Actuator_Bus_Interface::process_data_serial(serial_message *msg) {
  */
 void Actuator_Bus_Interface::check_for_response(){
     serial_message* msg = this->message_queue[this->message_queue_dequeue_position];
-    if (msg == nullptr) return;
+    if (msg == nullptr) return; // This should not be null, but just in case
+
     if(msg->expect_response) { // Determine if we are waiting for data or just a success serial_message
         this->process_data_serial(msg);   // This checks for a data serial_message
     } else {
@@ -191,7 +192,6 @@ Actuator_Bus_Interface::serial_message *Actuator_Bus_Interface::get_next_message
             this->message_queue_dequeue_position = 0;
         }
         serial_message* msg = this->message_queue[this->message_queue_dequeue_position];
-        this->message_queue[this->message_queue_dequeue_position] = nullptr;
         return msg;
     }
 }

@@ -117,12 +117,15 @@ void EStopController::resume() {
 
 void EStopController::update() {
     // Check how many devices are in the linked list
+    DROP_CRUMB();
+    this->output_data.data.number_of_tripped_devices = this->number_of_tripped_devices;
+
     if (!estop_triggered) {
-        DROP_CRUMB();
+        this->output_data.data.estop_state = 0 ? 2 : this->automatic_estop_inhibited;
         if (millis() - estop_resume_time > 3000) this->automatic_estop_inhibited = false;
         this->check_for_faults();
     } else {
-        DROP_CRUMB();
+        this->output_data.data.estop_state = 1;
         if (millis() - estop_triggered_time > ESTOP_CONTACTOR_DELAY)
         digitalWriteFast(MAIN_CONTACTOR_PIN, HIGH);  // Open the main contactor
     }
