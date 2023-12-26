@@ -145,7 +145,7 @@ ros_topic battery_topic = {
         .message = &battery_msg
 };
 
-#define ESTOP_STR_TOPIC_NUM 13
+//#define ESTOP_STR_TOPIC_NUM 13
 std_msgs::String estop_msg;
 ros::Publisher estop_pub("/mciu/Estop_controller/message", &estop_msg);
 ros_topic estop_topic = {
@@ -153,7 +153,7 @@ ros_topic estop_topic = {
         .message = &estop_msg
 };
 
-#define ESTOP_TOPIC_NUM 14
+#define ESTOP_TOPIC_NUM 13
 std_msgs::Int32MultiArray estop_status_msg;
 ros::Publisher estop_status_pub("/mciu/Estop_controller/status", &estop_status_msg);
 ros_topic estop_status_topic = {
@@ -222,7 +222,6 @@ ros_topic* all_topics[ALL_TOPICS_LENGTH] = {
         &actuator4_encoder_topic,
         &imu_topic,
         &battery_topic,
-//        &estop_topic,
         &estop_status_topic,
         &suspension_load_cell_topic,
         &hopper_load_cell_topic,

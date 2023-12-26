@@ -310,3 +310,27 @@ void ADAU_Bus_Interface::parse_buffer() {
             this->parse_count, this->failed_message_count, ignored_bytes,
             micros() - this->parse_start_time);
 }
+
+EStopDevice::TRIP_LEVEL ADAU_Bus_Interface::tripped(char *tripped_device_name, char *tripped_device_message) {
+    sprintf(tripped_device_name, "ADAU Bus Interface");
+    char temp[100]{};
+    EStopDevice::TRIP_LEVEL tripped = EStopDevice::TRIP_LEVEL::NO_FAULT;
+    if (this->attempting_restart && this->restart_attempts < 10) {
+        sprintf(temp, "ATTEMPTING RESTART-");
+        strlcat(tripped_device_message, temp, 100);
+        tripped = EStopDevice::TRIP_LEVEL::WARNING;
+    }
+    if (this->restart_attempts >= 10) {
+        sprintf(temp, "RESTART ATTEMPT ABANDONED-");
+        strlcat(tripped_device_message, temp, 100);
+        tripped = EStopDevice::TRIP_LEVEL::FAULT;
+    }
+    if (millis() - this->last_message_time > 1000) {
+        sprintf(temp, "NO ADAU DATA-");
+        strlcat(tripped_device_message, temp, 100);
+        tripped = EStopDevice::TRIP_LEVEL::FAULT;
+        this->reset();
+    }
+    if (tripped) tripped_device_message[strlen(tripped_device_message) - 1] = '\0';
+    return tripped;
+}

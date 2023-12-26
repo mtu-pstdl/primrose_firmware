@@ -217,11 +217,13 @@ void setup() {
 
     accessory_power = new AccessoryPower();
 
+    e_stop_controller->add_estop_device(&ADAU_BUS_INTERFACE);
     for (auto & odrive : odrives) e_stop_controller->add_estop_device(odrive);
     for (auto & actuator : actuators) e_stop_controller->add_estop_device(actuator);
     for (auto & load_cell : load_cells) e_stop_controller->add_estop_device(load_cell);
     e_stop_controller->add_estop_device(battery_monitor);
     e_stop_controller->add_estop_device(imu_class);
+
 //    e_stop_controller->add_estop_device(system_monitor);
 
     // Add all ros nodes to the ros node array
@@ -268,7 +270,7 @@ void loop() {
     DROP_CRUMB_VALUE(loop_count, breadcrumb_type::INT);
     if (safe_mode_flag == NORMAL_BOOT) {
 
-        adauTester->run();
+//        adauTester->run();
 
         ADAU_BUS_INTERFACE.parse_buffer(); // Update the ADAU bus
 

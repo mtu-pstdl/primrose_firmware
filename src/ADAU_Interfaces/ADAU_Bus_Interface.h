@@ -5,6 +5,7 @@
 #ifndef PRIMROSE_MCIU_ADAU_BUS_INTERFACE_H
 #define PRIMROSE_MCIU_ADAU_BUS_INTERFACE_H
 #include <Arduino.h>
+#include "Misc/EStopDevice.h"
 
 #define ADAU_INTERFACE  Serial4
 #define ADAU_BAUD_RATE  1000000  // 1Mbaud
@@ -32,7 +33,7 @@ class ADAU_Sensor;
  * @warning This class is not thread safe and should only be used in the main thread.
  * @warning This class is not interrupt safe and should not be used in an interrupt
  */
-class ADAU_Bus_Interface {
+class ADAU_Bus_Interface: public EStopDevice {
 
     // Data sent by the ADAU is formatted as follows:
     // 1 byte: start of message (0xFF)
@@ -66,15 +67,29 @@ private:
     uint8_t message_buffer[254] = {0,};  // The buffer that holds the message data
     uint8_t message_buffer_len = 0;      // The length of the message data received so far
 
+    boolean  attempting_restart = false;  // True if the bus interface is attempting to restart the ADAU
+    uint32_t restart_start_time = 0;      // The time that the restart started
+    uint32_t restart_attempts = 0;        // The number of times the bus interface has attempted to restart the ADAU
+
     // Watchdog variables
     uint32_t failed_message_count = 0;   // The number of messages that failed to parse
     uint32_t last_message_time = 0;      // The time that the last message was received
 
-    static void reset(){
-        digitalWriteFast(ADAU_RESET_PIN, LOW);
-        delay(10);
-        digitalWriteFast(ADAU_RESET_PIN, HIGH);
-        delay(10);
+    // Sliding window of the decoding success rate of the last 20 messages
+    uint8_t success_rate_window[20] = {0,};
+
+    void reset(){
+        if (millis() - this->restart_start_time < 1000) {
+
+        } else if (!this->attempting_restart) {
+            this->attempting_restart = true;
+            this->restart_start_time = millis();
+            this->restart_attempts++;
+            digitalWriteFast(ADAU_RESET_PIN, LOW);
+        } else if (millis() - this->restart_start_time > 100) {
+            digitalWriteFast(ADAU_RESET_PIN, HIGH);
+            this->attempting_restart = false;
+        }
     }
 
     void load_header();
@@ -126,6 +141,17 @@ public:
     // The number of sensors attached to this bus interface
     int num_sensors = 0;
     int parse_count = 0;
+
+    void resume() override {
+
+    }
+
+    void estop() override {
+
+    }
+
+    EStopDevice::TRIP_LEVEL tripped(char* tripped_device_name, char* tripped_device_message) override;
+
 };
 
 #endif //PRIMROSE_MCIU_ADAU_BUS_INTERFACE_H

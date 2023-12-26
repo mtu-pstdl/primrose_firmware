@@ -14,6 +14,7 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/subscriber.h"
 #include "ADAU_Interfaces/ADAU_Sensor.h"
 #include "Misc/EStopDevice.h"
+#include "Main_Helpers/BreadCrumbs.h"
 
 #include <utility>
 
@@ -82,29 +83,33 @@ public:
     void control_callback(const std_msgs::Int32MultiArray& msg);
 
     EStopDevice::TRIP_LEVEL tripped(char* tripped_device_name, char* tripped_device_message) override {
+        DROP_CRUMB();
+        sprintf(tripped_device_name, "Load Cells: %s", this->name);
+        char temp[100]{};
+        TRIP_LEVEL tripped = NO_FAULT;
         if (!sensor->is_valid()) {
-            sprintf(tripped_device_name, "Load Cells: %s", this->name);
-            sprintf(tripped_device_message, "ADAU Data Invalid");
-            return EStopDevice::TRIP_LEVEL::FAULT;
-        }
-        if (sensor->get_last_update_time() > 100000) {
-            sprintf(tripped_device_name, "Load Cells: %s", this->name);
-            sprintf(tripped_device_message, "ADAU Data Stale");
-            return EStopDevice::TRIP_LEVEL::FAULT;
+            sprintf(temp, "ADAU DATA INVALID-");
+            strlcat(tripped_device_message, temp, 100);
+            tripped = FAULT;
+        } else if (sensor->get_last_update_time() > 100000) {
+            sprintf(temp, "ADAU DATA STALE-");
+            strlcat(tripped_device_message, temp, 100);
+            tripped = FAULT;
         }
         if (data.flags != 0) {
-            sprintf(tripped_device_name, "Load Cells: %s", this->name);
-            sprintf(tripped_device_message, "ERROR FLAGS: ");
-            for (int i = 0; i < 8; i++) {
+            sprintf(temp, "ERROR FLAGS: ");
+            for (int i = 7; i >= 0; i--) {
                 if (data.flags & (1 << i)) {
-                    sprintf(tripped_device_message, "%s%d ", tripped_device_message, 1);
+                    sprintf(temp, "%s%d ", temp, 1);
                 } else {
-                    sprintf(tripped_device_message, "%s%d ", tripped_device_message, 0);
+                    sprintf(temp, "%s%d ", temp, 0);
                 }
             }
-            return EStopDevice::TRIP_LEVEL::FAULT;
+            strlcat(tripped_device_message, temp, 100);
+            tripped = FAULT;
         }
-        return EStopDevice::TRIP_LEVEL::NO_FAULT;
+        if (tripped) tripped_device_message[strlen(tripped_device_message) - 1] = '\0';
+        return tripped;
     }
 
 };
