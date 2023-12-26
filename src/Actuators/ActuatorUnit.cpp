@@ -246,31 +246,31 @@ void ActuatorUnit::estop() {
  * @param device_message  A pointer to a char array to store the message of this device
  * @return True if the device is tripped, false otherwise
  */
-bool ActuatorUnit::tripped(char* device_name, char* device_message) {
+EStopDevice::TRIP_LEVEL ActuatorUnit::tripped(char* device_name, char* device_message) {
     DROP_CRUMB();
-    bool tripped = false;
+    EStopDevice::TRIP_LEVEL tripped = EStopDevice::TRIP_LEVEL::NO_FAULT;
     sprintf(device_name, "Actuator Unit: %d", this->id);
     sprintf(device_message, "");
     char temp[100];
     if (!this->connected) {
         sprintf(temp, "CONN LOST-");
         strlcat(device_message, temp, 99);
-        tripped = true;
+        tripped = EStopDevice::TRIP_LEVEL::FAULT;
     }
     if (this->get_logic_battery_voltage() < 10 && this->get_logic_battery_voltage() != FP_NAN) {
         sprintf(temp, "LOGIC BUS LOW: %0.1fV-", this->get_logic_battery_voltage());
         strlcat(device_message, temp, 99);
-        tripped = true;
+        tripped = EStopDevice::TRIP_LEVEL::FAULT;
     }
     if (this->get_main_battery_voltage() < 46 && this->get_main_battery_voltage() != FP_NAN) {
         sprintf(temp, "MAIN BUS LOW: %0.1fV-", this->get_main_battery_voltage());
         strlcat(device_message, temp, 99);
-        tripped = true;
+        tripped = EStopDevice::TRIP_LEVEL::FAULT;
     }
     if (this->get_temperature() > 80) {
         sprintf(temp, "TEMP HIGH: %0.2fC-", this->get_temperature());
         strlcat(device_message, temp, 99);
-        tripped = true;
+        tripped = EStopDevice::TRIP_LEVEL::FAULT;
     }
 
     // Check if the motors encoders are healthy
@@ -278,11 +278,11 @@ bool ActuatorUnit::tripped(char* device_name, char* device_message) {
         if (this->motors[i].encoder->fault()) {
             sprintf(temp, "ENCODER M%d FAULT-", i + 1);
             strlcat(device_message, temp, 99);
-            tripped = true;
+            tripped = EStopDevice::TRIP_LEVEL::FAULT;
         } else if (!this->motors[i].encoder->is_valid()) {
             sprintf(temp, "ENCODER M%d INVALID-", i + 1);
             strlcat(device_message, temp, 99);
-            tripped = true;
+            tripped = EStopDevice::TRIP_LEVEL::FAULT;
         }
     }
     // Remove the trailing dash

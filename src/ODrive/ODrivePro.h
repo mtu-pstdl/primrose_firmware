@@ -142,7 +142,7 @@ private:
 
 public:
 
-    bool tripped(char* device_name, char* device_message) override;
+    EStopDevice::TRIP_LEVEL tripped(char* device_name, char* device_message) override;
 
     void estop() override;
 

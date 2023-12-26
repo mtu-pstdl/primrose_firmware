@@ -508,27 +508,27 @@ double_t ODrivePro::get_power_consumption() const {
     }
 }
 
-bool ODrivePro::tripped(char* dev_name, char* reason) {
+EStopDevice::TRIP_LEVEL ODrivePro::tripped(char* dev_name, char* reason) {
     // An ODrive will trip an estop if it ever exits closed loop control with an error as indicated in disarm_reason
     // The only trigger state is if we lose communication with the ODrive
     DROP_CRUMB();
+    sprintf(dev_name, "ODrive: %d", this->can_id);
     if (!this->is_connected()) {
-        sprintf(dev_name, "ODrive: %d", this->can_id);
         sprintf(reason, "CONN LOST");
-        return true;
+        return EStopDevice::TRIP_LEVEL::FAULT;
     }
     // If an odrive reports a SPINOUT error, then it should be ignored and closed loop control should be resumed
     if (this->DISARM_REASON == SPINOUT_DETECTED || this->AXIS_ERROR == SPINOUT_DETECTED) {
+        sprintf(reason, "SPINOUT IGNORED");
         this->send_command(odrive::Clear_Errors);
         this->send_command(odrive::Set_Axis_State, odrive::axis_states::CLOSED_LOOP_CONTROL);
-        return false;
+        return EStopDevice::TRIP_LEVEL::WARNING;
     }
     if (this->DISARM_REASON != 0x00 && this->AXIS_STATE != odrive::axis_states::CLOSED_LOOP_CONTROL){
-        sprintf(dev_name, "ODrive: %d", this->can_id);
         odrive::sprintf_error_code(reason, this->DISARM_REASON);
-        return true;
+        return EStopDevice::TRIP_LEVEL::FAULT;
     }
-    return false;
+    return EStopDevice::TRIP_LEVEL::NO_FAULT;
 }
 
 void ODrivePro::estop() {

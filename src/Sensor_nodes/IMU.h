@@ -53,7 +53,7 @@ public:
 
     void publish() override;
 
-    boolean tripped(char* tripped_device_name, char* tripped_device_message) override;
+    EStopDevice::TRIP_LEVEL tripped(char* tripped_device_name, char* tripped_device_message) override;
 
     void initialize();
 };

@@ -12,6 +12,6 @@ void SystemMonitor::update() {
 
 }
 
-boolean SystemMonitor::tripped(char *tripped_device_name, char *tripped_device_message) {
+EStopDevice::TRIP_LEVEL SystemMonitor::tripped(char *tripped_device_name, char *tripped_device_message) {
 
 }

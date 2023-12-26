@@ -121,13 +121,31 @@ void EStopController::update() {
     this->output_data.data.number_of_tripped_devices = this->number_of_tripped_devices;
 
     if (!estop_triggered) {
-        this->output_data.data.estop_state = 0 ? 2 : this->automatic_estop_inhibited;
         if (millis() - estop_resume_time > 3000) this->automatic_estop_inhibited = false;
         this->check_for_faults();
     } else {
-        this->output_data.data.estop_state = 1;
         if (millis() - estop_triggered_time > ESTOP_CONTACTOR_DELAY)
         digitalWriteFast(MAIN_CONTACTOR_PIN, HIGH);  // Open the main contactor
     }
+}
+
+EStopDevice::TRIP_LEVEL EStopController::tripped(char *name, char *message) {
+    // Check if the watchdogs for the pi and remote are still alive
+    char temp[100];
+    EStopDevice::TRIP_LEVEL tripped = NO_FAULT;
+    sprintf(name, "EStopController");
+    if (millis() - this->last_pi_heartbeat > HEARTBEAT_INTERVAL) {
+        sprintf(temp, "Pi Heartbeat Lost-");
+        strcat(message, temp);
+        tripped = FAULT;
+    }
+    if (millis() - this->last_remote_heartbeat > HEARTBEAT_INTERVAL) {
+        sprintf(temp, "Remote Heartbeat Lost-");
+        strcat(message, temp);
+        tripped = FAULT;
+    }
+    // Remove the trailing dash
+    if (tripped) message[strlen(message) - 1] = '\0';
+    return tripped;
 }
 

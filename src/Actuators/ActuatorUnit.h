@@ -269,7 +269,7 @@ public:
 
     void resume() override;
 
-    bool tripped(char* device_name, char* device_message) override;
+    EStopDevice::TRIP_LEVEL tripped(char* device_name, char* device_message) override;
 
     void pass_odometer(odometer_value* odometer, uint8_t motor);
 

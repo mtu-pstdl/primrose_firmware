@@ -9,6 +9,12 @@ class EStopDevice {
 
 public:
 
+    enum TRIP_LEVEL {
+        NO_FAULT = 0,
+        WARNING = 1,
+        FAULT = 2,
+    };
+
     /**
      * This function is called by the EStopController when an estop is triggered.
      */
@@ -20,7 +26,7 @@ public:
      * This function is called by the EStopController to determine if this device has tripped an estop.
      * If this function returns true, the EStopController will then call the estop() function on all other devices.
      */
-    virtual bool tripped(char* device_name, char* device_message) {
+    virtual TRIP_LEVEL tripped(char* device_name, char* device_message) {
         // Should be overridden
     }
 

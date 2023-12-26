@@ -23,7 +23,17 @@
 #define HEARTBEAT_INTERVAL 4000  // 4 seconds
 #define STATUS_MESSAGE_LENGTH 800
 
-class EStopController : public ROSNode {
+// EStopFlags
+#define ESTOP_TRIGGERED         0x00000001  // An E-Stop has been triggered
+#define AUTO_ESTOP_INHIBITED    0x00000002  // Automatic E-Stops are inhibited (e.g. An E-Stop is being cleared)
+#define AUTO_ESTOP_ENABLED      0x00000004  // Automatic E-Stops are enabled (Can be enabled and inhibited at the same time)
+#define HIGH_VOLTAGE_ENABLED    0x00000008  // The command to enable high voltage has been sent to the contactor
+#define REMOTE_HEARTBEAT_LOW    0x00000010  // The remote heartbeat is about to expire (less than 1 second left)
+#define PI_HEARTBEAT_LOW        0x00000020  // The PI heartbeat is about to expire     (less than 1 second left)
+#define SOME_DEVICES_SUPPRESSED 0x00000040  // Some devices are not allowed to trigger an E-Stop
+
+
+class EStopController : public ROSNode, public EStopDevice {
 
 private:
 
@@ -43,8 +53,7 @@ private:
 
     union OutputArray {
         struct OutputData {
-            int32_t estop_state;  // 0 = Not triggered, 1 = Triggered, 2 = Inhibited
-            int32_t flags;        // 0 = Automatic E-Stop enabled, 1 = Remote heartbeat received, 2 = PI heartbeat received
+            int32_t estop_flags;  // A bitfield of EStopFlags
             int32_t number_of_tripped_devices;
             int32_t time_since_last_pi_heartbeat;
             int32_t time_since_last_remote_heartbeat;
@@ -156,8 +165,15 @@ public:
         this->estop_status_topic->data_length = sizeof (this->output_data.raw_array) / sizeof (int32_t);
         this->estop_status_topic->data = this->output_data.raw_array;
 
+        this->output_data.data.estop_flags = 0;
+        this->output_data.data.number_of_tripped_devices = 0;
+        this->output_data.data.time_since_last_pi_heartbeat = 0;
+        this->output_data.data.time_since_last_remote_heartbeat = 0;
+
         sprintf(this->tripped_device_name, "NULL");
         sprintf(this->tripped_device_message, "NULL");
+
+        this->add_to_estop_device_list(this);
 
         pinMode(MAIN_CONTACTOR_PIN, OUTPUT);
         digitalWrite(MAIN_CONTACTOR_PIN, HIGH);
@@ -200,6 +216,8 @@ public:
     void trigger_estop(boolean automatic = false, boolean remote = false);
 
     void resume();
+
+    TRIP_LEVEL tripped(char* name, char* message) override;
 
 };
 

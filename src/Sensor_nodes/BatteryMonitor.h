@@ -38,6 +38,8 @@ private:
 
     uint8_t data_buffer[255] = {0};
 
+    uint32_t last_update = 0;
+
     void battery_callback(const std_msgs::Int32MultiArray& msg){
 
     }
@@ -80,6 +82,7 @@ public:
         VE_DIRECT_SERIAL.write("V\r\n");
         sprintf(this->debug_string, "Battery Data: %d", VE_DIRECT_SERIAL.available());
         while (VE_DIRECT_SERIAL.available() && micros() - parse_start < 1000) {
+            last_update = millis();
             this->battery_interface->rxData(VE_DIRECT_SERIAL.read());
         }
 
@@ -94,10 +97,13 @@ public:
         this->node_handle = node_handle;
     }
 
-    boolean tripped(char* tripped_device_name, char* tripped_device_message) override {
-        sprintf(tripped_device_name, "Battery Monitor");
-        sprintf(tripped_device_message, "No VE.Direct Data");
-        return true;
+    EStopDevice::TRIP_LEVEL tripped(char* tripped_device_name, char* tripped_device_message) override {
+        if (millis() - last_update > 1000) {
+            sprintf(tripped_device_name, "Battery Monitor");
+            sprintf(tripped_device_message, "No VE.Direct Data");
+            return EStopController::TRIP_LEVEL::FAULT;
+        }
+        return EStopDevice::TRIP_LEVEL::NO_FAULT;
     }
 };
 

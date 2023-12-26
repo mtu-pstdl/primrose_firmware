@@ -110,24 +110,24 @@ void IMU::publish() {
 }
 
 
-boolean IMU::tripped(char* tripped_device_name, char* tripped_device_message) {
+EStopDevice::TRIP_LEVEL IMU::tripped(char* tripped_device_name, char* tripped_device_message) {
     DROP_CRUMB();
     char temp[100];
-    bool tripped = false;
+    EStopDevice::TRIP_LEVEL tripped = NO_FAULT;
     sprintf(tripped_device_name, "IMU");
+    if (imu.wasReset()) {
+        sprintf(temp, "Reset-");
+        strcat(tripped_device_message, temp);
+        tripped = WARNING;
+    }
     if (!this->config_success) {
         strcat(tripped_device_message, this->failure_message);
-        tripped = true;
+        tripped = FAULT;
     }
     if (this->last_report_time < millis() - 1000) {
         sprintf(temp, "Not Reporting-");
         strcat(tripped_device_message, temp);
-        tripped = true;
-    }
-    if (imu.wasReset()) {
-        sprintf(temp, "Reset-");
-        strcat(tripped_device_message, temp);
-        tripped = true;
+        tripped = FAULT;
     }
     // Remove the trailing dash if there is one
     if (tripped) tripped_device_message[strlen(tripped_device_message) - 1] = '\0';
