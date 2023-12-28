@@ -62,7 +62,7 @@ public:
         high_temperature_warn    = 0x0800,
         m1_homing                = 0x1000,
         m2_homing                = 0x2000
-    };
+    } __attribute__((unused));
 
     enum control_modes {
         E_STOPPED  = 0,

@@ -8,7 +8,7 @@
 Adafruit_BNO08x imu(RST_PIN);
 sh2_SensorValue_t sensor_value;
 volatile uint32_t interrupt_count = 0;
-volatile uint32_t message_count = 0;
+volatile uint32_t last_interrupt_time = 0;
 
 void IMU::initialize(){
     DROP_CRUMB();
@@ -126,6 +126,11 @@ EStopDevice::TRIP_LEVEL IMU::tripped(char* tripped_device_name, char* tripped_de
         strcat(tripped_device_message, this->failure_message);
         tripped = FAULT;
     }
+    if (last_interrupt_time < millis() - 1000) {
+        sprintf(temp, "No Interrupts-");
+        strcat(tripped_device_message, temp);
+        tripped = FAULT;
+    }
     if (this->last_report_time < millis() - 1000) {
         sprintf(temp, "Not Reporting-");
         strcat(tripped_device_message, temp);
@@ -141,6 +146,7 @@ void IMU::irq_handler() {
 //    noInterrupts();
     DROP_CRUMB();
     interrupt_count++;
+    last_interrupt_time = millis();
     // Re-enable interrupts
 //    interrupts();
 }

@@ -23,7 +23,7 @@
 #define HEARTBEAT_INTERVAL 4000  // 4 seconds
 #define STATUS_MESSAGE_LENGTH 800
 
-// EStopFlags
+// EStopFlags is a bitfield of the current state of the E-Stop system
 #define ESTOP_TRIGGERED         0x00000001  // An E-Stop has been triggered
 #define AUTO_ESTOP_INHIBITED    0x00000002  // Automatic E-Stops are inhibited (e.g. An E-Stop is being cleared)
 #define AUTO_ESTOP_ENABLED      0x00000004  // Automatic E-Stops are enabled (Can be enabled and inhibited at the same time)
@@ -32,6 +32,10 @@
 #define PI_HEARTBEAT_LOW        0x00000020  // The PI heartbeat is about to expire     (less than 1 second left)
 #define SOME_DEVICES_SUPPRESSED 0x00000040  // Some devices are not allowed to trigger an E-Stop
 
+// Prefix characters for the E-Stop message (wip)
+#define TRIGGERING_FAULT '-'
+#define SUPPRESSED_FAULT '*'
+#define WARNING_MESSAGE  '!'
 
 class EStopController : public ROSNode, public EStopDevice {
 
@@ -53,7 +57,7 @@ private:
 
     union OutputArray {
         struct OutputData {
-            int32_t estop_flags;  // A bitfield of EStopFlags
+            int32_t estop_flags;                        // A bitfield of EStopFlags
             int32_t number_of_tripped_devices;
             int32_t time_since_last_pi_heartbeat;
             int32_t time_since_last_remote_heartbeat;
