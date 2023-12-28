@@ -30,26 +30,29 @@ private:
         SET_DUTY_CYCLE = 2,
     };
 
+    /**
+     * ActuatorsROS::OutputArray is a named union for storing the output data into the Int32MultiArray message
+     */
     union OutputArray {
         struct OutputData {
-            int32_t actuator_id = 0;
-            int32_t m1_position = 0;
-            int32_t m1_velocity = 0;
-            int32_t m2_position = 0;
-            int32_t m2_velocity = 0;
-            int32_t m1_duty_cycle = 0;
-            int32_t m2_duty_cycle = 0;
-            int32_t m1_target_position = 0;
-            int32_t m2_target_position = 0;
-            int32_t m1_control_mode = 0;
-            int32_t m2_control_mode = 0;
-            int32_t m1_current = 0;
-            int32_t m2_current = 0;
-            int32_t m1_fault_flags = 0;
-            int32_t m2_fault_flags = 0;
-            int32_t main_battery_voltage = 0;
-            int32_t logic_battery_voltage = 0;
-            int32_t controller_temperature = 0;
+            int32_t actuator_id = 0;             // The serial ID of the actuator (static)
+            int32_t m1_position = 0;             // Fixed point, x100 (unit: unknown)
+            int32_t m1_velocity = 0;             // Fixed point, x100 (unit: unknown)
+            int32_t m2_position = 0;             // Fixed point, x100 (unit: ticks)
+            int32_t m2_velocity = 0;             // Fixed point, x100 (unit: ticks/s)
+            int32_t m1_duty_cycle = 0;           // -100 - 100 (unit: %)
+            int32_t m2_duty_cycle = 0;           // -100 - 100 (unit: %)
+            int32_t m1_target_position = 0;      // Fixed point, x100 (unit: unknown)
+            int32_t m2_target_position = 0;      // Fixed point, x100 (unit: ticks)
+            int32_t m1_control_mode = 0;         // ActuatorUnit::control_modes
+            int32_t m2_control_mode = 0;         // ActuatorUnit::control_modes
+            int32_t m1_current = 0;              // Fixed point, x100 (unit: Amps)
+            int32_t m2_current = 0;              // Fixed point, x100 (unit: Amps)
+            int32_t m1_fault_flags = 0;          // ActuatorUnit::fault_flags bitmask
+            int32_t m2_fault_flags = 0;          // ActuatorUnit::fault_flags bitmask
+            int32_t main_battery_voltage = 0;    // Fixed point, x100 (unit: Volts)
+            int32_t logic_battery_voltage = 0;   // Fixed point, x100 (unit: Volts)
+            int32_t controller_temperature = 0;  // Fixed point, x100 (unit: Celsius)
             int32_t reserved[2] = {0, 0};  // Reserved for future use
         } data;
         int32_t raw_array[20];  // The raw array of data to be sent over the serial bus
