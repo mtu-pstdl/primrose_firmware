@@ -36,23 +36,23 @@ private:
      */
     union OutputArray {
         struct OutputData {
-            int32_t can_id = 0;
-            int32_t pos_estimate = 0;
-            int32_t vel_estimate = 0;
-            int32_t current_setpoint = 0;
-            int32_t control_mode = 0;
-            int32_t axis_state = 0;
-            int32_t axis_error = 0;
-            int32_t active_errors = 0;
-            int32_t disarm_reason = 0;
-            int32_t procedure_result = 0;
-            int32_t torque_estimate = 0;
-            int32_t vbus_voltage = 0;
-            int32_t vbus_current = 0;
-            int32_t odometer_distance = 0;
-            int32_t odometer_power = 0;
-            int32_t iq_measured = 0;
-            int32_t iq_setpoint = 0;
+            int32_t can_id = 0;            // The CAN ID of the ODrive (static)
+            int32_t pos_estimate = 0;      // Fixed point, x100 (unit: turns)
+            int32_t vel_estimate = 0;      // Fixed point, x100 (unit: turns/s)
+            int32_t current_setpoint = 0;  // Fixed point, x100 (unit: ControlMode dependent)
+            int32_t control_mode = 0;      // odrive_constants::control_modes
+            int32_t axis_state = 0;        // odrive_constants::axis_states
+            int32_t axis_error = 0;        // AXIS_ERRORS bitmask
+            int32_t active_errors = 0;     // AXIS_ERRORS bitmask
+            int32_t disarm_reason = 0;     // AXIS_ERRORS bitmask
+            int32_t procedure_result = 0;  // odrive_constants::procedure_results
+            int32_t torque_estimate = 0;   // Fixed point, x100 (unit: Nm)
+            int32_t vbus_voltage = 0;      // Fixed point, x100 (unit: V)
+            int32_t vbus_current = 0;      // Fixed point, x100 (unit: A)
+            int32_t odometer_distance = 0; // Fixed point, x100 (unit: kTurns)
+            int32_t odometer_power = 0;    // Fixed point, x100 (unit: kW)
+            int32_t iq_measured = 0;       // Fixed point, x100 (unit: A)
+            int32_t iq_setpoint = 0;       // Fixed point, x100 (unit: A)
             int32_t reserved[3] = {0, 0, 0};  // Reserved for future use
         } data;
         int32_t raw_array[20]{};  // The raw array of data to be sent over the serial bus
@@ -62,8 +62,8 @@ private:
         E_STOP = 0,            // 0 Arguments
         DISARM = 1,            // 0 Arguments
         CLEAR_ERRORS = 2,      // 0 Argument
-        SET_CLOSED_LOOP = 3,   // 2 Argument  (control_mode, input_mode)
-        SET_POINT = 4,         // 1 Argument  (setpoint)
+        SET_CLOSED_LOOP = 3,   // 2 Arguments  (control_mode, input_mode)
+        SET_POINT = 4,         // 1 Argument   (setpoint)
         CALIBRATE = 5,         // 0 Arguments
     };
 
@@ -80,7 +80,7 @@ private:
                     int32_t input_mode;
                 } set_closed_loop;
                 int32_t set_point;
-            } arguments;
+            } args;
         } data;
         int32_t raw_array[sizeof (InputData) / sizeof (int32_t)];
     } input_data = {};

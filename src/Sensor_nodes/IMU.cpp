@@ -7,6 +7,8 @@
 
 Adafruit_BNO08x imu(RST_PIN);
 sh2_SensorValue_t sensor_value;
+volatile uint32_t interrupt_count = 0;
+volatile uint32_t message_count = 0;
 
 void IMU::initialize(){
     DROP_CRUMB();
@@ -73,7 +75,9 @@ void IMU::update() {
         DROP_CRUMB_VALUE('RST ', breadcrumb_type::CHAR4);
 //        this->initialize();
     }
-    char temp[100]{};
+    // Display the interrupt count
+    this->imu_msg->header.frame_id = log_buffer;
+    sprintf(log_buffer, "Interrupt count: %lu", interrupt_count);
     if (!imu.getSensorEvent(&sensor_value)) return;
         this->imu_msg->header.stamp = this->node_handle->now();
         last_report_time = millis();
@@ -100,8 +104,6 @@ void IMU::update() {
             case SH2_TEMPERATURE:
                 this->imu_msg->orientation_covariance[0] = *(float*) &sensor_value.un.temperature;
                 break;
-            default:
-                sprintf(temp, "Message data: 0x%x", sensor_value.sensorId);
         }
 //    this->imu_msg->header.frame_id = temp;
 }
@@ -132,4 +134,13 @@ EStopDevice::TRIP_LEVEL IMU::tripped(char* tripped_device_name, char* tripped_de
     // Remove the trailing dash if there is one
     if (tripped) tripped_device_message[strlen(tripped_device_message) - 1] = '\0';
     return tripped;
+}
+
+void IMU::irq_handler() {
+    // Disable interrupts
+//    noInterrupts();
+    DROP_CRUMB();
+    interrupt_count++;
+    // Re-enable interrupts
+//    interrupts();
 }

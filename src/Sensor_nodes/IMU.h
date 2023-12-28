@@ -21,6 +21,9 @@ class IMU: public ROSNode, public EStopDevice {
 
 private:
 
+    // Method that gets called when the IRQ pin goes low
+    static void irq_handler();
+
     sensor_msgs::Imu* imu_msg;
 
     char log_buffer[256]{}; // For sending ros log messages
@@ -37,6 +40,8 @@ public:
 
     explicit IMU(sensor_msgs::Imu* imu_msg){
         this->imu_msg = imu_msg;
+        // Attach the interrupt handler
+        attachInterrupt(IRQ_PIN, irq_handler, FALLING);
         this->initialize();
     }
 
