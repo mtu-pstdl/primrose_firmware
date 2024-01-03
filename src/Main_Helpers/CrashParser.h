@@ -218,6 +218,25 @@ public:
         memset(crash_info, 0, sizeof(fault_info_struct));
     }
 
+    void generate_crumb_dump(){
+        if (!has_breadcrumbs()) {
+            sprintf(current_line->line, "No breadcrumbs available");
+            return;
+        }
+        sprintf(current_line->line, "----- BREADCRUMBS %lu/%d -----", get_breadcrumb_count(), 16);
+        next_line();
+        breadcrumb *crumb = get_breadcrumb();
+        while (crumb != nullptr) {
+            char buffer[100];
+            print_breadcrumb(crumb, buffer);
+            sprintf(current_line->line, "%s", buffer);
+            next_line();
+            crumb = get_breadcrumb();
+        }
+        sprintf(current_line->line, "----- END OF BREADCRUMBS -----");
+        next_line();
+    }
+
     /**
      * @brief Get the next line of the crash dump
      * @note  Each call of this function will remove access to the previous line of the crash dump

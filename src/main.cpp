@@ -303,18 +303,30 @@ void loop() {
             switch (startup_type) {
                 case COLD_START:
                     node_handle.logwarn("MCIU EXITED NORMALLY, COLD_START");
+                    loop_count = 0;
                     safe_mode_flag = NORMAL_BOOT;
                     break;
                 case WARM_START:
                     node_handle.logwarn("MCIU EXITED NORMALLY, WARM_START");
+                    loop_count = 0;
                     safe_mode_flag = NORMAL_BOOT;
                     break;
                 case WATCHDOG_VIOLATION:
                     node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: WATCHDOG_VIOLATION");
+                    parser.generate_crumb_dump();
+                    while ((line = parser.crash_dump()) != nullptr) {
+                        node_handle.logerror(line);
+                    }
+                    loop_count = 0;
                     safe_mode_flag = NORMAL_BOOT;
                     break;
                 case MEMORY_EXHAUSTION:
                     node_handle.logerror("MCIU EXITED ABNORMALLY - CAUSE: MEMORY_EXHAUSTION");
+                    parser.generate_crumb_dump();
+                    while ((line = parser.crash_dump()) != nullptr) {
+                        node_handle.logerror(line);
+                    }
+                    loop_count = 0;
                     safe_mode_flag = NORMAL_BOOT;
                     break;
                 case SYSTEM_PANIC:
