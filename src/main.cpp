@@ -31,11 +31,11 @@
 #include "Watchdog_t4.h"
 #include <EEPROM.h>
 #include "Main_Helpers/build_info.h"
-#include "Main_Helpers/initialize_objects.h"
 #include "Main_Helpers/utility_functions.h"
 #include "Main_Helpers/BreadCrumbs.h"
 #include "Main_Helpers/CrashParser.h"
 #include "Misc/SystemMonitor.h"
+#include "Main_Helpers/initialize_objects.h"
 
 // If a loop takes longer than MAX_LOOP_TIME then the whole system will be reset so this is a hard limit
 #define MAX_LOOP_TIME 1 // 1 second
@@ -63,13 +63,13 @@ LoadCells* load_cells[2];
 BatteryMonitor* battery_monitor;
 IMU* imu_class;
 
-ROSNode* ros_nodes[24];
-
-Odometers odometers;
-
 EStopController* e_stop_controller;
 HopperDoor* hopper_door;
 AccessoryPower* accessory_power;
+
+ROSNode* ros_nodes[24];
+
+Odometers odometers;
 
 ADAU_Tester* adauTester;
 
@@ -165,30 +165,7 @@ void setup() {
 
     allocate_hardware_objects();  // Allocate memory for all the hardware objects
 
-    load_cells[0] = new LoadCells(0x05, "Suspen",
-                                  static_cast<std_msgs::Int32MultiArray*>(load_cell_topics[0]->message));
-    load_cells[1] = new LoadCells(0x06, "Hopper",
-                                  static_cast<std_msgs::Int32MultiArray*>(load_cell_topics[1]->message));
-
-    e_stop_controller = new EStopController(
-            static_cast<std_msgs::String*>(estop_topic.message),
-            static_cast<std_msgs::Int32MultiArray*>(all_topics[ESTOP_TOPIC_NUM]->message));
-    hopper_door = new HopperDoor();
-
-    battery_monitor = new BatteryMonitor(e_stop_controller,
-                                         static_cast<sensor_msgs::BatteryState*>(all_topics[BATTERY_TOPIC_NUM]->message));
-    imu_class = new IMU(static_cast<sensor_msgs::Imu*>(all_topics[IMU_TOPIC_NUM]->message));
-
-    accessory_power = new AccessoryPower();
-
-    e_stop_controller->add_estop_device(&ADAU_BUS_INTERFACE);
-    for (auto & odrive : odrives) e_stop_controller->add_estop_device(odrive);
-    for (auto & actuator : actuators) e_stop_controller->add_estop_device(actuator);
-    for (auto & load_cell : load_cells) e_stop_controller->add_estop_device(load_cell);
-    e_stop_controller->add_estop_device(battery_monitor);
-    e_stop_controller->add_estop_device(imu_class);
-
-//    e_stop_controller->add_estop_device(system_monitor);
+    attach_estop_devices();  // Attach all the estop devices to the estop controller
 
     // Add all ros nodes to the ros node array
     int ros_node_count = 0;
@@ -279,8 +256,7 @@ void loop() {
         test_output_pub.publish(&test_output_msg);
 
         while (ACTUATOR_BUS_INTERFACE.spin() && micros() - loop_start < 45000) {
-//            yield();  // Yield to other tasks
-            imu_class->update();
+            // Can put other busy waiting code here otherwise leave empty
         }
 
         DROP_CRUMB();

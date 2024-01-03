@@ -23,11 +23,23 @@ uint8_t actuators_ros_memory[sizeof(ActuatorsROS) * num_actuators];  // NOLINT
 extern ActuatorsROS* actuators_ros[num_actuators];  // NOLINT
 extern ActuatorUnit* actuators[num_actuators];      // NOLINT
 
+// Misc objects
+
+extern LoadCells* load_cells[2];            // NOLINT
+extern BatteryMonitor* battery_monitor;     // NOLINT
+extern IMU* imu_class;                      // NOLINT
+extern EStopController* e_stop_controller;  // NOLINT
+extern AccessoryPower* accessory_power;     // NOLINT
+extern HopperDoor* hopper_door;             // NOLINT
+
 extern Odometers odometers;          // NOLINT
 extern ros::NodeHandle node_handle;  // NOLINT
 
 extern FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;  // NOLINT
 
+/**
+ * Initializes the odrive classes and the odrive_ros classes in memory already allocated by the linker
+ */
 void allocate_odrives(){
 
     for (int i = 0; i < 7; i++) {
@@ -62,6 +74,10 @@ void allocate_odrives(){
                       "Hopper");
 }
 
+/**
+ * Initializes the actuator classes and the actuator_ros classes in memory already allocated by the linker
+ * @note Uses placement new, but some sensor objects are not allocated at until runtime
+ */
 void allocate_actuators(){
 
     uint8_t actuator_num = 0;  // Keep track of position in the actuators array
@@ -106,9 +122,40 @@ void allocate_actuators(){
                          "Rear_Right");
 }
 
+void allocate_misc_objects(){
+    load_cells[0] = new LoadCells(0x05, "Suspen",
+                                  static_cast<std_msgs::Int32MultiArray*>(load_cell_topics[0]->message));
+    load_cells[1] = new LoadCells(0x06, "Hopper",
+                                  static_cast<std_msgs::Int32MultiArray*>(load_cell_topics[1]->message));
+
+    e_stop_controller = new EStopController(
+            static_cast<std_msgs::String*>(estop_topic.message),
+            static_cast<std_msgs::Int32MultiArray*>(all_topics[ESTOP_TOPIC_NUM]->message));
+    battery_monitor = new BatteryMonitor(e_stop_controller,
+                                         static_cast<sensor_msgs::BatteryState*>(all_topics[BATTERY_TOPIC_NUM]->message));
+    imu_class = new IMU(static_cast<sensor_msgs::Imu*>(all_topics[IMU_TOPIC_NUM]->message));
+    hopper_door = new HopperDoor();
+    accessory_power = new AccessoryPower();
+}
+
+void attach_estop_devices(){
+    e_stop_controller->add_estop_device(&ADAU_BUS_INTERFACE);
+    for (auto & odrive : odrives) e_stop_controller->add_estop_device(odrive);
+    for (auto & actuator : actuators) e_stop_controller->add_estop_device(actuator);
+    for (auto & load_cell : load_cells) e_stop_controller->add_estop_device(load_cell);
+    e_stop_controller->add_estop_device(battery_monitor);
+    e_stop_controller->add_estop_device(imu_class);
+}
+
+/**
+ * Initializes all of the objects that are allocated at compile time and allocates memory for the objects that are
+ * allocated at runtime.
+ * @note This function must be called after the ROS node has been initialized and before the main loop starts
+ */
 void allocate_hardware_objects(){
     allocate_odrives();
     allocate_actuators();
+    allocate_misc_objects();
 }
 
 #endif //PRIMROSE_MCIU_INITIALIZE_OBJECTS_H
