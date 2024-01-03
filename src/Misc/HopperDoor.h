@@ -15,6 +15,10 @@
 #define IN1_PIN 3
 #define IN2_PIN 4
 
+/**
+ * The HopperDoor class takes data from the Hopper Door and publishes it to the ROS network.
+ * @deprecated The hopper door is expected to be controlled by an actuator controller in the future.
+ */
 class HopperDoor : public ROSNode, public EStopDevice {
 
 private:

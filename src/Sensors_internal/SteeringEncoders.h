@@ -24,9 +24,9 @@
 #define MAX_INCREMENT_JITTER    2000
 
 /**
- * @brief This class is used to interface with the steering encoders
- * @details The steering encoders are AMT22 absolute encoders that are connected to the SPI bus
- * @note This class is a derived class of the PositionSensor class
+ * Interfaces directly with a steering encoder and provides the position and velocity of the steering encoder
+ * @details The steering encoders are AMT22 absolute encoders that are connected to SPI bus 1
+ * @note This class is a derived class of the PositionSensor class and should be treated as a PositionSensor
  */
 class SteeringEncoders : public PositionSensor {
 

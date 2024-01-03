@@ -24,6 +24,10 @@
 #define UNIT_SCALE 100
 //#define VEL_UNIT_SCALE 10000
 
+/**
+ * The ODriveROS class takes data from the ODrive and publishes it to the ROS network. It also takes
+ * data from the ROS network and sends it to the ODrive.
+ */
 class ODriveROS : public ROSNode {
 
     ODrivePro *odrive = nullptr;

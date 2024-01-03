@@ -18,7 +18,10 @@
 
 #include <utility>
 
-
+/**
+ * The LoadCell takes data from the ADAU load cell sensor and publishes it to the ROS network.
+ * @note LoadCells are E-Stop trip devices and must be attached to an EStopController object.
+ */
 class LoadCells : public ROSNode, public EStopDevice {
 
     std_msgs::Int32MultiArray* output_topic;
@@ -27,7 +30,7 @@ class LoadCells : public ROSNode, public EStopDevice {
 
     union OutputArray {
         struct OutputData {
-            int32_t sensor1;  // Fixed point, x100
+            int32_t sensor1;    // Fixed point, x100
             int32_t sensor2;
             int32_t sensor3;
             int32_t sensor4;

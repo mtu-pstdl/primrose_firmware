@@ -8,13 +8,17 @@
 #include "ADAU_Interfaces/ADAU_Sensor.h"
 #include "PositionSensor.h"
 
+/**
+ * Suspension Encoders are analog linear position sensors and are measured by the ADAU
+ * @note  This class is a wrapper around the ADAU_Sensor class and is meant to be used with the PositionSensor class
+ */
 class SuspensionEncoders : public PositionSensor {
 
 private:
 
     /**
      * @brief The data structure that a analog linear position sensor sends
-     * @note  This is a packed data structure
+     * @note  This is a packed data structure because the ADAU doesn't include padding in its data structures
      */
     #pragma pack(push, 1) // Remove all padding from the data structure to reduce transmission size
     struct data {

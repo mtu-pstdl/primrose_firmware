@@ -18,6 +18,14 @@
 
 #define VBUS_SAMPLE_SIZE 20
 
+
+/**
+ * The ODrivePro class interfaces directly with a particular ODrive on the CAN bus. It is responsible for
+ * keeping track of the state of the ODrive and sending commands to the ODrive.
+ * @note Receiving CAN messages are asynchronous to the main execution loop, they are processed as they arrive.
+ * @note ODrivePro objects are E-Stop trip and action devices and must be attached to an EStopController object.
+ * @warning The ODrivePro's must be running firmware version v0.6.6 no higher and no lower.
+ */
 class ODrivePro: public EStopDevice {
 
 public:

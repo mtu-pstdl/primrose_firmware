@@ -13,6 +13,10 @@
 #define LASER_PIN 2
 #define CAMERA_PIN 1
 
+/**
+ * Controls miscellaneous pins that are used to power accessories.
+ * @deprecated The state of this node is up in the air and its future is uncertain.
+ */
 class AccessoryPower : public ROSNode {
 
     enum accessory_ids {

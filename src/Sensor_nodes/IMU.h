@@ -17,6 +17,12 @@
 #define IRQ_PIN 28
 #define RST_PIN 29
 
+
+/**
+ * The IMU class takes data from the BNO085 IMU sensor and publishes it to the ROS network.
+ *
+ * @note IMUs are E-Stop trip devices and must be attached to an EStopController object.
+ */
 class IMU: public ROSNode, public EStopDevice {
 
 private:

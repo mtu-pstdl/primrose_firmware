@@ -5,14 +5,21 @@
 #ifndef PRIMROSE_MCIU_ESTOPDEVICE_H
 #define PRIMROSE_MCIU_ESTOPDEVICE_H
 
+/**
+ * EStopDevice is an abstract class that provides an interface for all EStop devices to implement
+ * Allowing for the EStopController to check the health of all EStop devices and trigger an EStop if necessary
+ * @note Not all EStop devices have an estop action and may only be used to monitor the health of the device
+ * @note Additionally, not all EStop devices are used to trigger an EStop and may only take action when an EStop is triggered
+ */
 class EStopDevice {
 
 public:
 
+    // Allow for some granularity in the type of action that an EStop device can take
     enum TRIP_LEVEL {
-        NO_FAULT = 0,
-        WARNING = 1,
-        FAULT = 2,
+        NO_FAULT = 0,  // No fault detected
+        WARNING = 1,   // Fault detected, but no EStop required
+        FAULT = 2,     // Fault detected, EStop required
     };
 
     /**

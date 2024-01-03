@@ -1,6 +1,11 @@
 //
 // Created by Jay on 12/10/2022.
 //
+/**
+ * @file odrive_constants.h
+ * Contains all the constants used by the ODrivePro class
+ * @note This file is not meant to be included directly. Instead include ODrivePro.h
+ */
 
 #ifndef TEENSYCANTRANSCEIVER_ODRIVE_CONSTANTS_H
 #define TEENSYCANTRANSCEIVER_ODRIVE_CONSTANTS_H

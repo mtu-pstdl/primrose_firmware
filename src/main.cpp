@@ -1,5 +1,12 @@
 /**
  * @author Jay Sweeney, email: ajsweene@mtu.edu
+ * The MCIU (Motor Controller Interface Unit) is the main controller for the PSTDL PRIMROSE vehicle. It is responsible
+ * for interfacing with all the hardware on the vehicle and providing a ROS interface for the higher level controllers
+ * to use. It is also tasked with keeping the vehicle and those around it by ensuring that all hardware is operating
+ * within safe limits and that the vehicle is being commanded in a safe manner. In the event of an emergency the MCIU
+ * is responsible for bringing the vehicle to a safe stop by commanding all controllers to stop and disengaging the
+ * high voltage power supply.
+ * @note This code is designed to run on a Teensy 4.1 microcontroller using the Arduino framework
  */
 
 #include <Arduino.h>
@@ -105,6 +112,9 @@ enum safe_mode_flags : uint32_t {
     SAFE_MODE_EXIT,         // The system is in safe mode and will exit safe mode on the next boot
 };
 
+/**
+ * @warning The setup function will wait for a ROS Serial connection before returning
+ */
 void setup() {
     save_breadcrumbs(); // Copy the breadcrumbs from the previous boot into a separate buffer
 
@@ -139,7 +149,7 @@ void setup() {
 
     node_handle.getHardware()->setBaud(4000000); // ~4Mbps
     node_handle.setSpinTimeout(100); // 50ms
-    node_handle.initNode();
+    node_handle.initNode();         // Initialize the ROS node (this will block until a connection is made)
     node_handle.requestSyncTime();  // Sync time with ROS master
 //    system_monitor = new SystemMonitor(
 //            static_cast<std_msgs::UInt32MultiArray*>(all_topics[SYSTEM_MONITOR_TOPIC_NUM]->message));
@@ -151,11 +161,11 @@ void setup() {
 
     // Set up the CAN bus
     can1.begin();
-    can1.setBaudRate(500000); // 500kbps
-    can1.onReceive(can_recieve);
+    can1.setBaudRate(500000);       // Set the baud rate to 500kbps
+    can1.onReceive(can_recieve);  // Set the callback function for when a CAN message is received
 
-    can1.enableFIFO();
-    can1.enableFIFOInterrupt();
+    can1.enableFIFO();                   // Enable the FIFO (First In First Out) buffer for the CAN bus
+    can1.enableFIFOInterrupt();          // Allow the CAN bus to trigger an interrupt when a message is received
 
     SPI.begin();
 //    SPI1.begin();
@@ -182,7 +192,6 @@ void setup() {
     node_handle.advertise(*estop_topic.publisher);
     estop_topic.publisher->publish(estop_topic.message);
 
-
     for(ros_topic* topic: all_topics) {
         if (topic == nullptr) continue;
         // Check if the topic's publisher is already in the node handle's PUBLISHER list
@@ -205,6 +214,12 @@ void setup() {
     wdt.begin(config);
 }
 
+/**
+ * Main MCIU Control Loop - Runs at 20Hz
+ * @warning This is a real-time execution loop and all code must be non-blocking (no Delay() or busy waiting)
+ * @warning All memory must be allocated at compile time or in the setup function to prevent memory fragmentation
+ * @note This function is called by the Arduino framework and should not be called manually
+ */
 void loop() {
     uint32_t loop_start = micros(); // Get the time at the start of the loop
     freeram();  // Calculate the amount of space left in the heap

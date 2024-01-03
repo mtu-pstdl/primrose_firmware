@@ -21,6 +21,11 @@
 
 #define VE_DIRECT_SERIAL Serial5
 
+/**
+ * The BatteryMonitor class takes data from the VE.Direct battery monitor and publishes it to the ROS network.
+ *
+ * @note BatteryMonitors are E-Stop trip devices and must be attached to an EStopController object.
+ */
 class BatteryMonitor : public ROSNode, public EStopDevice {
 
 

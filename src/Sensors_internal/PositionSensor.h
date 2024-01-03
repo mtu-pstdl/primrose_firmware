@@ -6,7 +6,8 @@
 #define PRIMROSE_MCIU_POSITIONSENSOR_H
 
 /**
- * @brief Base class for all position sensors
+ * PositionSensor is an abstract class that provides an interface for all position sensors to implement
+ * @details Position sensors provide the position and velocity of a sensor
  * @warning Do not instantiate this class directly. Instead use one of the derived classes
  */
 class PositionSensor {

@@ -37,6 +37,11 @@
 #define SUPPRESSED_FAULT '*'
 #define WARNING_MESSAGE  '!'
 
+/**
+ * The EStopController class is responsible for managing all E-Stop devices and triggering E-Stops.
+ * It also publishes the status of the E-Stop system to the ROS network.
+ * @note There should only be one EStopController object and all EStopDevices should be attached to it.
+ */
 class EStopController : public ROSNode, public EStopDevice {
 
 private:
