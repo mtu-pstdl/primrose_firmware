@@ -89,39 +89,6 @@ void can_recieve(const CAN_message_t &msg) {
     }
 }
 
-
-uint8_t odometer_reset_sequence = 0;
-
-
-/**
- * @brief Callback for the odometer reset subscriber
- * In order to prevent accidental resets of the odometer the user will need to send the values
- * 0x0FF1CE and 0x0DD1CE to the topic /odometer_reset in succession to reset the odometer
- * @param msg
- */
-void odometer_reset_callback(const std_msgs::Int32& msg) {
-    switch (odometer_reset_sequence) {
-        case 0:
-            if (msg.data == 0x0FF1CE) odometer_reset_sequence++;
-            break;
-        case 1:
-            if (msg.data == 0x0DD1CE) {
-                odometer_reset_sequence = 0;
-                for (int i = 0; i < 14; i++){
-                    odometers.reset_odometer(i);
-                }
-//                battery_monitor->reset_data();
-            }
-            break;
-        default:
-            odometer_reset_sequence = 0;
-            break;
-    }
-}
-
-// Setup ros subscriber for odometer reset it is an int32 message
-ros::Subscriber<std_msgs::Int32> odometer_reset_sub("/odometer_reset", odometer_reset_callback);
-
 enum start_flags {
     COLD_START,             // The system was started from a cold boot (power on)
     WARM_START,             // The system was started from a warm boot (reset)
@@ -192,9 +159,6 @@ void setup() {
 
     SPI.begin();
 //    SPI1.begin();
-
-    // Setup the odometer reset subscriber
-    node_handle.subscribe(odometer_reset_sub);
 
     // Setup the test output publisher
     node_handle.advertise(test_output_pub);
@@ -315,7 +279,8 @@ void loop() {
         test_output_pub.publish(&test_output_msg);
 
         while (ACTUATOR_BUS_INTERFACE.spin() && micros() - loop_start < 45000) {
-            yield();  // Yield to other tasks
+//            yield();  // Yield to other tasks
+            imu_class->update();
         }
 
         DROP_CRUMB();
