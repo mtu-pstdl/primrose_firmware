@@ -130,11 +130,16 @@ enum safe_mode_flags : uint32_t {
     SAFE_MODE_EXIT,         // The system is in safe mode and will exit safe mode on the next boot
 };
 
+extern "C" void startup_middle_hook(void);
+
 /**
- * @warning The setup function will wait for a ROS Serial connection before returning
+ * @brief This function is called by the Arduino framework before the setup function is called
+ * Used to setup things that need immediate actions
  */
-void setup() {
+void startup_middle_hook(void) {
     save_breadcrumbs(); // Copy the breadcrumbs from the previous boot into a separate buffer
+    pinMode(MAIN_CONTACTOR_PIN, OUTPUT);
+    digitalWrite(MAIN_CONTACTOR_PIN, HIGH);  // Immediately open the main contactor to initiate an estop
 
     // Check if this is the first boot
     if (first_boot != 0xDEADBEEF) {
@@ -164,14 +169,17 @@ void setup() {
     } else {
         loop_count = 0;
     }
+}
+
+/**
+ * @warning The setup function will wait for a ROS Serial connection before returning
+ */
+void setup() {
 
     node_handle.getHardware()->setBaud(4000000); // ~4Mbps
     node_handle.setSpinTimeout(100); // 50ms
     node_handle.initNode();         // Initialize the ROS node (this will block until a connection is made)
     node_handle.requestSyncTime();  // Sync time with ROS master
-//    system_monitor = new SystemMonitor(
-//            static_cast<std_msgs::UInt32MultiArray*>(all_topics[SYSTEM_MONITOR_TOPIC_NUM]->message));
-
 
     // If we are starting in safe mode exit here to prevent us from encountering the same error again and again
     if (!safe_mode_flag) return;
@@ -191,7 +199,7 @@ void setup() {
     // Setup the test output publisher
     node_handle.advertise(test_output_pub);
 
-    allocate_hardware_objects();  // Allocate memory for all the hardware objects
+    setup_hardware_objects();  // Initialize all the hardware objects and allocate memory for the runtime objects
 
     attach_estop_devices();  // Attach all the estop devices to the estop controller
 
@@ -261,19 +269,19 @@ void loop() {
             odrive->refresh_data();  // Send queries to the ODrives if they have not sent data on their own
         }
 
-        static int starting_actuator = 0;
+        static size_t starting_actuator = 0;
         // Every cycle start with a different actuator to prevent the same actuator from always being the first to update
-        for (int i = 0; i < 4; i++) {
-            uint32_t actuator_index = (i + starting_actuator) % 4;
+        for (int i = 0; i < num_actuators; i++) {
+            uint32_t actuator_index = (i + starting_actuator) % num_actuators;
             if (actuators[actuator_index] == nullptr) continue;
             actuators[actuator_index]->update();
         }
-        starting_actuator = (starting_actuator + 1) % 4;
+        starting_actuator = (starting_actuator + 1) % num_actuators;
 
         if (node_handle.connected()) {
             for (ROSNode *node: ros_nodes) {
-                if (node == nullptr) continue;
-                if (node->dropped_task) continue;
+                if (node == nullptr) continue;     // Skip over nullptrs
+                if (node->dropped_task) continue;  // This node has violated the real-time constraints
                 node->run_update();
             }
         }
@@ -293,21 +301,21 @@ void loop() {
         test_output_pub.publish(&test_output_msg);
 
         while (ACTUATOR_BUS_INTERFACE.spin() && micros() - loop_start < 45000) {
-            // Can put other busy waiting code here otherwise leave empty
+            // Can put other background tasks here if necessary, but they must be non-blocking
         }
 
         DROP_CRUMB();
     }
 
     String log_msg = "";
-    int8_t spin_result = 0;
+    int8_t spin_result;
     char *line;
     spin_result = node_handle.spinOnce(); // 50ms timeout
 
     switch (spin_result) {
         case ros::SPIN_OK:
             break;
-        case ros::SPIN_ERR:  // Always happens once on startup
+        case ros::SPIN_ERR:  // Always happens once on startup. Reason unknown, but it is quite useful
             node_handle.logwarn("BUILD #" BUILD_NUMBER_STR " @ " BUILD_DATE " " BUILD_TIME);
             node_handle.logwarn("BUILD TYPE: " BUILD_TYPE);
             node_handle.logwarn("BUILD GIT HASH: " BUILD_GIT_HASH);

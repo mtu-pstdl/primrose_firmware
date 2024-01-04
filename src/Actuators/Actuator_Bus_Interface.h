@@ -121,10 +121,10 @@ public:
     uint32_t round_trip_time() const;
 
     /**
-    * Sendsd messages to the actuators from the serial_message queue
-    * @param finalSpin - True if this is the last time the spin function will be called
-    * @return True if there are more messages to send
-    */
+     * @brief This method should be called in the main loop of the program to process messages
+     * @details This message sends messages to the actuators and then checks for responses
+     * @return True messages remain in the queue
+     */
     boolean spin();
 
 };

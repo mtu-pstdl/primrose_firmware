@@ -156,7 +156,7 @@ void attach_estop_devices(){
  * allocated at runtime.
  * @note This function must be called after the ROS node has been initialized and before the main loop starts
  */
-void allocate_hardware_objects(){
+void setup_hardware_objects(){
     allocate_odrives();
     allocate_actuators();
     allocate_misc_objects();

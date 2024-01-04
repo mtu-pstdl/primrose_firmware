@@ -16,7 +16,7 @@
 #include "Main_Helpers/BreadCrumbs.h"
 #include <TimeLib.h>
 
-#define MAIN_CONTACTOR_PIN 0
+#define MAIN_CONTACTOR_PIN 5
 
 // The time in milliseconds to wait after an estop is triggered before the main contactor is opened (to reduce back EMF)
 #define ESTOP_CONTACTOR_DELAY 2500  // 2.5 seconds
