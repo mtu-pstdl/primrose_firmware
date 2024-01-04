@@ -202,8 +202,6 @@ public:
 
     void update() override;
 
-    void publish() override {}
-
     void subscribe(ros::NodeHandle *node_handle) override {
         node_handle->subscribe(estop_sub);
     }

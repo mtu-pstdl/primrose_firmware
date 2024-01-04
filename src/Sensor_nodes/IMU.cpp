@@ -108,10 +108,6 @@ void IMU::update() {
 //    this->imu_msg->header.frame_id = temp;
 }
 
-void IMU::publish() {
-}
-
-
 EStopDevice::TRIP_LEVEL IMU::tripped(char* tripped_device_name, char* tripped_device_message) {
     DROP_CRUMB();
     char temp[100];

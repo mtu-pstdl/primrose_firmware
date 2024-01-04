@@ -4,12 +4,6 @@
 
 #include "LoadCells.h"
 
-
-void LoadCells::publish() {
-
-}
-
-
 void LoadCells::control_callback(const std_msgs::Int32MultiArray &msg) {
 
 }

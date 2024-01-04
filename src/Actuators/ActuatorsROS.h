@@ -110,8 +110,6 @@ public:
 
     void update() override;
 
-    void publish() override;
-
     static int32_t to_fixed_point(float value, float scale);
 };
 

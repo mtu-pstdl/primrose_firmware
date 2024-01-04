@@ -65,9 +65,6 @@ void ActuatorsROS::update() {
     this->output_data.data.controller_temperature = this->to_fixed_point(this->actuator->get_temperature(), UNIT_SCALE);
 }
 
-void ActuatorsROS::publish() {
-}
-
 void ActuatorsROS::subscribe(ros::NodeHandle *node_handle) {
     node_handle->subscribe(this->command_sub);
 }

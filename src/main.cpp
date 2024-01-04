@@ -1,12 +1,27 @@
 /**
  * @author Jay Sweeney, email: ajsweene@mtu.edu
- * The MCIU (Motor Controller Interface Unit) is the main controller for the PSTDL PRIMROSE vehicle. It is responsible
+ * The MCIU (Motor Controller Interface Unit) is the main controller for the PSTDL's PRIMROSE vehicle. It is responsible
  * for interfacing with all the hardware on the vehicle and providing a ROS interface for the higher level controllers
  * to use. It is also tasked with keeping the vehicle and those around it by ensuring that all hardware is operating
  * within safe limits and that the vehicle is being commanded in a safe manner. In the event of an emergency the MCIU
  * is responsible for bringing the vehicle to a safe stop by commanding all controllers to stop and disengaging the
  * high voltage power supply.
+ * Utilizes the following hardware interfaces:
+ * - CAN 1
+ * - SPI 1 and 2
+ * - UART 1, 2, 4
+ * - I2C 1
+ * Connected hardware:
+ * - 1x Analog Data Acquisition Unit (ADAU, Additional Teensy 4.1 running in tandem with the MCIU)
+ * - 6x ODrivePro running firmware v0.6.6
+ * - 4x RoboClaw 2x60A motor controllers
+ * - 2x 4 channel ADCs used for reading load cells (connected to the ADAU)
+ * - 1x 4 channel ADC used for reading the linear encoders on the suspension (connected to the ADAU)
+ * - 4x AMT22 absolute encoders used for reading the steering angle of each wheel
+ * - 1x VE.Direct smart shunt for monitoring the battery
+ * - 1x BNO055 IMU for measuring the orientation of the vehicle
  * @note This code is designed to run on a Teensy 4.1 microcontroller using the Arduino framework
+ * @date Comment last updated: 2024/01/04 by Jay Sweeney
  */
 
 #include <Arduino.h>
@@ -54,9 +69,11 @@ uint32_t first_boot __attribute__((section(".noinit")));
 uint32_t loop_count __attribute__((section(".noinit")));
 
 ros::NodeHandle node_handle;
+
+// CAN settings: 500kbps, 64 byte RX and TX buffers
 FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
 
-// Remove for release build
+// TODO: Remove this for release build
 std_msgs::String test_output_msg;
 ros::Publisher test_output_pub("/test_output", &test_output_msg);
 
@@ -80,12 +97,10 @@ ROSNode* ros_nodes[24];
 
 Odometers odometers;
 
-// Remove for release build
+// TODO: Remove this for release build
 ADAU_Tester* adauTester;
 
 CrashParser parser;
-
-int starting_actuator = 0;
 
 
 void can_recieve(const CAN_message_t &msg) {
@@ -220,7 +235,7 @@ void setup() {
 }
 
 /**
- * Main MCIU Control Loop - Runs at 20Hz - Tolerance: 13Hz - 20Hz - RTCS Critical
+ * Main MCIU Control Loop - Runs at 20Hz - RTCS Critical Section
  * @warning This is a real-time execution loop and all code must be non-blocking (no Delay() or busy waiting)
  * @warning All memory must be allocated at compile time or in the setup function to prevent memory fragmentation
  * @note This function is called by the Arduino framework and should not be called manually
@@ -246,6 +261,7 @@ void loop() {
             odrive->refresh_data();  // Send queries to the ODrives if they have not sent data on their own
         }
 
+        static int starting_actuator = 0;
         // Every cycle start with a different actuator to prevent the same actuator from always being the first to update
         for (int i = 0; i < 4; i++) {
             uint32_t actuator_index = (i + starting_actuator) % 4;
@@ -255,22 +271,10 @@ void loop() {
         starting_actuator = (starting_actuator + 1) % 4;
 
         if (node_handle.connected()) {
-            static uint32_t execution_time = 0;
             for (ROSNode *node: ros_nodes) {
                 if (node == nullptr) continue;
                 if (node->dropped_task) continue;
-                execution_time = micros();
-                node->update();
-                execution_time = micros() - execution_time;
-                if (execution_time > node->deadline) {  // Check if this node took longer than its deadline
-                    node->deadline_misses++;
-                    if (node->deadline_misses > node->max_deadline_misses) {
-                        node->dropped_task = true;
-                        node->deadline_misses = 0;
-                    }
-                } else {
-                    node->deadline_misses = 0;
-                }
+                node->run_update();
             }
         }
 
@@ -380,9 +384,9 @@ void loop() {
         delayMicroseconds(50000 - execution_time);
     }
     uint32_t loop_time = micros() - loop_start;
-    if (loop_time > 75000) { // Timing constraints violated
-        // TODO: Add action to take when timing constraints are violated
-    }
+
+    // If the system monitor determines that the timing constraints have been violated then it will command
+    // an emergency stop but will not reboot the system
     system_monitor->update_loop_info(execution_time, loop_time);  // Update the system monitor with the loop time
 
     wdt.feed();  // Feed the watchdog timer to prevent a reset

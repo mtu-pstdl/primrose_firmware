@@ -77,8 +77,6 @@ public:
 
     }
 
-    void publish() override;
-
     void subscribe(ros::NodeHandle *node_handle) override {
         node_handle->subscribe(command_sub);
     }
