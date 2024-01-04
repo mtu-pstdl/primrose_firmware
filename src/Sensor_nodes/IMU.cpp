@@ -117,6 +117,11 @@ EStopDevice::TRIP_LEVEL IMU::tripped(char* tripped_device_name, char* tripped_de
     char temp[100];
     EStopDevice::TRIP_LEVEL tripped = NO_FAULT;
     sprintf(tripped_device_name, "IMU");
+    if (this->dropped_task) {
+        sprintf(temp, "IMU TASK DROPPED: VIOLATED RTCS CONSTRAINTS");
+        strcat(tripped_device_message, temp);
+        return FAULT;
+    }
     if (imu.wasReset()) {
         sprintf(temp, "Reset-");
         strcat(tripped_device_message, temp);
@@ -136,6 +141,7 @@ EStopDevice::TRIP_LEVEL IMU::tripped(char* tripped_device_name, char* tripped_de
         strcat(tripped_device_message, temp);
         tripped = FAULT;
     }
+
     // Remove the trailing dash if there is one
     if (tripped) tripped_device_message[strlen(tripped_device_message) - 1] = '\0';
     return tripped;

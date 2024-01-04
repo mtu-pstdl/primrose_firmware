@@ -255,10 +255,22 @@ void loop() {
         starting_actuator = (starting_actuator + 1) % 4;
 
         if (node_handle.connected()) {
+            static uint32_t execution_time = 0;
             for (ROSNode *node: ros_nodes) {
                 if (node == nullptr) continue;
+                if (node->dropped_task) continue;
+                execution_time = micros();
                 node->update();
-                node->publish();
+                execution_time = micros() - execution_time;
+                if (execution_time > node->deadline) {  // Check if this node took longer than its deadline
+                    node->deadline_misses++;
+                    if (node->deadline_misses > node->max_deadline_misses) {
+                        node->dropped_task = true;
+                        node->deadline_misses = 0;
+                    }
+                } else {
+                    node->deadline_misses = 0;
+                }
             }
         }
 

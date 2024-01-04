@@ -21,7 +21,7 @@
 // The time in milliseconds to wait after an estop is triggered before the main contactor is opened (to reduce back EMF)
 #define ESTOP_CONTACTOR_DELAY 2500  // 2.5 seconds
 #define HEARTBEAT_INTERVAL 4000  // 4 seconds
-#define STATUS_MESSAGE_LENGTH 800
+#define STATUS_MESSAGE_LENGTH 900
 
 // EStopFlags is a bitfield of the current state of the E-Stop system
 #define ESTOP_TRIGGERED         0x00000001  // An E-Stop has been triggered
