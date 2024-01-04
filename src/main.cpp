@@ -56,6 +56,7 @@ uint32_t loop_count __attribute__((section(".noinit")));
 ros::NodeHandle node_handle;
 FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;
 
+// Remove for release build
 std_msgs::String test_output_msg;
 ros::Publisher test_output_pub("/test_output", &test_output_msg);
 
@@ -73,11 +74,13 @@ IMU* imu_class;
 EStopController* e_stop_controller;
 HopperDoor* hopper_door;
 AccessoryPower* accessory_power;
+SystemMonitor* system_monitor;
 
 ROSNode* ros_nodes[24];
 
 Odometers odometers;
 
+// Remove for release build
 ADAU_Tester* adauTester;
 
 CrashParser parser;
@@ -187,7 +190,7 @@ void setup() {
     ros_nodes[ros_node_count++] = battery_monitor;
     ros_nodes[ros_node_count++] = accessory_power;
     ros_nodes[ros_node_count++] = imu_class;
-//    ros_nodes[ros_node_count++] = system_monitor;
+    ros_nodes[ros_node_count++] = system_monitor;
 
     node_handle.advertise(*estop_topic.publisher);
     estop_topic.publisher->publish(estop_topic.message);
@@ -207,15 +210,17 @@ void setup() {
 
     test_output_msg.data = battery_monitor->debug_string;
 
+    // The watchdog timers primary job is to reset the system if it somehow gets itself stuck into an infinite loop
+    // It does not enforce the 20Hz loop time
     WDT_timings_t config;
-    config.trigger = MAX_LOOP_TIME;
+    config.trigger = MAX_LOOP_TIME; // 1 second
     config.timeout = 5;
     config.callback = watchdog_violation;
     wdt.begin(config);
 }
 
 /**
- * Main MCIU Control Loop - Runs at 20Hz
+ * Main MCIU Control Loop - Runs at 20Hz - Tolerance: 13Hz - 20Hz - RTCS Critical
  * @warning This is a real-time execution loop and all code must be non-blocking (no Delay() or busy waiting)
  * @warning All memory must be allocated at compile time or in the setup function to prevent memory fragmentation
  * @note This function is called by the Arduino framework and should not be called manually
@@ -228,7 +233,8 @@ void loop() {
 
 //        adauTester->run();
 
-        ADAU_BUS_INTERFACE.parse_buffer(); // Update the ADAU bus
+        // Update the ADAU (Analogue Data Acquisition Unit) interface
+        ADAU_BUS_INTERFACE.parse_buffer();
 
         ACTUATOR_BUS_INTERFACE.sent_last_cycle = 0;
 
@@ -237,7 +243,7 @@ void loop() {
 
         for (ODrivePro *odrive: odrives) {
             if (odrive == nullptr) continue;
-            odrive->refresh_data();  // Get the latest data from the ODrive
+            odrive->refresh_data();  // Send queries to the ODrives if they have not sent data on their own
         }
 
         // Every cycle start with a different actuator to prevent the same actuator from always being the first to update
@@ -357,12 +363,15 @@ void loop() {
     }
 
     uint32_t execution_time = micros() - loop_start;
-
-    uint32_t loop_time = micros() - loop_start;
-    if (loop_time < 50000) {
+    if (execution_time < 50000) {
         // Wait for the remaining time in the loop to maintain a 20Hz loop
-        delayMicroseconds(50000 - loop_time);
+        delayMicroseconds(50000 - execution_time);
     }
+    uint32_t loop_time = micros() - loop_start;
+    if (loop_time > 75000) { // Timing constraints violated
+        // TODO: Add action to take when timing constraints are violated
+    }
+    system_monitor->update_loop_info(execution_time, loop_time);  // Update the system monitor with the loop time
 
     wdt.feed();  // Feed the watchdog timer to prevent a reset
     loop_count++;

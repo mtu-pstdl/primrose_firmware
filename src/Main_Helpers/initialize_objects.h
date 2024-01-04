@@ -31,6 +31,7 @@ extern IMU* imu_class;                      // NOLINT
 extern EStopController* e_stop_controller;  // NOLINT
 extern AccessoryPower* accessory_power;     // NOLINT
 extern HopperDoor* hopper_door;             // NOLINT
+extern SystemMonitor* system_monitor;       // NOLINT
 
 extern Odometers odometers;          // NOLINT
 extern ros::NodeHandle node_handle;  // NOLINT
@@ -136,10 +137,13 @@ void allocate_misc_objects(){
     imu_class = new IMU(static_cast<sensor_msgs::Imu*>(all_topics[IMU_TOPIC_NUM]->message));
     hopper_door = new HopperDoor();
     accessory_power = new AccessoryPower();
+    system_monitor = new SystemMonitor(
+            static_cast<std_msgs::Int32MultiArray*>(all_topics[SYSTEM_MONITOR_TOPIC_NUM]->message));
 }
 
 void attach_estop_devices(){
     e_stop_controller->add_estop_device(&ADAU_BUS_INTERFACE);
+    e_stop_controller->add_estop_device(system_monitor);
     for (auto & odrive : odrives) e_stop_controller->add_estop_device(odrive);
     for (auto & actuator : actuators) e_stop_controller->add_estop_device(actuator);
     for (auto & load_cell : load_cells) e_stop_controller->add_estop_device(load_cell);

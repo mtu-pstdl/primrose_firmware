@@ -177,13 +177,13 @@ ros_topic hopper_load_cell_topic = {
         .message = &hopper_load_cell_msg
 };
 
-//#define SYSTEM_MONITOR_TOPIC_NUM 17
-//std_msgs::UInt32MultiArray system_monitor_msg;
-//ros::Publisher system_monitor_pub("/mciu/System_monitor", &system_monitor_msg);
-//ros_topic system_monitor_topic = {
-//        .publisher = &system_monitor_pub,
-//        .message = &system_monitor_msg
-//};
+#define SYSTEM_MONITOR_TOPIC_NUM 16
+std_msgs::Int32MultiArray system_monitor_msg;
+ros::Publisher system_monitor_pub("/mciu/System_monitor", &system_monitor_msg);
+ros_topic system_monitor_topic = {
+        .publisher = &system_monitor_pub,
+        .message = &system_monitor_msg
+};
 
 ros_topic* odrive_encoder_topics[7] = {
         &odrive1_encoder_topic,
@@ -225,7 +225,7 @@ ros_topic* all_topics[ALL_TOPICS_LENGTH] = {
         &estop_status_topic,
         &suspension_load_cell_topic,
         &hopper_load_cell_topic,
-//        &system_monitor_topic
+        &system_monitor_topic
 };
 
 #endif //TEENSYCANTRANSCEIVER_ROS_PUBLISHERS_H
