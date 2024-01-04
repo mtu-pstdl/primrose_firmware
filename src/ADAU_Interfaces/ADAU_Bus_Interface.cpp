@@ -296,7 +296,7 @@ void ADAU_Bus_Interface::parse_buffer() {
                 break;
            case waiting_for_end_byte:
            case waiting_for_end_byte_failure:
-                // Wait for the end byte
+                // Wait for the end bytes
                 this->finish_message();
                 break;
            default:

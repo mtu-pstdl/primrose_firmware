@@ -84,7 +84,7 @@ void Actuator_Bus_Interface::process_data_serial(serial_message *msg) {
                 auto object = msg->object;  // Get the messages actuator object
                 auto callback = msg->callback; // Cast the callback to a function pointer
                 callback(object, msg);  // Call the callback function with the object and the serial_message
-                if (msg->free_after_callback) delete msg; // Free the serial_message if we are supposed to
+                if (msg->free_after_callback) delete msg; // NEVER USE
                 this->total_messages_processed++;
             }
         } else {
@@ -198,7 +198,7 @@ Actuator_Bus_Interface::serial_message *Actuator_Bus_Interface::get_next_message
 
 void Actuator_Bus_Interface::queue_message(Actuator_Bus_Interface::serial_message *message) {
     if (!this->space_available()) {
-        if (message->free_after_callback) delete message;
+        if (message->free_after_callback) delete message;  // NEVER USE
         return;
     }
     // Check if the pointer to this message is already in the queue

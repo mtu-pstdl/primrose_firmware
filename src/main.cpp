@@ -38,8 +38,6 @@
 #include <math.h>
 #include "ROS_Publishers.h"
 
-#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
-#include "../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticArray.h"
 #include "Sensor_nodes/LoadCells.h"
 #include "Sensor_nodes/BatteryMonitor.h"
 #include "Odometers.h"
@@ -80,8 +78,8 @@ ros::Publisher test_output_pub("/test_output", &test_output_msg);
 ODrivePro* odrives[num_odrives];
 ODriveROS* odrive_ros[num_odrives];
 
-ActuatorUnit* actuators[4];
-ActuatorsROS* actuators_ros[4];
+ActuatorUnit* actuators[num_actuators];
+ActuatorsROS* actuators_ros[num_actuators];
 
 LoadCells* load_cells[2];
 
@@ -130,13 +128,11 @@ enum safe_mode_flags : uint32_t {
     SAFE_MODE_EXIT,         // The system is in safe mode and will exit safe mode on the next boot
 };
 
-extern "C" void startup_middle_hook(void);
-
 /**
- * @brief This function is called by the Arduino framework before the setup function is called
- * Used to setup things that need immediate actions
+ * @warning The setup function will wait for a ROS Serial connection before returning
  */
-void startup_middle_hook(void) {
+void setup() {
+
     save_breadcrumbs(); // Copy the breadcrumbs from the previous boot into a separate buffer
     pinMode(MAIN_CONTACTOR_PIN, OUTPUT);
     digitalWrite(MAIN_CONTACTOR_PIN, HIGH);  // Immediately open the main contactor to initiate an estop
@@ -169,17 +165,11 @@ void startup_middle_hook(void) {
     } else {
         loop_count = 0;
     }
-}
-
-/**
- * @warning The setup function will wait for a ROS Serial connection before returning
- */
-void setup() {
 
     node_handle.getHardware()->setBaud(4000000); // ~4Mbps
-    node_handle.setSpinTimeout(100); // 50ms
-    node_handle.initNode();         // Initialize the ROS node (this will block until a connection is made)
-    node_handle.requestSyncTime();  // Sync time with ROS master
+    node_handle.setSpinTimeout(100);
+    node_handle.initNode();          // Initialize the ROS node (this will block until a connection is made)
+    node_handle.requestSyncTime();   // Sync time with ROS master
 
     // If we are starting in safe mode exit here to prevent us from encountering the same error again and again
     if (!safe_mode_flag) return;
@@ -201,7 +191,7 @@ void setup() {
 
     setup_hardware_objects();  // Initialize all the hardware objects and allocate memory for the runtime objects
 
-    attach_estop_devices();  // Attach all the estop devices to the estop controller
+    attach_estop_devices();    // Attach all the estop devices to the estop controller
 
     // Add all ros nodes to the ros node array
     int ros_node_count = 0;
@@ -229,7 +219,7 @@ void setup() {
         node->subscribe(&node_handle);
     }
 
-    adauTester = new ADAU_Tester(&test_output_msg);
+//    adauTester = new ADAU_Tester(&test_output_msg);
 
     test_output_msg.data = battery_monitor->debug_string;
 
@@ -260,9 +250,6 @@ void loop() {
         ADAU_BUS_INTERFACE.parse_buffer();
 
         ACTUATOR_BUS_INTERFACE.sent_last_cycle = 0;
-
-        // Get the teensy temperature
-        check_temp();
 
         for (ODrivePro *odrive: odrives) {
             if (odrive == nullptr) continue;
