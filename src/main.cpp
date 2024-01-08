@@ -244,6 +244,7 @@ void loop() {
     DROP_CRUMB_VALUE(loop_count, breadcrumb_type::INT);
     if (safe_mode_flag == NORMAL_BOOT) {
 
+        // TODO: Remove this for release build
 //        adauTester->run();
 
         // Update the ADAU (Analogue Data Acquisition Unit) interface
@@ -284,7 +285,7 @@ void loop() {
             topic->publisher->publish(topic->message);
         }
 
-
+        // TODO: Remove this for release build
         test_output_pub.publish(&test_output_msg);
 
         while (ACTUATOR_BUS_INTERFACE.spin() && micros() - loop_start < 45000) {
