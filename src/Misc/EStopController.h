@@ -60,6 +60,9 @@ private:
     std_msgs::String*          estop_msg_topic;
     std_msgs::Int32MultiArray* estop_status_topic;
 
+    /**
+     * EStopController::OutputArray is a named union for storing the output data into the Int32MultiArray message
+     */
     union OutputArray {
         struct OutputData {
             int32_t estop_flags;                        // A bitfield of EStopFlags
