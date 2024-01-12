@@ -79,7 +79,7 @@ private:
     uint8_t success_rate_window[20] = {0,};
 
     void reset(){
-        if (millis() - this->restart_start_time < 1000) {
+        if (millis() - this->restart_start_time < 2000) {
 
         } else if (!this->attempting_restart) {
             this->attempting_restart = true;

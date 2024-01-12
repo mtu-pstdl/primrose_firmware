@@ -25,7 +25,7 @@ private:
         float_t  position = 0;  // The position of the suspension encoder in units of (unit)
         float_t  velocity = 0;  // The velocity of the suspension encoder in units of (unit)/s
         uint32_t sequence = 0;  // The sequence number of the message (always incrementing)
-        uint8_t  fault = false; // Indicates if something is wrong with the sensor
+        uint8_t  faults   = 0; // Indicates if something is wrong with the sensor
     } data = {};
     #pragma pack(pop) // End of data structure
 
@@ -78,7 +78,7 @@ public:
 
     uint8_t fault() override {
 //        return true;
-        return data.fault;
+        return data.faults;
     }
 
 };
