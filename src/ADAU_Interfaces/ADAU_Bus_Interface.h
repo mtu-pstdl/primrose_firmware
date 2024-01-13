@@ -7,9 +7,11 @@
 #include <Arduino.h>
 #include "Misc/EStopDevice.h"
 
-#define ADAU_INTERFACE  Serial4
+#define ADAU_INTERFACE  Serial8
+//#define ADAU_INTERFACE  Serial2
 #define ADAU_BAUD_RATE  1000000  // 1Mbaud
 #define ADAU_RESET_PIN  3
+#define SERIAL_BUFFER_SIZE 2048
 
 // Message parameters
 #define MESSAGE_START_BYTE 0xFF
@@ -85,9 +87,9 @@ private:
             this->attempting_restart = true;
             this->restart_start_time = millis();
             this->restart_attempts++;
-            digitalWriteFast(ADAU_RESET_PIN, LOW);
+//            digitalWriteFast(ADAU_RESET_PIN, LOW);
         } else if (millis() - this->restart_start_time > 100) {
-            digitalWriteFast(ADAU_RESET_PIN, HIGH);
+//            digitalWriteFast(ADAU_RESET_PIN, HIGH);
             this->attempting_restart = false;
         }
     }
@@ -119,7 +121,7 @@ public:
     ADAU_Sensor_List* sensor_list = nullptr;
 
     // Increase the size of the serial buffer to 2kb, so we don't miss any messages when the main thread is busy
-    uint8_t serial_buffer[2048] = {0};
+    uint8_t serial_buffer[SERIAL_BUFFER_SIZE] = {0};
 
     char output_string[1000] = {0};
 
@@ -128,9 +130,9 @@ public:
      */
     ADAU_Bus_Interface(){
         ADAU_INTERFACE.begin(ADAU_BAUD_RATE, SERIAL_8E1);
-        ADAU_INTERFACE.addMemoryForRead(serial_buffer, sizeof(serial_buffer));
+        ADAU_INTERFACE.addMemoryForRead(serial_buffer, SERIAL_BUFFER_SIZE);
         pinMode(ADAU_RESET_PIN, OUTPUT);
-        reset(); // Put the ADAU in a known state
+//        reset(); // Put the ADAU in a known state
         // Attach to the serialEvent interrupt for whatever serial port is being used
     }
 

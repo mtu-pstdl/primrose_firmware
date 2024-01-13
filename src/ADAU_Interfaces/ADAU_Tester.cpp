@@ -52,8 +52,8 @@ uint8_t ADAU_Tester::calculate_parity(uint8_t sensor_id) {
 void ADAU_Tester::send_data(uint8_t sensor_id, void* data, uint8_t data_length,
                             ADAU_Tester::corruption_types corrupt) {
     uint8_t temp[100] = {0};
-    temp[0] = 0xFF;  // Start byte
-    temp[1] = sensor_id;  // Sensor id (1 byte)
+    temp[0] = 0xFF;         // Start byte
+    temp[1] = sensor_id;    // Sensor id (1 byte)
     temp[2] = data_length;  // Data length (1 byte)
     temp[3] = calculate_checksum(data, data_length); // Checksum (1 byte)
     for (int i = 0; i < data_length; i++) {

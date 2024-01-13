@@ -329,7 +329,7 @@ EStopDevice::TRIP_LEVEL ADAU_Bus_Interface::tripped(char *tripped_device_name, c
         sprintf(temp, "NO ADAU DATA-");
         strlcat(tripped_device_message, temp, 100);
         tripped = EStopDevice::TRIP_LEVEL::FAULT;
-        this->reset();
+//        this->reset();
     }
     if (tripped) tripped_device_message[strlen(tripped_device_message) - 1] = '\0';
     return tripped;

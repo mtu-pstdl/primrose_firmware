@@ -221,7 +221,9 @@ void setup() {
 
 //    adauTester = new ADAU_Tester(&test_output_msg);
 
-    test_output_msg.data = battery_monitor->debug_string;
+//    test_output_msg.data = battery_monitor->debug_string;
+
+    test_output_msg.data = ADAU_BUS_INTERFACE.output_string;
 
     // The watchdog timers primary job is to reset the system if it somehow gets itself stuck into an infinite loop
     // It does not enforce the 20Hz loop time

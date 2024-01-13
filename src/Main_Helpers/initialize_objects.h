@@ -84,24 +84,24 @@ void allocate_actuators(){
     uint8_t actuator_num = 0;  // Keep track of position in the actuators array
     actuators[0] = new (&actuator_unit_memory[sizeof(ActuatorUnit) * actuator_num++])
             ActuatorUnit(128,new SteeringEncoders(0),
-                         new SuspensionEncoders(0x01)); // Slot 3L
+                         new SuspensionEncoders(0x01));
 
     actuators[1] = new (&actuator_unit_memory[sizeof(ActuatorUnit) * actuator_num++])
             ActuatorUnit(129,new SteeringEncoders(4),
-                         new SuspensionEncoders(0x02)); // Slot 2R
+                         new SuspensionEncoders(0x02));
 
     actuators[1]->set_inverted(true,0); // Set the motor to run in the opposite direction
     actuators[1]->set_inverted(true,1);
 
     actuators[2] = new (&actuator_unit_memory[sizeof(ActuatorUnit) * actuator_num++])
             ActuatorUnit(130,new SteeringEncoders(10),
-                         new SuspensionEncoders(0x03)); // Slot 2L
+                         new SuspensionEncoders(0x03));
     actuators[2]->set_inverted(true,0);
     actuators[2]->set_inverted(true,1);
 
     actuators[3] = new (&actuator_unit_memory[sizeof(ActuatorUnit) * actuator_num++])
             ActuatorUnit(131,new SteeringEncoders(24),
-                         new SuspensionEncoders(0x04)); // Slot 3R
+                         new SuspensionEncoders(0x04));
     actuators[3]->set_inverted(true,0);
 
     actuator_num = 0;  // Reset the actuator_num variable

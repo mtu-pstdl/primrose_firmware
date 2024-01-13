@@ -46,17 +46,31 @@ class LoadCells : public ROSNode, public EStopDevice {
 
     ADAU_Sensor* sensor;
 
-    #pragma pack(push, 1) // Remove all padding from the data structure to reduce transmission size
+    #pragma pack(push, 1)
     struct data_struct {
-        int32_t sensor[4];
-        uint8_t flags;      // First 4 bits are error flags for each sensor
+        union {
+            struct labeled {
+                float_t fl_load;
+                float_t fr_load;
+                float_t bl_load;
+                float_t br_load;
+            };
+            float_t sensor[4];
+        } data;
+        union {
+            struct {
+                uint8_t fl_fault;
+                uint8_t fr_fault;
+                uint8_t bl_fault;
+                uint8_t br_fault;
+            } sensors;
+            uint8_t raw[4];
+        } flags;
+        uint32_t seq;
     };
-    #pragma pack(pop) // End of data structure
+    #pragma pack(pop)
 
-    data_struct data = {
-            .sensor = {0, 0, 0, 0},
-            .flags = 0b00001111
-    };
+    data_struct data = {};
 
 public:
 
@@ -65,7 +79,12 @@ public:
         this->sensor_id = sensor_id;
         this->output_topic = output_topic;
         this->output_topic->data_length = sizeof (output_data.raw_array) / sizeof (output_data.raw_array[0]);
-        this->output_topic->data = data.sensor;
+        this->data.seq = 0;
+        for (int i = 0; i < 4; i++) {
+            this->data.flags.raw[i] = 0xFF;
+            this->data.data.sensor[i] = nanf("");
+        }
+        this->output_topic->data = output_data.raw_array;
         // Change the name of the command topic to the correct name
         command_sub.topic_ = this->topic_name;
         sprintf(this->topic_name, "/mciu/%s/Load_cells/command", name);
@@ -97,15 +116,17 @@ public:
             strlcat(tripped_device_message, temp, 100);
             tripped = FAULT;
         }
-        if (data.flags != 0) {
+        if (data.flags.sensors.bl_fault || data.flags.sensors.br_fault ||
+        data.flags.sensors.fl_fault || data.flags.sensors.fr_fault) {
             sprintf(temp, "ERROR FLAGS: ");
-            for (int i = 7; i >= 0; i--) {
-                if (data.flags & (1 << i)) {
-                    sprintf(temp, "%s%d ", temp, 1);
-                } else {
-                    sprintf(temp, "%s%d ", temp, 0);
-                }
-            }
+            strlcat(tripped_device_message, temp, 100);
+            if (data.flags.sensors.fl_fault) sprintf(temp, "FL-0x%02X ", data.flags.sensors.fl_fault);
+            strlcat(tripped_device_message, temp, 100);
+            if (data.flags.sensors.fr_fault) sprintf(temp, "FR-0x%02X ", data.flags.sensors.fr_fault);
+            strlcat(tripped_device_message, temp, 100);
+            if (data.flags.sensors.bl_fault) sprintf(temp, "BL-0x%02X ", data.flags.sensors.bl_fault);
+            strlcat(tripped_device_message, temp, 100);
+            if (data.flags.sensors.br_fault) sprintf(temp, "BR-0x%02X ", data.flags.sensors.br_fault);
             strlcat(tripped_device_message, temp, 100);
             tripped = FAULT;
         }
