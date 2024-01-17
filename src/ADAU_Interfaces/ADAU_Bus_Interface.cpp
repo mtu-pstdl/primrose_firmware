@@ -186,6 +186,7 @@ void ADAU_Bus_Interface::process_message() {
         // The checksum is invalid
         // Increment the failed message count
         this->failed_message_count++;
+        this->failed_checksum_count++;
         this->cleanup();
         return;
     }
@@ -265,14 +266,32 @@ void ADAU_Bus_Interface::cleanup() {
  */
 void ADAU_Bus_Interface::parse_buffer() {
     DROP_CRUMB();
+    char temp[100]{};
     this->parse_start_time = micros(); // Record the time that the parse started so we don't overrun the allotted time
     // Print the contents of the buffer to the temp string in hex
     this->parse_count = 0;
     this->failed_message_count = 0;
+    this->failed_checksum_count = 0;
     uint32_t ignored_bytes = 0;
     memset(this->output_string, 0, 999);
-    sprintf(this->output_string, "Starting parse, entry state: %d, buffer length: %d\n",
-            this->current_state, ADAU_INTERFACE.available());
+//    sprintf(this->output_string, "Starting parse, entry state: %d, buffer length: %d\n",
+//            this->current_state, ADAU_INTERFACE.available());
+
+    // For debugging print in hex the contents of the buffer up to 500 bytes and don't do anything else
+    // This is useful for debugging the serial bus
+
+    uint32_t buffer_length = ADAU_INTERFACE.available();
+//    if (buffer_length > 128) buffer_length = 128;
+    for (int i = 0; i < buffer_length; i++) {
+        sprintf(temp, "0x%02X ", ADAU_INTERFACE.read());
+        strlcat(this->output_string, temp, 999);
+        if (strlen(this->output_string) > 900) break;
+    }
+    sprintf(this->output_string, "%s\n", this->output_string);
+    ADAU_INTERFACE.clear();
+    return;
+
+
     while (this->parse_start_time + MAX_PARSE_TIME > micros()) {
         if (!ADAU_INTERFACE.available()) break;
         switch (this->current_state) {
@@ -303,12 +322,16 @@ void ADAU_Bus_Interface::parse_buffer() {
                this->cleanup();
        }
     }
+    char exceeded_time[] = "Exceeded max parse time";
+    char within_time[] = "Within max parse time";
     sprintf(this->output_string, "%sFinished parse, exit state: %d, buffer length: %d,"
-                                 " parse count: %d, failed count: %lu, ignored bytes: %lu, "
-                                 "time elapsed: %lu us\n",
+                                 " parse count: %d, failed count: %lu | %lu, ignored bytes: %lu\n"
+                                 "time elapsed: %lu us, %s\n",
             this->output_string, this->current_state, ADAU_INTERFACE.available(),
-            this->parse_count, this->failed_message_count, ignored_bytes,
-            micros() - this->parse_start_time);
+            this->parse_count, this->failed_message_count, this->failed_checksum_count,
+            ignored_bytes,
+            micros() - this->parse_start_time,
+            this->parse_start_time + MAX_PARSE_TIME > micros() ? within_time : exceeded_time);
 }
 
 EStopDevice::TRIP_LEVEL ADAU_Bus_Interface::tripped(char *tripped_device_name, char *tripped_device_message) {
@@ -325,7 +348,7 @@ EStopDevice::TRIP_LEVEL ADAU_Bus_Interface::tripped(char *tripped_device_name, c
         strlcat(tripped_device_message, temp, 100);
         tripped = EStopDevice::TRIP_LEVEL::FAULT;
     }
-    if (millis() - this->last_message_time > 1000) {
+    if (millis() - this->last_message_time > 30000) {
         sprintf(temp, "NO ADAU DATA-");
         strlcat(tripped_device_message, temp, 100);
         tripped = EStopDevice::TRIP_LEVEL::FAULT;

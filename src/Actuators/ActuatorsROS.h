@@ -76,7 +76,7 @@ private:
                 } velocity_args;
             } arguments;
         } command_data;
-        int32_t raw_array[3];
+        int32_t raw_array[sizeof (InputData) / sizeof (int32_t)] = {};
     };
 
 

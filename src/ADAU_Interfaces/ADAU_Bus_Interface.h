@@ -7,11 +7,17 @@
 #include <Arduino.h>
 #include "Misc/EStopDevice.h"
 
+//#define MAKE_CLION_HAPPY
+
+#ifdef MAKE_CLION_HAPPY
+#define ADAU_INTERFACE  Serial2
+#error "Wrong serial port for ADAU interface
+#else
 #define ADAU_INTERFACE  Serial8
-//#define ADAU_INTERFACE  Serial2
+#endif
 #define ADAU_BAUD_RATE  1000000  // 1Mbaud
 #define ADAU_RESET_PIN  3
-#define SERIAL_BUFFER_SIZE 2048
+#define SERIAL_BUFFER_SIZE 4096
 
 // Message parameters
 #define MESSAGE_START_BYTE 0xFF
@@ -19,7 +25,7 @@
 #define MESSAGE_MAX_LENGTH 254
 #define END_MESSAGE_COUNT  3
 
-#define MAX_PARSE_TIME 1000 // 1ms
+#define MAX_PARSE_TIME 2000 // 1ms
 
 // There is only one ADAU on the bus and we want all ADAU_Sensors to share this object
 // We want this object to be a singleton and exist only once automatically
@@ -39,7 +45,7 @@ class ADAU_Bus_Interface: public EStopDevice {
 
     // Data sent by the ADAU is formatted as follows:
     // 1 byte: start of message (0xFF)
-    // 1 byte: sensor_id (7bits) + parity (1 bit)
+    // 1 byte: sensor_id
     // 1 byte: data_length (Needs to match the data_size of the sensor otherwise reject the message)
     // 1 byte: checksum (sum of all bytes in the message including data_length, excludes sensor_id)
     // n bytes: data
@@ -75,10 +81,13 @@ private:
 
     // Watchdog variables
     uint32_t failed_message_count = 0;   // The number of messages that failed to parse
+    uint32_t failed_checksum_count = 0;  // The number of messages that failed the checksum
     uint32_t last_message_time = 0;      // The time that the last message was received
 
     // Sliding window of the decoding success rate of the last 20 messages
     uint8_t success_rate_window[20] = {0,};
+
+    boolean one_shot = false;
 
     void reset(){
         if (millis() - this->restart_start_time < 2000) {
