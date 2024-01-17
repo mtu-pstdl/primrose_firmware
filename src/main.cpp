@@ -59,7 +59,8 @@
 
 // If a loop takes longer than MAX_LOOP_TIME then the whole system will be reset so this is a hard limit
 #define MAX_LOOP_TIME 1 // 1 second
-WDT_T4<WDT1> wdt;
+WDT_T4<WDT1> main_execution_watchdog;
+WDT_T4<WDT2> setup_watchdog; // This watchdog is used to auto restart the teensy if a serial connection is not made
 
 // Set to false if the system crashed during initialization during the last boot
 uint32_t safe_mode_flag __attribute__((section(".noinit")));
@@ -132,6 +133,14 @@ enum safe_mode_flags : uint32_t {
  * @warning The setup function will wait for a ROS Serial connection before returning
  */
 void setup() {
+    WDT_timings_t setup_config;
+    setup_config.trigger = 30;
+    setup_config.timeout = 5;
+    setup_config.callback = []() {
+        *(volatile uint32_t *)RESTART_ADDR = 0x5FA0004;
+    };
+//    setup_watchdog.begin(setup_config);
+//    setup_watchdog.feed();
 
     save_breadcrumbs(); // Copy the breadcrumbs from the previous boot into a separate buffer
     pinMode(MAIN_CONTACTOR_PIN, OUTPUT);
@@ -231,7 +240,7 @@ void setup() {
     config.trigger = MAX_LOOP_TIME; // 1 second
     config.timeout = 5;
     config.callback = watchdog_violation;
-    wdt.begin(config);
+    main_execution_watchdog.begin(config);
 }
 
 /**
@@ -306,6 +315,7 @@ void loop() {
         case ros::SPIN_OK:
             break;
         case ros::SPIN_ERR:  // Always happens once on startup. Reason unknown, but it is quite useful
+//            setup_watchdog.reset();
             node_handle.logwarn("BUILD #" BUILD_NUMBER_STR " @ " BUILD_DATE " " BUILD_TIME);
             node_handle.logwarn("BUILD TYPE: " BUILD_TYPE);
             node_handle.logwarn("BUILD GIT HASH: " BUILD_GIT_HASH);
@@ -387,7 +397,7 @@ void loop() {
     // an emergency stop but will not reboot the system
     system_monitor->update_loop_info(execution_time, loop_time);  // Update the system monitor with the loop time
 
-    wdt.feed();  // Feed the watchdog timer to prevent a reset
+    main_execution_watchdog.feed();  // Feed the watchdog timer to prevent a reset
     loop_count++;
     DROP_CRUMB_VALUE('END ', breadcrumb_type::CHAR4);
 }

@@ -26,7 +26,7 @@ uint32_t cpu_freq = CPU_FREQ_BASE;
 extern "C" uint32_t set_arm_clock(uint32_t frequency);
 #endif
 
-extern WDT_T4<WDT1> wdt;
+extern WDT_T4<WDT1> main_execution_watchdog;
 
 uint32_t last_ram_time = 0;
 int last_ram = 0;
@@ -36,7 +36,7 @@ void watchdog_violation() {
     // If the watchdog timer is triggered then reset the system
     // This will only happen if the loop takes longer than MAX_LOOP_TIME
     // This is a hard limit
-    wdt.reset();
+    main_execution_watchdog.reset();
     EEPROM.write(WATCHDOG_FLAG_ADDR, 0x5A); // Set the watchdog flag in eeprom
     // write to the restart register (Application Restart and Control Register) to hard reset the system
     *(volatile uint32_t *)RESTART_ADDR = 0x5FA0004;

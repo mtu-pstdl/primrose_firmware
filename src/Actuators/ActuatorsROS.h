@@ -28,6 +28,7 @@ private:
         STOP = 0,
         SET_POSITION = 1,
         SET_DUTY_CYCLE = 2,
+        SET_VELOCITY = 3,
     };
 
     /**
@@ -57,6 +58,26 @@ private:
         } data;
         int32_t raw_array[20];  // The raw array of data to be sent over the serial bus
     } output_data = {};
+
+
+    union InputArray {
+        struct InputData {
+            ROS_COMMANDS command = STOP;
+            int32_t target_actuator = 0;
+            union Arguments {
+                struct PositionArgs {
+                    int32_t position = 0;
+                } position_args;
+                struct DutyCycleArgs {
+                    int32_t duty_cycle = 0;
+                } duty_cycle_args;
+                struct VelocityArgs {
+                    int32_t velocity = 0;
+                } velocity_args;
+            } arguments;
+        } command_data;
+        int32_t raw_array[3];
+    };
 
 
     ros::Subscriber<std_msgs::Int32MultiArray, ActuatorsROS> command_sub;

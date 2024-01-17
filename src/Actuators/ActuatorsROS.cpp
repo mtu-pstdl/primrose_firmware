@@ -7,17 +7,25 @@
 
 void ActuatorsROS::control_callback(const std_msgs::Int32MultiArray &msg) {
     // First element is the command and the second is the target actuator
-    switch (msg.data[0]) {
+    // Cast the msg data into an InputArray
+    if (msg.data_length > sizeof (InputArray) / sizeof (int32_t)) return;
+    InputArray input_array = *((InputArray *) &msg.data);
+    InputArray::InputData command_data = input_array.command_data;
+    switch (command_data.command) {
         case STOP:
-            this->actuator->set_duty_cycle(0, msg.data[1]);
+            this->actuator->set_duty_cycle(0, command_data.target_actuator);
             break;
         case SET_POSITION:
-            if (msg.data_length != 3) return;
-            this->actuator->set_target_position(msg.data[1], msg.data[2]);
+            this->actuator->set_target_position(command_data.arguments.position_args.position,
+                                                command_data.target_actuator);
             break;
         case SET_DUTY_CYCLE:
-            if (msg.data_length != 3) return;
-            this->actuator->set_duty_cycle(msg.data[1] / 100.f, msg.data[2]);
+            this->actuator->set_duty_cycle(command_data.arguments.duty_cycle_args.duty_cycle / 100.0f,
+                                            command_data.target_actuator);
+            break;
+        case SET_VELOCITY:
+//            this->actuator->set_target_velocity(command_data.arguments.velocity_args.velocity,
+//                                                command_data.target_actuator);
             break;
     }
 }
