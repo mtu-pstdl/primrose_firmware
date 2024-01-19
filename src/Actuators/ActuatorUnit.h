@@ -68,6 +68,7 @@ public:
         E_STOPPED  = 0,
         DUTY_CYCLE = 1,
         POSITION = 2,
+        VELOCITY = 3,
     };
 
     struct odometer_value {  // stores odometer data in RAM
