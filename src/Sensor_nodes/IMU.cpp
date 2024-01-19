@@ -5,16 +5,15 @@
 #include "IMU.h"
 #include "Main_Helpers/BreadCrumbs.h"
 
-Adafruit_BNO08x imu(RST_PIN);
+Adafruit_BNO08x imu(-1);
 sh2_SensorValue_t sensor_value;
-volatile uint32_t interrupt_count = 0;
-volatile uint32_t last_interrupt_time = 0;
+//volatile uint32_t interrupt_count = 0;
+//volatile uint32_t last_interrupt_time = 0;
 
 void IMU::initialize(){
     DROP_CRUMB();
-    imu.hardwareReset();
     delay(10);
-    if (!imu.begin_SPI(CS_PIN, IRQ_PIN, &SPI_BUS)){
+    if (!imu.begin_I2C()) {
         this->imu_msg->header.frame_id = "imu_link_failed";
         return;
     } else {
@@ -71,13 +70,13 @@ void IMU::enable_reporting() {
 void IMU::update() {
     DROP_CRUMB();
     if (!this->config_success) return;
-    if (imu.wasReset()) {
-        DROP_CRUMB_VALUE('RST ', breadcrumb_type::CHAR4);
-//        this->initialize();
-    }
+//    if (imu.wasReset()) {
+//        DROP_CRUMB_VALUE('RST ', breadcrumb_type::CHAR4);
+////        this->initialize();
+//    }
     // Display the interrupt count
     this->imu_msg->header.frame_id = log_buffer;
-    sprintf(log_buffer, "Interrupt count: %lu", interrupt_count);
+//    sprintf(log_buffer, "Interrupt count: %lu", interrupt_count);
     if (!imu.getSensorEvent(&sensor_value)) return;
         this->imu_msg->header.stamp = this->node_handle->now();
         last_report_time = millis();
@@ -127,11 +126,11 @@ EStopDevice::TRIP_LEVEL IMU::tripped(char* tripped_device_name, char* tripped_de
         strcat(tripped_device_message, this->failure_message);
         tripped = FAULT;
     }
-    if (last_interrupt_time < millis() - 1000) {
-        sprintf(temp, "No Interrupts-");
-        strcat(tripped_device_message, temp);
-        tripped = FAULT;
-    }
+//    if (last_interrupt_time < millis() - 1000) {
+//        sprintf(temp, "No Interrupts-");
+//        strcat(tripped_device_message, temp);
+//        tripped = FAULT;
+//    }
     if (this->last_report_time < millis() - 1000) {
         sprintf(temp, "Not Reporting-");
         strcat(tripped_device_message, temp);
@@ -143,12 +142,12 @@ EStopDevice::TRIP_LEVEL IMU::tripped(char* tripped_device_name, char* tripped_de
     return tripped;
 }
 
-void IMU::irq_handler() {
-    // Disable interrupts
-//    noInterrupts();
-    DROP_CRUMB();
-    interrupt_count++;
-    last_interrupt_time = millis();
-    // Re-enable interrupts
-//    interrupts();
-}
+//void IMU::irq_handler() {
+//    // Disable interrupts
+////    noInterrupts();
+//    DROP_CRUMB();
+//    interrupt_count++;
+//    last_interrupt_time = millis();
+//    // Re-enable interrupts
+////    interrupts();
+//}
