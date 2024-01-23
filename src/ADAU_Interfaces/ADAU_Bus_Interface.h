@@ -11,7 +11,7 @@
 
 #ifdef MAKE_CLION_HAPPY
 #define ADAU_INTERFACE  Serial2
-#error "Wrong serial port for ADAU interface
+#error Wrong serial port for ADAU interface
 #else
 #define ADAU_INTERFACE  Serial8
 #endif

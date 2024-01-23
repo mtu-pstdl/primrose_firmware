@@ -25,6 +25,7 @@
  */
 
 #include <Arduino.h>
+//#include "../.pio/libdeps/teensy40/Teensy4 I2C/src/i2c_driver_wire.h"
 #include <Actuators/Actuator_Bus_Interface.h>
 #include <FlexCAN_T4.h>
 #include <ros.h>
@@ -57,6 +58,8 @@
 #include "Misc/SystemMonitor.h"
 #include "Main_Helpers/initialize_objects.h"
 
+
+
 // If a loop takes longer than MAX_LOOP_TIME then the whole system will be reset so this is a hard limit
 #define MAX_LOOP_TIME 1 // 1 second
 WDT_T4<WDT1> main_execution_watchdog;
@@ -85,7 +88,7 @@ ActuatorsROS* actuators_ros[num_actuators];
 LoadCells* load_cells[2];
 
 BatteryMonitor* battery_monitor;
-IMU* imu_class;
+//IMU* imu_class;
 
 EStopController* e_stop_controller;
 HopperDoor* hopper_door;
@@ -93,6 +96,7 @@ AccessoryPower* accessory_power;
 SystemMonitor* system_monitor;
 
 ROSNode* ros_nodes[24];
+
 
 Odometers odometers;
 
@@ -133,15 +137,6 @@ enum safe_mode_flags : uint32_t {
  * @warning The setup function will wait for a ROS Serial connection before returning
  */
 void setup() {
-    WDT_timings_t setup_config;
-    setup_config.trigger = 30;
-    setup_config.timeout = 5;
-    setup_config.callback = []() {
-        *(volatile uint32_t *)RESTART_ADDR = 0x5FA0004;
-    };
-//    setup_watchdog.begin(setup_config);
-//    setup_watchdog.feed();
-
     save_breadcrumbs(); // Copy the breadcrumbs from the previous boot into a separate buffer
     pinMode(MAIN_CONTACTOR_PIN, OUTPUT);
     digitalWrite(MAIN_CONTACTOR_PIN, HIGH);  // Immediately open the main contactor to initiate an estop
@@ -211,7 +206,7 @@ void setup() {
     ros_nodes[ros_node_count++] = hopper_door;
     ros_nodes[ros_node_count++] = battery_monitor;
     ros_nodes[ros_node_count++] = accessory_power;
-    ros_nodes[ros_node_count++] = imu_class;
+//    ros_nodes[ros_node_count++] = imu_class;
     ros_nodes[ros_node_count++] = system_monitor;
 
     node_handle.advertise(*estop_topic.publisher);

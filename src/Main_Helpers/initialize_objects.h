@@ -27,7 +27,7 @@ extern ActuatorUnit* actuators[num_actuators];      // NOLINT
 
 extern LoadCells* load_cells[2];            // NOLINT
 extern BatteryMonitor* battery_monitor;     // NOLINT
-extern IMU* imu_class;                      // NOLINT
+//extern IMU* imu_class;                      // NOLINT
 extern EStopController* e_stop_controller;  // NOLINT
 extern AccessoryPower* accessory_power;     // NOLINT
 extern HopperDoor* hopper_door;             // NOLINT
@@ -134,7 +134,7 @@ void allocate_misc_objects(){
             static_cast<std_msgs::Int32MultiArray*>(all_topics[ESTOP_TOPIC_NUM]->message));
     battery_monitor = new BatteryMonitor(e_stop_controller,
                                          static_cast<sensor_msgs::BatteryState*>(all_topics[BATTERY_TOPIC_NUM]->message));
-    imu_class = new IMU(static_cast<sensor_msgs::Imu*>(all_topics[IMU_TOPIC_NUM]->message));
+//    imu_class = new IMU(static_cast<sensor_msgs::Imu*>(all_topics[IMU_TOPIC_NUM]->message));
     hopper_door = new HopperDoor();
     accessory_power = new AccessoryPower();
     system_monitor = new SystemMonitor(
@@ -148,7 +148,7 @@ void attach_estop_devices(){
     for (auto & actuator : actuators) e_stop_controller->add_estop_device(actuator);
     for (auto & load_cell : load_cells) e_stop_controller->add_estop_device(load_cell);
     e_stop_controller->add_estop_device(battery_monitor);
-    e_stop_controller->add_estop_device(imu_class);
+//    e_stop_controller->add_estop_device(imu_class);
 }
 
 /**
