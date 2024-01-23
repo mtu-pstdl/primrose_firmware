@@ -38,12 +38,29 @@ private:
     } suspension_data = {};
     #pragma pack(pop) // End of data structure
 
-    #pragma pack(push, 1) // Remove all padding from the data structure to reduce transmission size
-    struct loadcell_data {
-        float_t sensor[4];  // Fixed point, x100
-        uint8_t flags;      // First 4 bits are error flags for each sensor
+#pragma pack(push, 1)
+    struct data_struct {
+        union {
+            struct labeled {
+                float_t fl_load;
+                float_t fr_load;
+                float_t bl_load;
+                float_t br_load;
+            };
+            float_t sensor[4];
+        } data;
+        union {
+            struct {
+                uint8_t fl_fault;
+                uint8_t fr_fault;
+                uint8_t bl_fault;
+                uint8_t br_fault;
+            } sensors;
+            uint8_t raw[4];
+        } flags;
+        uint32_t seq;
     } loadcell_data = {};
-    #pragma pack(pop) // End of data structure
+#pragma pack(pop)
 
     enum corruption_types {
         NO_CORRUPTION,
@@ -71,7 +88,7 @@ private:
     // The test works by running the ADAU through a series of possible
     static uint8_t calculate_checksum(void* data, uint8_t data_length);
 
-    void send_data(uint8_t sensor_id, void* data, uint8_t data_length, corruption_types corrupt = NO_CORRUPTION);
+    void send_data(uint8_t sensor_id, void* data, uint8_t data_length);
 
     void check_validation();
 
@@ -93,6 +110,10 @@ public:
         this->send_data(0x04, &suspension_data, sizeof(suspension_data));
         this->send_data(0x05, &loadcell_data, sizeof(loadcell_data));
         this->send_data(0x06, &loadcell_data, sizeof(loadcell_data));
+
+        const uint32_t test_data_length =
+                (sizeof(suspension_data) + 10) * 4
+                + (sizeof(loadcell_data) + 10) * 2;
 
 //        this->send_data(0x10, &test_data, sizeof(BigData), LESS_DATA_THAN_LENGTH);
 //        this->send_data(0x10, &test_data, sizeof(BigData), MORE_DATA_THAN_LENGTH);

@@ -15,7 +15,8 @@
 #else
 #define ADAU_INTERFACE  Serial8
 #endif
-#define ADAU_BAUD_RATE  1000000  // 1Mbaud
+#define ADAU_BAUD_RATE   115200  // 1Mbaud
+#define ADAU_SERIAL_MODE SERIAL_8N1
 #define ADAU_RESET_PIN  3
 #define SERIAL_BUFFER_SIZE 4096
 
@@ -138,7 +139,7 @@ public:
      * @brief Initializes the serial interface and triggers a reset of the ADAU
      */
     ADAU_Bus_Interface(){
-        ADAU_INTERFACE.begin(ADAU_BAUD_RATE, SERIAL_8E1);
+        ADAU_INTERFACE.begin(ADAU_BAUD_RATE, ADAU_SERIAL_MODE);
         ADAU_INTERFACE.addMemoryForRead(serial_buffer, SERIAL_BUFFER_SIZE);
         pinMode(ADAU_RESET_PIN, OUTPUT);
 //        reset(); // Put the ADAU in a known state

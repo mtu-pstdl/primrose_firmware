@@ -49,8 +49,7 @@ uint8_t ADAU_Tester::calculate_parity(uint8_t sensor_id) {
  * @param data        A pointer to the data to send
  * @param data_length The length of the data to send
  */
-void ADAU_Tester::send_data(uint8_t sensor_id, void* data, uint8_t data_length,
-                            ADAU_Tester::corruption_types corrupt) {
+void ADAU_Tester::send_data(uint8_t sensor_id, void* data, uint8_t data_length) {
     uint8_t temp[100] = {0};
     temp[0] = 0xFF;         // Start byte
     temp[1] = sensor_id;    // Sensor id (1 byte)
@@ -60,51 +59,8 @@ void ADAU_Tester::send_data(uint8_t sensor_id, void* data, uint8_t data_length,
         temp[4 + i] = ((uint8_t *) data)[i];
     }
     memset(&temp[4 + data_length], 0, 6);  // End bytes (6 bytes)
-
-    uint32_t added_bytes = 0;
-    // Corrupt the data
-    switch (corrupt) {
-        case NO_CORRUPTION:
-            break;
-        case CORRUPT_START_BYTE:
-//            temp[0] = random(0x00, 0xFE); // Random start byte
-            temp[0] = 0x01;
-            break;
-        case CORRUPT_SENSOR_ID:
-            // Random sensor id that is not the same as the sensor id
-            temp[1] = random(0x00, 0xFF);
-            while (temp[1] == sensor_id) {
-                temp[1] = random(0x00, 0xFF);
-            }
-            break;
-        case CORRUPT_DATA_LENGTH:
-            temp[2] = random(0x00, 0xFF); // Random data length
-            break;
-        case CORRUPT_CHECKSUM:
-            temp[3] = random(0x00, 0xFF); // Random checksum
-            break;
-        case CORRUPT_END_BYTE:
-            temp[10 + data_length] = random(0x01, 0xFF); // Random end byte
-            break;
-        case CORRUPT_DATA:
-            // Pick a random byte in the data and change it to a random value
-            temp[4 + random(0, data_length)] = random(0x00, 0xFF);
-            break;
-        case MORE_DATA_THAN_LENGTH:
-            // Add more data in the data section than the data length indicates but don't change the data length value
-            added_bytes = random(1, 100);
-            for (int i = 0; i < added_bytes; i++) {
-                temp[4 + data_length + i] = random(0x00, 0xFF);
-            }
-            // Add the termination back
-            memset(&temp[4 + data_length + added_bytes], 0, 6);
-            data_length += added_bytes + 6;
-            break;
-    }
-
-    // Copy the data to the virtual serial buffer
-    memcpy(virtual_serial_buffer + virtual_serial_buffer_len, temp, 11 + data_length);
-    virtual_serial_buffer_len += 11 + data_length;
+    Serial2.write(temp, 10 + data_length);
+    Serial2.flush();
 }
 
 void ADAU_Tester::check_validation() {

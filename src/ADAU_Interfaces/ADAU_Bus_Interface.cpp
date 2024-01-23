@@ -274,23 +274,22 @@ void ADAU_Bus_Interface::parse_buffer() {
     this->failed_checksum_count = 0;
     uint32_t ignored_bytes = 0;
     memset(this->output_string, 0, 999);
-//    sprintf(this->output_string, "Starting parse, entry state: %d, buffer length: %d\n",
-//            this->current_state, ADAU_INTERFACE.available());
+    sprintf(this->output_string, "Starting parse, entry state: %d, buffer length: %d\n",
+            this->current_state, ADAU_INTERFACE.available());
 
     // For debugging print in hex the contents of the buffer up to 500 bytes and don't do anything else
     // This is useful for debugging the serial bus
 
 //    uint32_t buffer_length = ADAU_INTERFACE.available();
-////    if (buffer_length > 128) buffer_length = 128;
+//    if (buffer_length > 128) buffer_length = 128;
 //    for (int i = 0; i < buffer_length; i++) {
 //        sprintf(temp, "0x%02X ", ADAU_INTERFACE.read());
 //        strlcat(this->output_string, temp, 999);
 //        if (strlen(this->output_string) > 900) break;
 //    }
-//    sprintf(this->output_string, "%s\n", this->output_string);
 //    ADAU_INTERFACE.clear();
 //    return;
-
+//
 
     while (this->parse_start_time + MAX_PARSE_TIME > micros()) {
         if (!ADAU_INTERFACE.available()) break;
