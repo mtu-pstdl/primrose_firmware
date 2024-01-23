@@ -210,13 +210,16 @@ void ADAU_Bus_Interface::process_message() {
             current->sensor->set_valid(true);
             // Record the time that the last message was received
             this->last_message_time = micros();
-            parse_count++;
             found_sensor = true;
+            parse_count++;
         }
         if (current->next == nullptr) break;
         current = current->next;
     }
-    if (!found_sensor) this->failed_message_count++;
+    if (!found_sensor) {
+        this->failed_message_count++;
+        this->failed_not_found_count++;
+    }
     this->cleanup();
 }
 
@@ -272,6 +275,7 @@ void ADAU_Bus_Interface::parse_buffer() {
     this->parse_count = 0;
     this->failed_message_count = 0;
     this->failed_checksum_count = 0;
+    this->failed_not_found_count = 0;
     uint32_t ignored_bytes = 0;
     memset(this->output_string, 0, 999);
     sprintf(this->output_string, "Starting parse, entry state: %d, buffer length: %d\n",
@@ -324,10 +328,11 @@ void ADAU_Bus_Interface::parse_buffer() {
     char exceeded_time[] = "Exceeded max parse time";
     char within_time[] = "Within max parse time";
     sprintf(this->output_string, "%sFinished parse, exit state: %d, buffer length: %d,"
-                                 " parse count: %d, failed count: %lu | %lu, ignored bytes: %lu\n"
+                                 " parse count: %d, failed count: %lu | %lu | %lu, ignored bytes: %lu\n"
                                  "time elapsed: %lu us, %s\n",
             this->output_string, this->current_state, ADAU_INTERFACE.available(),
-            this->parse_count, this->failed_message_count, this->failed_checksum_count,
+            this->parse_count,
+            this->failed_message_count, this->failed_checksum_count, this->failed_not_found_count,
             ignored_bytes,
             micros() - this->parse_start_time,
             this->parse_start_time + MAX_PARSE_TIME > micros() ? within_time : exceeded_time);
@@ -347,7 +352,7 @@ EStopDevice::TRIP_LEVEL ADAU_Bus_Interface::tripped(char *tripped_device_name, c
         strlcat(tripped_device_message, temp, 100);
         tripped = EStopDevice::TRIP_LEVEL::FAULT;
     }
-    if (millis() - this->last_message_time > 30000) {
+    if (micros() - this->last_message_time > 30000) {
         sprintf(temp, "NO ADAU DATA-");
         strlcat(tripped_device_message, temp, 100);
         tripped = EStopDevice::TRIP_LEVEL::FAULT;

@@ -34,9 +34,10 @@ class LoadCells : public ROSNode, public EStopDevice {
             int32_t sensor2;
             int32_t sensor3;
             int32_t sensor4;
-            uint8_t flags;      // First 4 bits are error flags for each sensor
+            uint32_t flags;      // First 4 bits are error flags for each sensor
+            uint32_t seq;
         } data;
-        int32_t raw_array[5];  // The raw array of data to be sent over the serial bus
+        int32_t raw_array[sizeof (OutputData) / sizeof (int32_t)];
     } output_data = {};
 
     char* topic_name = new char[30];
@@ -54,7 +55,7 @@ class LoadCells : public ROSNode, public EStopDevice {
                 float_t fr_load;
                 float_t bl_load;
                 float_t br_load;
-            };
+            } values;
             float_t sensor[4];
         } data;
         union {
@@ -81,10 +82,11 @@ public:
         this->output_topic->data_length = sizeof (output_data.raw_array) / sizeof (output_data.raw_array[0]);
         this->data.seq = 0;
         for (int i = 0; i < 4; i++) {
-            this->data.flags.raw[i] = 0xFF;
+            this->data.flags.raw[i] = 0x01;
             this->data.data.sensor[i] = nanf("");
         }
         this->output_topic->data = output_data.raw_array;
+
         // Change the name of the command topic to the correct name
         command_sub.topic_ = this->topic_name;
         sprintf(this->topic_name, "/mciu/%s/Load_cells/command", name);
@@ -93,7 +95,14 @@ public:
     }
 
     void update() override {
-
+        // Copy the data from the sensor into the output array
+        this->output_data.data.sensor1 = (int32_t)(this->data.data.values.fl_load * 100);
+        this->output_data.data.sensor2 = (int32_t)(this->data.data.values.fr_load * 100);
+        this->output_data.data.sensor3 = (int32_t)(this->data.data.values.bl_load * 100);
+        this->output_data.data.sensor4 = (int32_t)(this->data.data.values.br_load * 100);
+        this->output_data.data.flags =
+                this->data.flags.raw[0] | this->data.flags.raw[1] | this->data.flags.raw[2] | this->data.flags.raw[3];
+        this->output_data.data.seq = this->data.seq;
     }
 
     void subscribe(ros::NodeHandle *node_handle) override {
@@ -108,11 +117,17 @@ public:
         char temp[100]{};
         TRIP_LEVEL tripped = NO_FAULT;
         if (!sensor->is_valid()) {
-            sprintf(temp, "ADAU DATA INVALID-");
+            sprintf(temp, "NO ADAU DATA-");
             strlcat(tripped_device_message, temp, 100);
             tripped = FAULT;
         } else if (sensor->get_last_update_time() > 100000) {
             sprintf(temp, "ADAU DATA STALE-");
+            strlcat(tripped_device_message, temp, 100);
+            tripped = FAULT;
+        }
+        if (isnanf(data.data.values.fl_load) || isnanf(data.data.values.fr_load) ||
+            isnanf(data.data.values.bl_load) || isnanf(data.data.values.br_load)) {
+            sprintf(temp, "NAN DATA-");
             strlcat(tripped_device_message, temp, 100);
             tripped = FAULT;
         }

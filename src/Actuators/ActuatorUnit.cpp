@@ -276,7 +276,7 @@ EStopDevice::TRIP_LEVEL ActuatorUnit::tripped(char* device_name, char* device_me
     // Check if the motors encoders are healthy
     for (int i = 0; i < 2; i++) {
         if (this->motors[i].encoder->fault()) {
-            sprintf(temp, "ENCODER M%d FAULT-", i + 1);
+            sprintf(temp, "ENCODER M%d FAULT 0x%02x-", i + 1, this->motors[i].encoder->fault());
             strlcat(device_message, temp, 99);
             tripped = EStopDevice::TRIP_LEVEL::FAULT;
         } else if (!this->motors[i].encoder->is_valid()) {

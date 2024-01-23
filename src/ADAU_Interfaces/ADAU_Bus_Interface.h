@@ -15,7 +15,7 @@
 #else
 #define ADAU_INTERFACE  Serial8
 #endif
-#define ADAU_BAUD_RATE   115200  // 1Mbaud
+#define ADAU_BAUD_RATE   1000000  // 1Mbaud
 #define ADAU_SERIAL_MODE SERIAL_8N1
 #define ADAU_RESET_PIN  3
 #define SERIAL_BUFFER_SIZE 4096
@@ -83,6 +83,7 @@ private:
     // Watchdog variables
     uint32_t failed_message_count = 0;   // The number of messages that failed to parse
     uint32_t failed_checksum_count = 0;  // The number of messages that failed the checksum
+    uint32_t failed_not_found_count = 0; // The number of messages that were not found
     uint32_t last_message_time = 0;      // The time that the last message was received
 
     // Sliding window of the decoding success rate of the last 20 messages
