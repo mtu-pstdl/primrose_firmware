@@ -97,14 +97,12 @@ SystemMonitor* system_monitor;
 
 ROSNode* ros_nodes[24];
 
-
 Odometers odometers;
 
 // TODO: Remove this for release build
 ADAU_Tester* adauTester;
 
 CrashParser parser;
-
 
 void can_recieve(const CAN_message_t &msg) {
     // Check node ID (Upper 6 bits of CAN ID)

@@ -282,23 +282,23 @@ float_t ODrivePro::get_vbus_current() const {
     return this->VBUS_CURRENT;
 }
 
-float_t ODrivePro::unit_conversion(float_t value, bool direction) const {
-    if (this->has_rev_conversion && this->has_meter_conversion){
-        if (direction){
-            return (value / this->meter_per_rev) * this->ticks_per_rev;
-        } else {
-            return (value / this->ticks_per_rev) * this->meter_per_rev;
-        }
-    } else if (this->has_rev_conversion) {
-        if (direction){
-            return value * this->ticks_per_rev;
-        } else {
-            return value / this->ticks_per_rev;
-        }
-    } else {
-        return value;
-    }
-}
+//float_t ODrivePro::unit_conversion(float_t value, bool direction) const {
+//    if (this->has_rev_conversion && this->has_meter_conversion){
+//        if (direction){
+//            return (value / this->meter_per_rev) * this->ticks_per_rev;
+//        } else {
+//            return (value / this->ticks_per_rev) * this->meter_per_rev;
+//        }
+//    } else if (this->has_rev_conversion) {
+//        if (direction){
+//            return value * this->ticks_per_rev;
+//        } else {
+//            return value / this->ticks_per_rev;
+//        }
+//    } else {
+//        return value;
+//    }
+//}
 
 float_t ODrivePro::get_torque_target() const {
     return this->TORQUE_TARGET;
@@ -309,11 +309,11 @@ float_t ODrivePro::get_torque_estimate() const {
 }
 
 float_t ODrivePro::get_pos_estimate() const {
-   return this->unit_conversion(this->POS_ESTIMATE, false);
+   return this->POS_ESTIMATE;
 }
 
 float_t ODrivePro::get_vel_estimate() const {
-    return this->unit_conversion(this->VEL_ESTIMATE, false);
+    return this->VEL_ESTIMATE;
 }
 
 float_t ODrivePro::get_Iq_setpoint() const {
@@ -326,11 +326,11 @@ float_t ODrivePro::get_Iq_measured() const {
 
 float_t ODrivePro::get_setpoint() const {
     if (this->control_mode == odrive::control_modes::POSITION_CONTROL) {
-        return this->unit_conversion(this->position_setpoint, false);
+        return this->position_setpoint;
     } else if (this->control_mode == odrive::control_modes::VELOCITY_CONTROL) {
-        return this->unit_conversion(this->velocity_setpoint, false);
+        return this->velocity_setpoint;
     } else if (this->control_mode == odrive::control_modes::TORQUE_CONTROL) {
-        return this->unit_conversion(this->torque_setpoint, false);
+        return this->torque_setpoint;
     } else {
         return 0;
     }

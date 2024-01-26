@@ -117,11 +117,11 @@ private:
 
     odrive::input_modes input_mode = odrive::UNKNOWN_INPUT_MODE; // The input mode of the ODrive
 
-    bool has_rev_conversion = false; // Whether or not the ODrive has a conversion from ticks to revolutions
-    float_t ticks_per_rev = 0;  // The number of ticks per revolution of output shaft
-    bool has_meter_conversion = false; // Whether or not the ODrive has a conversion from revs to meters
-    float_t meter_per_rev = 0; // The number of revolutions of the output shaft per meter of distance
-
+//    bool has_rev_conversion = false; // Whether or not the ODrive has a conversion from ticks to revolutions
+//    float_t ticks_per_rev = 0;  // The number of ticks per revolution of output shaft
+//    bool has_meter_conversion = false; // Whether or not the ODrive has a conversion from revs to meters
+//    float_t meter_per_rev = 0; // The number of revolutions of the output shaft per meter of distance
+//
     bool was_in_closed_loop = false; // Whether or not the ODrive was in closed loop mode
 
     float_t last_pos = 0; // The last position of the ODrive
@@ -234,7 +234,7 @@ public:
 
     uint32_t get_last_update() const;
 
-    float_t unit_conversion(float_t value, bool direction) const;
+//    float_t unit_conversion(float_t value, bool direction) const;
 
     uint32_t get_inflight_bitmask() const;
 
