@@ -25,6 +25,7 @@
  */
 
 #include <Arduino.h>
+//#include <Wire.h>
 //#include "../.pio/libdeps/teensy40/Teensy4 I2C/src/i2c_driver_wire.h"
 #include <Actuators/Actuator_Bus_Interface.h>
 #include <FlexCAN_T4.h>
@@ -88,7 +89,7 @@ ActuatorsROS* actuators_ros[num_actuators];
 LoadCells* load_cells[2];
 
 BatteryMonitor* battery_monitor;
-//IMU* imu_class;
+IMU* imu_class;
 
 EStopController* e_stop_controller;
 HopperDoor* hopper_door;
@@ -188,6 +189,8 @@ void setup() {
     SPI.begin();
 //    SPI1.begin();
 
+//    Wire.begin();
+
     // Setup the test output publisher
     node_handle.advertise(test_output_pub);
 
@@ -204,7 +207,7 @@ void setup() {
     ros_nodes[ros_node_count++] = hopper_door;
     ros_nodes[ros_node_count++] = battery_monitor;
     ros_nodes[ros_node_count++] = accessory_power;
-//    ros_nodes[ros_node_count++] = imu_class;
+    ros_nodes[ros_node_count++] = imu_class;
     ros_nodes[ros_node_count++] = system_monitor;
 
     node_handle.advertise(*estop_topic.publisher);
