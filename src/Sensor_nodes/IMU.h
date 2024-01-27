@@ -27,16 +27,19 @@ class IMU: public ROSNode, public EStopDevice {
             float_t z;
             float_t w;
         } orientation;
+        float_t orientation_covariance[9];
         struct {
             float_t x;
             float_t y;
             float_t z;
         } angular_velocity;
+        float_t angular_velocity_covariance[9];
         struct {
             float_t x;
             float_t y;
             float_t z;
         } linear_acceleration;
+        float_t linear_acceleration_covariance[9];
         uint32_t seq;
         uint8_t  flags;
     } imu_data = {};

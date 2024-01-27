@@ -40,7 +40,7 @@ public:
      * @param data_ptr   A pointer to the data structure that will be used to store the sensor data
      * @param data_size  The size of the data structure in bytes (sizeof(data_structure))
      */
-    ADAU_Sensor(uint8_t sensor_id, void* data_ptr, uint8_t data_size) {
+    ADAU_Sensor(uint8_t sensor_id, void* data_ptr, const uint8_t data_size) {
         // Set the data pointer and size
         this->sensor_id = sensor_id;
         this->data_ptr = data_ptr;
