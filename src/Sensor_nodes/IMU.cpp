@@ -21,6 +21,7 @@ void IMU::initialize(){
     this->imu_msg->linear_acceleration.x = nanf("");
     this->imu_msg->linear_acceleration.y = nanf("");
     this->imu_msg->linear_acceleration.z = nanf("");
+
 }
 
 void IMU::update() {
@@ -38,7 +39,7 @@ void IMU::update() {
     this->imu_msg->linear_acceleration.x = this->imu_data.linear_acceleration.x;
     this->imu_msg->linear_acceleration.y = this->imu_data.linear_acceleration.y;
     this->imu_msg->linear_acceleration.z = this->imu_data.linear_acceleration.z;
-    this->imu_msg->header.seq = this->imu_data.seq;
+//    this->imu_msg->header.seq = this->imu_data.seq;
 }
 
 EStopDevice::TRIP_LEVEL IMU::tripped(char* tripped_device_name, char* tripped_device_message) {

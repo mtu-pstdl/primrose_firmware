@@ -80,6 +80,8 @@ void ODriveROS::update() {
     this->output_data.data.odometer_power = this->to_fixed_point(this->odrive->get_power_consumption(), UNIT_SCALE);
     this->output_data.data.iq_measured   = this->to_fixed_point(this->odrive->get_Iq_measured(), UNIT_SCALE);
     this->output_data.data.iq_setpoint   = this->to_fixed_point(this->odrive->get_Iq_setpoint(), UNIT_SCALE);
+    this->output_data.data.fet_temperature = this->to_fixed_point(this->odrive->get_fet_temp(), UNIT_SCALE);
+    this->output_data.data.mtr_temperature = this->to_fixed_point(this->odrive->get_motor_temp(), UNIT_SCALE);
 
     if (odrive->get_axis_state() == odrive::axis_states::CLOSED_LOOP_CONTROL &&
        this->last_ros_command < millis() - 2500) {

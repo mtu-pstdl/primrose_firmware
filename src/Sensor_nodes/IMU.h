@@ -9,8 +9,13 @@
 #include "ROSNode.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/sensor_msgs/Imu.h"
 //#include <SPI.h>
+//#include "../../.pio/libdeps/teensy40/Adafruit BNO08x/src/Adafruit_BNO08x.h"
 #include "Misc/EStopDevice.h"
 #include "ADAU_Interfaces/ADAU_Sensor.h"
+
+//Adafruit_BNO08x imu = Adafruit_BNO08x(-1);
+// Declare global sensor message
+//sh2_SensorValue_t sensor_value = {};
 
 /**
  * The IMU class takes data from the BNO085 IMU sensor and publishes it to the ROS network.
@@ -26,22 +31,27 @@ class IMU: public ROSNode, public EStopDevice {
             float_t y;
             float_t z;
             float_t w;
+//            float_t covariance[9];
+            uint32_t seq;
+            uint8_t flags;
         } orientation;
-        float_t orientation_covariance[9];
         struct {
             float_t x;
             float_t y;
             float_t z;
+//            float_t covariance[9];
+            uint32_t seq;
+            uint8_t flags;
         } angular_velocity;
-        float_t angular_velocity_covariance[9];
         struct {
             float_t x;
             float_t y;
             float_t z;
+//            float_t covariance[9];
+            uint32_t seq;
+            uint8_t flags;
         } linear_acceleration;
-        float_t linear_acceleration_covariance[9];
-        uint32_t seq;
-        uint8_t  flags;
+        uint8_t flags;
     } imu_data = {};
 #pragma pack(pop)
 
@@ -67,15 +77,16 @@ public:
         this->imu_msg = imu_msg;
         this->initialize();
         this->sensor = new ADAU_Sensor(0x07, &this->imu_data, sizeof(this->imu_data));
+//        imu.begin_I2C(BNO08x_I2CADDR_DEFAULT, &Wire2, 0);
+//        imu.enableReport(SH2_GAME_ROTATION_VECTOR, 10000);
+//        imu.enableReport(SH2_ACCELEROMETER, 10000);
+//        imu.enableReport(SH2_GYROSCOPE_CALIBRATED, 10000);
+//        imu.enableReport(SH2_TEMPERATURE, 10000);
+//        sensor_value.
     }
 
     void subscribe(ros::NodeHandle* nh) override {
         this->node_handle = nh;
-//        if (this->config_success) {
-//            this->node_handle->loginfo("IMU initialized successfully");
-//        } else {
-//            this->node_handle->logerror("IMU failed to initialize");
-//        }
     }
 
     void update() override;

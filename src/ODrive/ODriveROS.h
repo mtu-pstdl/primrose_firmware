@@ -57,7 +57,9 @@ private:
             int32_t odometer_power = 0;    // Fixed point, x100 (unit: kW)
             int32_t iq_measured = 0;       // Fixed point, x100 (unit: A)
             int32_t iq_setpoint = 0;       // Fixed point, x100 (unit: A)
-            int32_t reserved[3] = {0, 0, 0};  // Reserved for future use
+            int32_t fet_temperature = 0;   // Fixed point, x100 (unit: degC)
+            int32_t mtr_temperature = 0;   // Fixed point, x100 (unit: degC)
+            int32_t reserved[1] = {0};     // Reserved for future use
         } data;
         int32_t raw_array[20]{};  // The raw array of data to be sent over the serial bus
     } output_data = {};
