@@ -99,6 +99,10 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
             this->IQ_MEASURED = * (float *) &lower_32;
             this->last_iq_update = millis();
             this->in_flight_bitmask &= ~IQ_FLIGHT_BIT; // Clear the bit
+            if (this->high_frequency_logging_enabled) {
+                this->send_command(odrive::Get_Iq);
+                this->high_frequency_logging_callback(odrive::Get_Iq);
+            }
             break;
         case odrive::Get_Temperature:
             this->FET_TEMP   = * (float *) &upper_32;
@@ -112,12 +116,20 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
             this->update_power_consumption();
             this->last_vbus_update = millis();
             this->in_flight_bitmask &= ~VBUS_FLIGHT_BIT; // Clear the bit
+            if (this->high_frequency_logging_enabled) {
+                this->send_command(odrive::Get_Bus_Voltage_Current);
+                this->high_frequency_logging_callback(odrive::Get_Bus_Voltage_Current);
+            }
             break;
         case odrive::Get_Torques:
             this->TORQUE_TARGET   = * (float *) &lower_32;
             this->TORQUE_ESTIMATE = * (float *) &upper_32;
             this->last_torque_update = millis();
             this->in_flight_bitmask &= ~TORQUE_FLIGHT_BIT; // Clear the bit
+            if (this->high_frequency_logging_enabled) {
+                this->send_command(odrive::Get_Torques);
+                this->high_frequency_logging_callback(odrive::Get_Torques);
+            }
             break;
         default:
             // Cry about it
@@ -539,3 +551,11 @@ void ODrivePro::resume() {
     this->send_command(odrive::Clear_Errors);
 }
 
+void ODrivePro::enable_high_frequency_logging(void *callback) {
+    this->high_frequency_logging_callback = callback;
+    this->high_frequency_logging_enabled = true;
+}
+
+void ODrivePro::disable_high_frequency_logging() {
+    this->high_frequency_logging_enabled = false;
+}

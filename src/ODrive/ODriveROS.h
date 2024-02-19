@@ -98,9 +98,9 @@ private:
     // Publishes the values of POS_ESTIMATE, VEL_ESTIMATE, IQ_SETPOINT, IQ_MEASURED
     std_msgs::Int32MultiArray* output_topic;
 
-#define NUM_CONDITIONS 13
-    char* strings[NUM_CONDITIONS]{};
-    char* status_string = new char[25];
+//#define NUM_CONDITIONS 13
+//    char* strings[NUM_CONDITIONS]{};
+//    char* status_string = new char[25];
     char* setpoint_topic_name = new char[25];
 
 public:

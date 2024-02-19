@@ -44,10 +44,14 @@ public:
 
 private:
 
-    bool    calibrating = false; // Whether or not the ODrive is calibrating
+    boolean high_frequency_logging_enabled = false; // Whether or not high frequency logging is enabled
+    // The high frequency logging callback function
+    void (*high_frequency_logging_callback) (odrive::command_ids command_id) = nullptr;
+
+    boolean calibrating = false; // Whether or not the ODrive is calibrating
     uint8_t calibration_step = 0; // The current calibration step
 
-    bool has_feedforward = false; // Whether or not the ODrive has feedforward
+    boolean has_feedforward = false; // Whether or not the ODrive has feedforward
     feedforward_struct* feedforward = nullptr; // The feedforward value
 
     FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64>* can_bus = nullptr; // The CAN bus pointer
@@ -151,6 +155,10 @@ private:
 public:
 
     EStopDevice::TRIP_LEVEL tripped(char* device_name, char* device_message) override;
+
+    void enable_high_frequency_logging(void* callback);
+
+    void disable_high_frequency_logging();
 
     void estop() override;
 
