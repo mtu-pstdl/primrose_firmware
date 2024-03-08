@@ -62,12 +62,37 @@ void HighSpeedLogger::add_log(HighSpeedLogger::LogData log_data){
 void HighSpeedLogger::log_callback(HighSpeedLogger *logger, odrive::command_ids command_id) {
     // Disable interrupts for the brief time it takes to copy the data
     // from the odrive to the log_data_buffer
-    __disable_irq();
+    if (logger->halt_logging) return;
+    logger->halt_logging = true;
     if (logger->odrive == nullptr) return;
     LogData log_data = logger->get_log_data(logger->odrive, command_id);
     logger->add_log(log_data);
-    __enable_irq();
-
+    logger->halt_logging = false;
 }
 
+void HighSpeedLogger::write_to_output(HighSpeedLogger::LogDataMessage* message){
+    // Write the data points from this message into the UInt32 array
+    for (int i = 0; i < message->total_data_points; i++){
+        LogData log_data = message->log_data[i];
+        this->output_message_data[i * 4]     = log_data.command_id;
+        this->output_message_data[i * 4 + 1] = log_data.timestamp_high;
+        this->output_message_data[i * 4 + 2] = log_data.timestamp_low;
+        this->output_message_data[i * 4 + 3] = log_data.data_1.int_data;
+        this->output_message_data[i * 4 + 4] = log_data.data_2.int_data;
+    }
+    this->output_message->data_length = message->total_data_points * 4;
+}
+
+void HighSpeedLogger::update(){
+    // Send each message
+    for (int i = 0; i < this->log_data_buffer.current_message; i++){
+        // Write the message into the UInt32 array
+        write_to_output(&this->log_data_buffer.log_data_messages[i]);
+        // Clear the message
+        this->log_data_buffer.log_data_messages[i].total_data_points = 0;
+        // Publish the message
+        this->publisher->publish(this->output_message);
+    }
+    this->log_data_buffer.current_message = 0;
+}
 

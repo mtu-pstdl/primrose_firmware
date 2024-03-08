@@ -186,7 +186,7 @@ ros_topic system_monitor_topic = {
 };
 
 #define HIGH_SPEED_LOGGER_TOPIC_NUM 17
-std_msgs::Int32MultiArray high_speed_logger_msg;
+std_msgs::UInt32MultiArray high_speed_logger_msg;
 ros::Publisher high_speed_logger_pub("/mciu/HighSpeed_logger", &high_speed_logger_msg);
 ros_topic high_speed_logger_topic = {
         .publisher = &high_speed_logger_pub,
@@ -215,7 +215,7 @@ ros_topic* load_cell_topics[2] = {
         &hopper_load_cell_topic
 };
 
-#define ALL_TOPICS_LENGTH 18
+#define ALL_TOPICS_LENGTH 17
 ros_topic* all_topics[ALL_TOPICS_LENGTH] = {
         &odrive1_encoder_topic,
         &odrive2_encoder_topic,
@@ -233,8 +233,7 @@ ros_topic* all_topics[ALL_TOPICS_LENGTH] = {
         &estop_status_topic,
         &suspension_load_cell_topic,
         &hopper_load_cell_topic,
-        &system_monitor_topic,
-        &high_speed_logger_topic
+        &system_monitor_topic
 };
 
 #endif //TEENSYCANTRANSCEIVER_ROS_PUBLISHERS_H

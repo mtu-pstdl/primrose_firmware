@@ -145,7 +145,8 @@ void allocate_misc_objects(){
     system_monitor = new SystemMonitor(
             static_cast<std_msgs::Int32MultiArray*>(all_topics[SYSTEM_MONITOR_TOPIC_NUM]->message));
     high_speed_logger = new (&high_speed_logger_memory)
-            HighSpeedLogger(static_cast<std_msgs::Int32MultiArray*>(all_topics[SYSTEM_MONITOR_TOPIC_NUM]->message));
+            HighSpeedLogger(static_cast<std_msgs::UInt32MultiArray*>(high_speed_logger_topic.message),
+                            high_speed_logger_topic.publisher);
 }
 
 void attach_estop_devices(){

@@ -9,13 +9,17 @@
 #include "ROSNode.h"
 #include "ODrive/odrive_constants.h"
 #include "ODrive/ODrivePro.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/UInt32MultiArray.h"
+#include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/ros/publisher.h"
+
 
 class HighSpeedLogger : public ROSNode {
 
 private:
 
     ODrivePro* odrive = nullptr;
-    std_msgs::Int32MultiArray* output_topic;
+
+    volatile boolean halt_logging = false;  // Set high when the buffer is being accessed
 
     struct LogData {
         uint8_t  command_id: 8;       // odrive::command_ids
@@ -44,9 +48,18 @@ private:
         uint8_t current_message = 0;
     } log_data_buffer;
 
+    std_msgs::UInt32MultiArray* output_message;
+    uint32_t output_message_data[sizeof(LogDataMessage) / sizeof(uint32_t)];
+    ros::Publisher* publisher;
+
 public:
-    explicit HighSpeedLogger(std_msgs::Int32MultiArray* output_topic){
-        this->output_topic = output_topic;
+
+    HighSpeedLogger(std_msgs::UInt32MultiArray* output_message, ros::Publisher* output_topic){
+        this->output_message = output_message;
+        this->publisher = output_topic;
+        this->output_message->data = this->output_message_data;
+        this->output_message->data_length = 0;
+
     }
 
     void attach_to_odrive(ODrivePro* target_odrive);
@@ -61,6 +74,10 @@ public:
     uint64_t get_micros_64();
 
     void add_log(LogData log_data);
+
+    void update() override;
+
+    void write_to_output(LogDataMessage *message);
 };
 
 
