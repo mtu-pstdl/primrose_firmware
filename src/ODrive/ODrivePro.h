@@ -18,6 +18,7 @@
 
 #define VBUS_SAMPLE_SIZE 20
 
+class HighSpeedLogger;
 
 /**
  * The ODrivePro class interfaces directly with a particular ODrive on the CAN bus. It is responsible for
@@ -46,7 +47,8 @@ private:
 
     boolean high_frequency_logging_enabled = false; // Whether or not high frequency logging is enabled
     // The high frequency logging callback function
-    void (*high_frequency_logging_callback) (odrive::command_ids command_id) = nullptr;
+    HighSpeedLogger* high_frequency_logger = nullptr;
+    void (*high_frequency_logger_callback) (HighSpeedLogger* logger, odrive::command_ids command_id) = nullptr;
 
     boolean calibrating = false; // Whether or not the ODrive is calibrating
     uint8_t calibration_step = 0; // The current calibration step

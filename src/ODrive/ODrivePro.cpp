@@ -93,6 +93,10 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
             this->update_odometer();
             this->last_encoder_update = millis();
             this->in_flight_bitmask &= ~ENCODER_FLIGHT_BIT; // Clear the bit
+            if (this->high_frequency_logging_enabled) {
+                this->send_command(odrive::Get_Encoder_Estimates);
+                this->high_frequency_logger_callback(this->high_frequency_logger, odrive::Get_Encoder_Estimates);
+            }
             break;
         case odrive::Get_Iq:
             this->IQ_SETPOINT = * (float *) &upper_32;
@@ -101,7 +105,7 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
             this->in_flight_bitmask &= ~IQ_FLIGHT_BIT; // Clear the bit
             if (this->high_frequency_logging_enabled) {
                 this->send_command(odrive::Get_Iq);
-                this->high_frequency_logging_callback(odrive::Get_Iq);
+                this->high_frequency_logger_callback(this->high_frequency_logger, odrive::Get_Iq);
             }
             break;
         case odrive::Get_Temperature:
@@ -118,7 +122,7 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
             this->in_flight_bitmask &= ~VBUS_FLIGHT_BIT; // Clear the bit
             if (this->high_frequency_logging_enabled) {
                 this->send_command(odrive::Get_Bus_Voltage_Current);
-                this->high_frequency_logging_callback(odrive::Get_Bus_Voltage_Current);
+                this->high_frequency_logger_callback(this->high_frequency_logger, odrive::Get_Bus_Voltage_Current);
             }
             break;
         case odrive::Get_Torques:
@@ -128,7 +132,7 @@ void ODrivePro::on_message(const CAN_message_t &msg) {
             this->in_flight_bitmask &= ~TORQUE_FLIGHT_BIT; // Clear the bit
             if (this->high_frequency_logging_enabled) {
                 this->send_command(odrive::Get_Torques);
-                this->high_frequency_logging_callback(odrive::Get_Torques);
+                this->high_frequency_logger_callback(this->high_frequency_logger, odrive::Get_Torques);
             }
             break;
         default:
@@ -552,7 +556,7 @@ void ODrivePro::resume() {
 }
 
 void ODrivePro::enable_high_frequency_logging(void *callback) {
-    this->high_frequency_logging_callback = callback;
+    this->high_frequency_logger = callback;
     this->high_frequency_logging_enabled = true;
 }
 

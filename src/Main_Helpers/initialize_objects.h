@@ -7,6 +7,7 @@
 
 #include "ODrive/ODriveROS.h"
 #include "ROS_Publishers.h"
+#include "Misc/HighSpeedLogger.h"
 
 // Allocate space for the odrives using placement new
 constexpr size_t num_odrives = 7;
@@ -23,6 +24,9 @@ uint8_t actuators_ros_memory[sizeof(ActuatorsROS) * num_actuators];  // NOLINT
 extern ActuatorsROS* actuators_ros[num_actuators];  // NOLINT
 extern ActuatorUnit* actuators[num_actuators];      // NOLINT
 
+constexpr size_t high_speed_logger_size = sizeof(HighSpeedLogger);
+uint8_t high_speed_logger_memory[high_speed_logger_size];  // NOLINT
+
 // Misc objects
 
 extern LoadCells* load_cells[2];            // NOLINT
@@ -32,6 +36,7 @@ extern EStopController* e_stop_controller;  // NOLINT
 extern AccessoryPower* accessory_power;     // NOLINT
 extern HopperDoor* hopper_door;             // NOLINT
 extern SystemMonitor* system_monitor;       // NOLINT
+extern HighSpeedLogger* high_speed_logger;  // NOLINT
 
 extern Odometers odometers;          // NOLINT
 extern ros::NodeHandle node_handle;  // NOLINT
@@ -139,6 +144,8 @@ void allocate_misc_objects(){
     accessory_power = new AccessoryPower();
     system_monitor = new SystemMonitor(
             static_cast<std_msgs::Int32MultiArray*>(all_topics[SYSTEM_MONITOR_TOPIC_NUM]->message));
+    high_speed_logger = new (&high_speed_logger_memory)
+            HighSpeedLogger(static_cast<std_msgs::Int32MultiArray*>(all_topics[SYSTEM_MONITOR_TOPIC_NUM]->message));
 }
 
 void attach_estop_devices(){

@@ -58,6 +58,7 @@
 #include "Main_Helpers/CrashParser.h"
 #include "Misc/SystemMonitor.h"
 #include "Main_Helpers/initialize_objects.h"
+#include "Misc/HighSpeedLogger.h"
 
 
 
@@ -95,6 +96,7 @@ EStopController* e_stop_controller;
 HopperDoor* hopper_door;
 AccessoryPower* accessory_power;
 SystemMonitor* system_monitor;
+HighSpeedLogger* high_speed_logger;
 
 ROSNode* ros_nodes[24];
 
