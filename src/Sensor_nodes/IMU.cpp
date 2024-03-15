@@ -28,17 +28,11 @@ void IMU::update() {
     DROP_CRUMB();
     if (!this->sensor->is_valid()) return;
     if (this->sensor->get_last_update_time() < 100000) return;
-    this->imu_msg->header.stamp = this->node_handle->now();
-    this->imu_msg->orientation.x = this->imu_data.orientation.x;
-    this->imu_msg->orientation.y = this->imu_data.orientation.y;
-    this->imu_msg->orientation.z = this->imu_data.orientation.z;
-    this->imu_msg->orientation.w = this->imu_data.orientation.w;
-    this->imu_msg->angular_velocity.x = this->imu_data.angular_velocity.x;
-    this->imu_msg->angular_velocity.y = this->imu_data.angular_velocity.y;
-    this->imu_msg->angular_velocity.z = this->imu_data.angular_velocity.z;
-    this->imu_msg->linear_acceleration.x = this->imu_data.linear_acceleration.x;
-    this->imu_msg->linear_acceleration.y = this->imu_data.linear_acceleration.y;
-    this->imu_msg->linear_acceleration.z = this->imu_data.linear_acceleration.z;
+//    this->imu_msg->header.stamp = this->node_handle->now();
+    this->imu_msg->orientation.x = this->imu_data.x;
+    this->imu_msg->orientation.y = this->imu_data.y;
+    this->imu_msg->orientation.z = this->imu_data.z;
+    this->imu_msg->orientation.w = this->imu_data.w;
 //    this->imu_msg->header.seq = this->imu_data.seq;
 }
 

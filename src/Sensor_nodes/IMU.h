@@ -25,34 +25,16 @@
 class IMU: public ROSNode, public EStopDevice {
 
 #pragma pack(push, 1)
-    struct IMUData {
-        struct {
-            float_t x;
-            float_t y;
-            float_t z;
-            float_t w;
-//            float_t covariance[9];
-            uint32_t seq;
-            uint8_t flags;
-        } orientation;
-        struct {
-            float_t x;
-            float_t y;
-            float_t z;
-//            float_t covariance[9];
-            uint32_t seq;
-            uint8_t flags;
-        } angular_velocity;
-        struct {
-            float_t x;
-            float_t y;
-            float_t z;
-//            float_t covariance[9];
-            uint32_t seq;
-            uint8_t flags;
-        } linear_acceleration;
-        uint8_t flags;
-    } imu_data = {};
+    struct ImuData {
+        float_t x = 0;
+        float_t y = 0;
+        float_t z = 0;
+        float_t w = 0;
+
+        uint8_t flags = 0x00;
+
+        uint32_t seq = 0;
+    } imu_data;
 #pragma pack(pop)
 
     // The IMU sensor
