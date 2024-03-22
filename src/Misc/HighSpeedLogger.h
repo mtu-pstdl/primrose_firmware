@@ -7,6 +7,7 @@
 
 
 #include "ROSNode.h"
+#include "SD.h"
 #include "ODrive/odrive_constants.h"
 #include "ODrive/ODrivePro.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/UInt32MultiArray.h"
@@ -19,11 +20,14 @@ private:
 
     ODrivePro* odrive = nullptr;
 
+    uint32_t micros_overflows = 0;
+    uint32_t last_micros = 0;
+
     volatile boolean halt_logging = false;  // Set high when the buffer is being accessed
 
     struct LogData {
         uint8_t  command_id: 8;       // odrive::command_ids
-        uint32_t timestamp_high: 24;
+        uint32_t timestamp_high: 24;  // Sacrifice 8 bits of resolution for 8 bits of command_id
         uint32_t timestamp_low : 32;
         union {
             float_t float_data;
@@ -59,7 +63,6 @@ public:
         this->publisher = output_topic;
         this->output_message->data = this->output_message_data;
         this->output_message->data_length = 0;
-
     }
 
     void attach_to_odrive(ODrivePro* target_odrive);

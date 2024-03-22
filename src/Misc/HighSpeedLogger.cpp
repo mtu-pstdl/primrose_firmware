@@ -14,7 +14,11 @@ void HighSpeedLogger::detach_from_odrive() {
 }
 
 uint64_t HighSpeedLogger::get_micros_64() {
-    return micros();
+    uint32_t current_time = micros();
+    if (current_time < this->last_micros)
+        this->micros_overflows++;
+    this->last_micros = current_time;
+    return ((uint64_t)this->micros_overflows << 32) + current_time;
 }
 
 HighSpeedLogger::LogData HighSpeedLogger::get_log_data(ODrivePro* target, odrive::command_ids data_type){
@@ -80,7 +84,7 @@ void HighSpeedLogger::write_to_output(HighSpeedLogger::LogDataMessage* message){
         this->output_message_data[i * 4 + 3] = log_data.data_1.int_data;
         this->output_message_data[i * 4 + 4] = log_data.data_2.int_data;
     }
-    this->output_message->data_length = message->total_data_points * 4;
+//    this->output_message->data_length = message->total_data_points * 4;
 }
 
 void HighSpeedLogger::update(){
@@ -91,7 +95,7 @@ void HighSpeedLogger::update(){
         // Clear the message
         this->log_data_buffer.log_data_messages[i].total_data_points = 0;
         // Publish the message
-        this->publisher->publish(this->output_message);
+//        this->publisher->publish(this->output_message);
     }
     this->log_data_buffer.current_message = 0;
 }

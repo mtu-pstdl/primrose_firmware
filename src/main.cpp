@@ -107,7 +107,7 @@ ADAU_Tester* adauTester;
 
 CrashParser parser;
 
-void can_recieve(const CAN_message_t &msg) {
+void can_receive(const CAN_message_t &msg) {
     // Check node ID (Upper 6 bits of CAN ID)
     uint8_t node_id = msg.id >> 5;
     for (ODrivePro* odrive : odrives) {
@@ -183,7 +183,7 @@ void setup() {
     // Set up the CAN bus
     can1.begin();
     can1.setBaudRate(500000);       // Set the baud rate to 500kbps
-    can1.onReceive(can_recieve);  // Set the callback function for when a CAN message is received
+    can1.onReceive(can_receive);  // Set the callback function for when a CAN message is received
 
     can1.enableFIFO();                   // Enable the FIFO (First In First Out) buffer for the CAN bus
     can1.enableFIFOInterrupt();          // Allow the CAN bus to trigger an interrupt when a message is received
@@ -274,7 +274,7 @@ void loop() {
             actuators[actuator_index]->update();
         }
         starting_actuator = (starting_actuator + 1) % num_actuators;
-
+        
         if (node_handle.connected()) {
             for (ROSNode *node: ros_nodes) {
                 if (node == nullptr) continue;     // Skip over nullptrs

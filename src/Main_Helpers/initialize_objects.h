@@ -58,25 +58,33 @@ void allocate_odrives(){
 
     uint8_t odrive_num = 0;  // Keep track of position in the odrive_ros array
     odrive_ros[0] = new (&odrive_ros_memory[sizeof(ODriveROS) * odrive_num++])
-            ODriveROS(odrives[0], static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[0]->message),
+            ODriveROS(odrives[0],
+                      static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[0]->message),
                       "Front_Left");
     odrive_ros[1] = new (&odrive_ros_memory[sizeof(ODriveROS) * odrive_num++])
-            ODriveROS(odrives[1],static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[1]->message),
+            ODriveROS(odrives[1],
+                      static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[1]->message),
                       "Front_Right");
     odrive_ros[2] = new (&odrive_ros_memory[sizeof(ODriveROS) * odrive_num++])
-            ODriveROS(odrives[2],static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[2]->message),
+            ODriveROS(odrives[2],
+
+                      static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[2]->message),
                       "Rear_Left");
     odrive_ros[3] = new (&odrive_ros_memory[sizeof(ODriveROS) * odrive_num++])
-            ODriveROS(odrives[3],static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[3]->message),
+            ODriveROS(odrives[3],
+                      static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[3]->message),
                       "Rear_Right");
     odrive_ros[4] = new (&odrive_ros_memory[sizeof(ODriveROS) * odrive_num++])
-            ODriveROS(odrives[4],static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[4]->message),
+            ODriveROS(odrives[4],
+                      static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[4]->message),
                       "Trencher");
     odrive_ros[5] = new (&odrive_ros_memory[sizeof(ODriveROS) * odrive_num++])
-            ODriveROS(odrives[5],static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[5]->message),
+            ODriveROS(odrives[5],
+                      static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[5]->message),
                       "Conveyor");
     odrive_ros[6] = new (&odrive_ros_memory[sizeof(ODriveROS) * odrive_num++])
-            ODriveROS(odrives[6],static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[6]->message),
+            ODriveROS(odrives[6],
+                      static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[6]->message),
                       "Hopper");
 }
 
