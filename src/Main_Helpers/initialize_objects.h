@@ -10,7 +10,7 @@
 #include "Misc/HighSpeedLogger.h"
 
 // Allocate space for the odrives using placement new
-constexpr size_t num_odrives = 7;
+constexpr size_t num_odrives = 6;
 uint8_t odrive_pro_memory[sizeof(ODrivePro) * num_odrives];  // NOLINT
 uint8_t odrive_ros_memory[sizeof(ODriveROS) * num_odrives];  // NOLINT
 
@@ -24,8 +24,8 @@ uint8_t actuators_ros_memory[sizeof(ActuatorsROS) * num_actuators];  // NOLINT
 extern ActuatorsROS* actuators_ros[num_actuators];  // NOLINT
 extern ActuatorUnit* actuators[num_actuators];      // NOLINT
 
-constexpr size_t high_speed_logger_size = sizeof(HighSpeedLogger);
-uint8_t high_speed_logger_memory[high_speed_logger_size];  // NOLINT
+//constexpr size_t high_speed_logger_size = sizeof(HighSpeedLogger);
+//uint8_t high_speed_logger_memory[high_speed_logger_size];  // NOLINT
 
 // Misc objects
 
@@ -36,7 +36,7 @@ extern EStopController* e_stop_controller;  // NOLINT
 extern AccessoryPower* accessory_power;     // NOLINT
 extern HopperDoor* hopper_door;             // NOLINT
 extern SystemMonitor* system_monitor;       // NOLINT
-extern HighSpeedLogger* high_speed_logger;  // NOLINT
+//extern HighSpeedLogger* high_speed_logger;  // NOLINT
 
 extern Odometers odometers;          // NOLINT
 extern ros::NodeHandle node_handle;  // NOLINT
@@ -47,17 +47,22 @@ extern FlexCAN_T4<CAN1, RX_SIZE_64, TX_SIZE_64> can1;  // NOLINT
  * Initializes the odrive classes and the odrive_ros classes in memory already allocated by the linker
  */
 void allocate_odrives(){
+    DROP_CRUMB_VALUE('ODRV', breadcrumb_type::CHAR4);
 
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < num_odrives; i++) {
+        DROP_CRUMB_VALUE(i, breadcrumb_type::INT);
         // Initialize the odrive's using placement new so that memory is allocated at compile time
         odrives[i] = new (&odrive_pro_memory[sizeof(ODrivePro) * i]) ODrivePro(i, &can1, &node_handle);
-        odrives[i]->pass_odometer_data(odometers.get_odometer(i));
+//        odrives[i]->pass_odometer_data(odometers.get_odometer(i));
     }
+
+    DROP_CRUMB_VALUE('OROS', breadcrumb_type::CHAR4);
 
 //    odrives[5]->set_feedforward(&trencher_ff);
 
     uint8_t odrive_num = 0;  // Keep track of position in the odrive_ros array
-    odrive_ros[0] = new (&odrive_ros_memory[sizeof(ODriveROS) * odrive_num++])
+//    DROP_CRUMB_VALUE(&odrive_ros_memory, breadcrumb_type::ADDRESS);
+    odrive_ros[0] = new
             ODriveROS(odrives[0],
                       static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[0]->message),
                       "Front_Left");
@@ -67,7 +72,6 @@ void allocate_odrives(){
                       "Front_Right");
     odrive_ros[2] = new (&odrive_ros_memory[sizeof(ODriveROS) * odrive_num++])
             ODriveROS(odrives[2],
-
                       static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[2]->message),
                       "Rear_Left");
     odrive_ros[3] = new (&odrive_ros_memory[sizeof(ODriveROS) * odrive_num++])
@@ -82,10 +86,11 @@ void allocate_odrives(){
             ODriveROS(odrives[5],
                       static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[5]->message),
                       "Conveyor");
-    odrive_ros[6] = new (&odrive_ros_memory[sizeof(ODriveROS) * odrive_num++])
-            ODriveROS(odrives[6],
-                      static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[6]->message),
-                      "Hopper");
+//    odrive_ros[6] = new (&odrive_ros_memory[sizeof(ODriveROS) * odrive_num++])
+//            ODriveROS(odrives[6],
+//                      static_cast<std_msgs::Int32MultiArray*>(odrive_encoder_topics[6]->message),
+//                      "Hopper");
+    DROP_CRUMB_VALUE('DONE', breadcrumb_type::CHAR4);
 }
 
 /**
@@ -93,7 +98,7 @@ void allocate_odrives(){
  * @note Uses placement new, but some sensor objects are not allocated at until runtime
  */
 void allocate_actuators(){
-
+    DROP_CRUMB_VALUE('ACTU', breadcrumb_type::CHAR4);
     uint8_t actuator_num = 0;  // Keep track of position in the actuators array
     actuators[0] = new (&actuator_unit_memory[sizeof(ActuatorUnit) * actuator_num++])
             ActuatorUnit(128,new SteeringEncoders(0),
@@ -137,6 +142,7 @@ void allocate_actuators(){
 }
 
 void allocate_misc_objects(){
+    DROP_CRUMB_VALUE('MISC', breadcrumb_type::CHAR4);
     load_cells[0] = new LoadCells(0x05, "Suspen",
                                   static_cast<std_msgs::Int32MultiArray*>(load_cell_topics[0]->message));
     load_cells[1] = new LoadCells(0x06, "Hopper",

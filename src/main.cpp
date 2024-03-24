@@ -108,6 +108,7 @@ ADAU_Tester* adauTester;
 CrashParser parser;
 
 void can_receive(const CAN_message_t &msg) {
+    DROP_CRUMB_VALUE('CANI', breadcrumb_type::CHAR4);
     // Check node ID (Upper 6 bits of CAN ID)
     uint8_t node_id = msg.id >> 5;
     for (ODrivePro* odrive : odrives) {
@@ -176,7 +177,7 @@ void setup() {
     node_handle.initNode();          // Initialize the ROS node (this will block until a connection is made)
     node_handle.requestSyncTime();   // Sync time with ROS master
 
-    DROP_CRUMB();
+    DROP_CRUMB_VALUE('NODE', breadcrumb_type::CHAR4);
 
     // If we are starting in safe mode exit here to prevent us from encountering the same error again and again
     if (!safe_mode_flag) return;
@@ -185,21 +186,18 @@ void setup() {
     // Set up the CAN bus
     can1.begin();
     can1.setBaudRate(500000);       // Set the baud rate to 500kbps
-    can1.onReceive(&can_receive);  // Set the callback function for when a CAN message is received
+    can1.onReceive(can_receive);  // Set the callback function for when a CAN message is received
 
-    DROP_CRUMB();
+    DROP_CRUMB_VALUE('CAN ', breadcrumb_type::CHAR4);
 
     can1.enableFIFO();                   // Enable the FIFO (First In First Out) buffer for the CAN bus
     can1.enableFIFOInterrupt();          // Allow the CAN bus to trigger an interrupt when a message is received
 
-    DROP_CRUMB();
+    DROP_CRUMB_VALUE('FIFO', breadcrumb_type::CHAR4);
 
     SPI.begin();
-//    SPI1.begin();
 
-//    Wire.begin();
-
-    DROP_CRUMB();
+    DROP_CRUMB_VALUE('SPI ', breadcrumb_type::CHAR4);
 
     // Setup the test output publisher
 //    node_handle.advertise(test_output_pub);
@@ -207,8 +205,8 @@ void setup() {
     setup_hardware_objects();  // Initialize all the hardware objects and allocate memory for the runtime objects
 
     attach_estop_devices();    // Attach all the estop devices to the estop controller
-
-    // Add all ros nodes to the ros node array
+//
+//    // Add all ros nodes to the ros node array
     int ros_node_count = 0;
     for (auto & odrive : odrive_ros) ros_nodes[ros_node_count++] = odrive;
     for (auto & actuator : actuators_ros) ros_nodes[ros_node_count++] = actuator;
@@ -297,15 +295,20 @@ void loop() {
 
         odometers.refresh();  // Save the updated odometer data to the EEPROM if necessary
 
-        if (e_stop_controller->estop_message_updated())
+        if (e_stop_controller->estop_message_updated()) {
+            if (estop_topic.message == nullptr) return;
+            DROP_CRUMB_VALUE('ESTO', breadcrumb_type::CHAR4);
             estop_topic.publisher->publish(estop_topic.message);
+        }
+        DROP_CRUMB_VALUE('PUBL', breadcrumb_type::CHAR4);
         for (ros_topic *topic: all_topics) {
             if (topic == nullptr) continue;
+            if (topic->message == nullptr) continue;
             topic->publisher->publish(topic->message);
         }
 
         // TODO: Remove this for release build
-        test_output_pub.publish(&test_output_msg);
+//        test_output_pub.publish(&test_output_msg);
 
         while (ACTUATOR_BUS_INTERFACE.spin() && micros() - loop_start < 45000) {
             // Can put other background tasks here if necessary, but they must be non-blocking

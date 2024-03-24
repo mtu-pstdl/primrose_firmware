@@ -20,6 +20,7 @@
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/std_msgs/Empty.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/DiagnosticStatus.h"
 #include "../../.pio/libdeps/teensy40/Rosserial Arduino Library/src/diagnostic_msgs/KeyValue.h"
+#include "Main_Helpers/BreadCrumbs.h"
 
 #define UNIT_SCALE 100
 //#define VEL_UNIT_SCALE 10000
@@ -110,6 +111,7 @@ public:
                std_msgs::Int32MultiArray* encoder_topic,
                String disp_name) :
             setpoint_sub("template1", &ODriveROS::setpoint_callback, this) {
+        DROP_CRUMB_VALUE('ODRO', breadcrumb_type::CHAR4);
         this->odrive = odrive;
         this->output_topic = encoder_topic;
         this->output_topic->data_length = sizeof (this->output_data.raw_array) / sizeof (int32_t);
@@ -117,6 +119,7 @@ public:
         this->name = disp_name.c_str();
         this->setpoint_sub.topic_ = setpoint_topic_name;
         sprintf(setpoint_topic_name, "/mciu/%s/odrive/input", disp_name.c_str());
+        DROP_CRUMB_VALUE('DONE', breadcrumb_type::CHAR4);
     }
 
 

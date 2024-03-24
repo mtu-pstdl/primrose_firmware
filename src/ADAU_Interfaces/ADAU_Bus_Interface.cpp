@@ -352,7 +352,7 @@ EStopDevice::TRIP_LEVEL ADAU_Bus_Interface::tripped(char *tripped_device_name, c
         strlcat(tripped_device_message, temp, 100);
         tripped = EStopDevice::TRIP_LEVEL::FAULT;
     }
-    if (micros() - this->last_message_time > 30000) {
+    if (micros() - this->last_message_time > 100000) {
         sprintf(temp, "NO ADAU DATA-");
         strlcat(tripped_device_message, temp, 100);
         tripped = EStopDevice::TRIP_LEVEL::FAULT;

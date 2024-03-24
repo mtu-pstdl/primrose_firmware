@@ -92,17 +92,17 @@ private:
     boolean one_shot = false;
 
     void reset(){
-        if (millis() - this->restart_start_time < 2000) {
-
-        } else if (!this->attempting_restart) {
-            this->attempting_restart = true;
-            this->restart_start_time = millis();
-            this->restart_attempts++;
-//            digitalWriteFast(ADAU_RESET_PIN, LOW);
-        } else if (millis() - this->restart_start_time > 100) {
-//            digitalWriteFast(ADAU_RESET_PIN, HIGH);
-            this->attempting_restart = false;
-        }
+//        if (millis() - this->restart_start_time < 2000) {
+//
+//        } else if (!this->attempting_restart) {
+//            this->attempting_restart = true;
+//            this->restart_start_time = millis();
+//            this->restart_attempts++;
+////            digitalWriteFast(ADAU_RESET_PIN, LOW);
+//        } else if (millis() - this->restart_start_time > 100) {
+////            digitalWriteFast(ADAU_RESET_PIN, HIGH);
+//            this->attempting_restart = false;
+//        }
     }
 
     void load_header();

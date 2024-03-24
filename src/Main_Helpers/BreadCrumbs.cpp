@@ -106,7 +106,7 @@ breadcrumb* get_breadcrumb() {
     // Keep track of where we are in the buffer (this method returns a null pointer once all breadcrumbs have been read)
     if (last_breadcrumbs.total == 0) return nullptr;
     static uint32_t current_index = last_breadcrumbs.index;
-    static uint32_t remaining = BREADCRUMB_BUFFER_SIZE - 1;
+    static uint32_t remaining = BREADCRUMB_BUFFER_SIZE;
     if (remaining == 0) return nullptr;
     breadcrumb* current = &last_breadcrumbs.crumbs[current_index];
     if (current_index >= BREADCRUMB_BUFFER_SIZE - 1) {

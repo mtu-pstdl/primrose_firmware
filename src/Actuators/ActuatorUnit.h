@@ -238,8 +238,8 @@ public:
         this->id = id;
         this->command_bus = &ACTUATOR_BUS_INTERFACE;
 
-        this->motors[0].encoder = suspension_encoder;
-        this->motors[1].encoder = steering_encoder;
+        this->motors[1].encoder = suspension_encoder;
+        this->motors[0].encoder = steering_encoder;
 
         // Setup all the required messages for gathering information from the object
         this->command_messages[0].msg = new Actuator_Bus_Interface::serial_message();

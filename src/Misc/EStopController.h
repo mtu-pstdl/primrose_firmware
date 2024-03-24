@@ -215,6 +215,8 @@ public:
         if (this->system_loops % 100 == 0) {
             return true;
         }
+        if (this->estop_message == nullptr) return false;
+        if (this->last_estop_message == nullptr) return false;
         if (strcmp(this->estop_message, this->last_estop_message) != 0) {
             sprintf(this->last_estop_message, "%s", this->estop_message);
             return true;
