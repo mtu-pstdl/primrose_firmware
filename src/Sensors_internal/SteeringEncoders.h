@@ -19,6 +19,7 @@
 #define RES14           14
 
 #define SPI_INTERFACE   SPI
+#define SPI_FREQ        100000
 
 #define MAX_ATTEMPTS_PER_UPDATE 5
 #define MAX_INCREMENT_JITTER    2000

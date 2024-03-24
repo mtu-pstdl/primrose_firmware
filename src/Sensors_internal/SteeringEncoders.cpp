@@ -7,7 +7,7 @@
 void SteeringEncoders::begin_transaction() const {
     // Begin SPI transaction with configuration
     // .5MHz clock, MSB first, SPI mode 0
-    SPI_INTERFACE.beginTransaction(SPISettings(500000, MSBFIRST, SPI_MODE0));
+    SPI_INTERFACE.beginTransaction(SPISettings(SPI_FREQ, MSBFIRST, SPI_MODE0));
     digitalWrite(cs_pin, LOW); // Select
     delayMicroseconds(10); //wait for the encoder to be ready (3us as specified in the datasheet)
 }

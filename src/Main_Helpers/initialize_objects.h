@@ -118,7 +118,7 @@ void allocate_actuators(){
     actuators[2]->set_inverted(true,1);
 
     actuators[3] = new (&actuator_unit_memory[sizeof(ActuatorUnit) * actuator_num++])
-            ActuatorUnit(131,new SteeringEncoders(24),
+            ActuatorUnit(131,new SteeringEncoders(25),
                          new SuspensionEncoders(0x04));
     actuators[3]->set_inverted(true,0);
 
