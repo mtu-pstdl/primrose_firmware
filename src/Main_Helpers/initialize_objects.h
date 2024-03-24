@@ -152,9 +152,9 @@ void allocate_misc_objects(){
     accessory_power = new AccessoryPower();
     system_monitor = new SystemMonitor(
             static_cast<std_msgs::Int32MultiArray*>(all_topics[SYSTEM_MONITOR_TOPIC_NUM]->message));
-    high_speed_logger = new (&high_speed_logger_memory)
-            HighSpeedLogger(static_cast<std_msgs::UInt32MultiArray*>(high_speed_logger_topic.message),
-                            high_speed_logger_topic.publisher);
+//    high_speed_logger = new (&high_speed_logger_memory)
+//            HighSpeedLogger(static_cast<std_msgs::UInt32MultiArray*>(high_speed_logger_topic.message),
+//                            high_speed_logger_topic.publisher);
 }
 
 void attach_estop_devices(){
@@ -173,6 +173,7 @@ void attach_estop_devices(){
  * @note This function must be called after the ROS node has been initialized and before the main loop starts
  */
 void setup_hardware_objects(){
+    DROP_CRUMB();
     allocate_odrives();
     allocate_actuators();
     allocate_misc_objects();

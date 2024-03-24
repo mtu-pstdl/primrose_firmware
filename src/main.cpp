@@ -96,7 +96,7 @@ EStopController* e_stop_controller;
 HopperDoor* hopper_door;
 AccessoryPower* accessory_power;
 SystemMonitor* system_monitor;
-HighSpeedLogger* high_speed_logger;
+//HighSpeedLogger* high_speed_logger;
 
 ROSNode* ros_nodes[24];
 
@@ -176,6 +176,8 @@ void setup() {
     node_handle.initNode();          // Initialize the ROS node (this will block until a connection is made)
     node_handle.requestSyncTime();   // Sync time with ROS master
 
+    DROP_CRUMB();
+
     // If we are starting in safe mode exit here to prevent us from encountering the same error again and again
     if (!safe_mode_flag) return;
     safe_mode_flag = SAFE_MODE_ARM;  // Arm the safe mode flag in case initialization fails
@@ -183,18 +185,24 @@ void setup() {
     // Set up the CAN bus
     can1.begin();
     can1.setBaudRate(500000);       // Set the baud rate to 500kbps
-    can1.onReceive(can_receive);  // Set the callback function for when a CAN message is received
+    can1.onReceive(&can_receive);  // Set the callback function for when a CAN message is received
+
+    DROP_CRUMB();
 
     can1.enableFIFO();                   // Enable the FIFO (First In First Out) buffer for the CAN bus
     can1.enableFIFOInterrupt();          // Allow the CAN bus to trigger an interrupt when a message is received
+
+    DROP_CRUMB();
 
     SPI.begin();
 //    SPI1.begin();
 
 //    Wire.begin();
 
+    DROP_CRUMB();
+
     // Setup the test output publisher
-    node_handle.advertise(test_output_pub);
+//    node_handle.advertise(test_output_pub);
 
     setup_hardware_objects();  // Initialize all the hardware objects and allocate memory for the runtime objects
 
@@ -211,6 +219,8 @@ void setup() {
     ros_nodes[ros_node_count++] = accessory_power;
     ros_nodes[ros_node_count++] = imu_class;
     ros_nodes[ros_node_count++] = system_monitor;
+
+    DROP_CRUMB();
 
     node_handle.advertise(*estop_topic.publisher);
     estop_topic.publisher->publish(estop_topic.message);

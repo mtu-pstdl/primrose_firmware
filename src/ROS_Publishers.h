@@ -186,12 +186,12 @@ ros_topic system_monitor_topic = {
 };
 
 #define HIGH_SPEED_LOGGER_TOPIC_NUM 17
-std_msgs::UInt32MultiArray high_speed_logger_msg;
-ros::Publisher high_speed_logger_pub("/mciu/HighSpeed_logger", &high_speed_logger_msg);
-ros_topic high_speed_logger_topic = {
-        .publisher = &high_speed_logger_pub,
-        .message = &high_speed_logger_msg
-};
+//std_msgs::UInt32MultiArray high_speed_logger_msg;
+//ros::Publisher high_speed_logger_pub("/mciu/HighSpeed_logger", &high_speed_logger_msg);
+//ros_topic high_speed_logger_topic = {
+//        .publisher = &high_speed_logger_pub,
+//        .message = &high_speed_logger_msg
+//};
 
 ros_topic* odrive_encoder_topics[7] = {
         &odrive1_encoder_topic,
